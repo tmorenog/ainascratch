@@ -49,16 +49,50 @@ Nothing else is required — no env vars, no database.
 
 ## 🎮 How to play
 
-1. **Name your bakery** (or roll a funny one like "Bunkin Bonuts").
-2. **Open the shop** with the green button. Customers will arrive on their own.
-3. **Tap a station** (Drink Bar, Pastry Counter, Scratch Workshop, Pet Nook) and pick a recipe to start prepping. Ingredients are used from your pantry.
-4. A progress ring shows prep time. When it says **READY!**, tap the station again to move it to the **Ready to serve** tray.
-5. Tap **Serve order** on a customer card once you've got all the items they need. Fast + correct = 5 stars + tips.
-6. Running low? Open the **🛒 Supermarket** to restock. Deliveries arrive in ~8 seconds.
-7. **📖 Recipe book** shows ingredients, steps, and bake times for every recipe (locked recipes reveal as you level up).
-8. **⭐ Reviews** shows every customer's reaction and your running stats.
-9. **⚙️ Settings** lets you rename the bakery, change pace (Cozy / Just right / Rush), or start fresh.
-10. Close the shop any time to restock or breathe. Your save persists automatically.
+The game is played in **first-person** — you physically walk around the bakery, Doom-style, and walk up to stations, the pantry, and the service counter to interact.
+
+### Controls
+
+**Desktop:**
+
+| Key | Action |
+|---|---|
+| `W` / `↑` | Walk forward |
+| `S` / `↓` | Walk back |
+| `A` / `Q` | Strafe left |
+| `D` | Strafe right |
+| `←` / `→` | Turn |
+| `Shift` | Run |
+| `E` / `Space` / `Enter` | Interact with the highlighted thing |
+
+**Mobile / tablet:** two on-screen joysticks — left to move, right to turn — and a big green **E** button to interact.
+
+### The bakery has 8 hotspots
+
+Walk close to any of these. A prompt appears in the middle of the screen telling you what pressing `E` will do.
+
+| Hotspot | What happens |
+|---|---|
+| 🥤 Drink Bar totem | Opens the drink station's recipe picker |
+| 🧁 Pastry Counter totem | Opens the pastry station's recipe picker |
+| 🥣 Scratch Oven totem | Opens the scratch-bake station's recipe picker |
+| 🐾 Pet Nook totem | Opens the pet-treat station's recipe picker |
+| 🧺 Pantry Shelf | Shows current ingredients + link to the supermarket |
+| 🛒 Supermarket Kiosk | Orders supplies (deliveries arrive in ~8s) |
+| 🔔 Service Counter | Serve waiting customers; open/close the shop |
+| 📖 Recipe Board | Opens the full recipe book |
+
+### Game loop
+
+1. **Name your bakery** on the welcome screen (or roll a funny one).
+2. Walk to the 🔔 **Service Counter** and tap **Open Shop**. Customers walk up and queue as sprites right at your counter.
+3. Walk to a station, press `E`, and choose a recipe. Ingredients are spent from your pantry; a progress ring ticks down.
+4. When the station is **READY!**, walk back and press `E` again to plate the treat onto the ready tray.
+5. Walk to the 🔔 counter and tap **Serve order** on a customer whose order you have on the tray. Fast + correct = 5 stars + tips.
+6. Low on flour? Walk to the 🛒 kiosk to restock. Deliveries show up automatically.
+7. Levels unlock fancier recipes (Mocha at Lv 2, Berry Pie at Lv 2, Croissant at Lv 3, Decorated Cake at Lv 4…).
+
+Your save persists automatically in `localStorage`.
 
 ### Stations
 
@@ -85,35 +119,48 @@ Tips scale with stars. Streak counter rewards consecutive correct orders. Level 
 
 ```
 src/
-├── app/                    # Next.js App Router
-│   ├── layout.tsx          # Fonts, metadata, viewport, global CSS
-│   ├── page.tsx            # Entry -> BakeryApp
-│   ├── globals.css         # Tailwind + cozy bakery styles (wood, chalkboard, glass case)
+├── app/                        # Next.js App Router
+│   ├── layout.tsx              # Fonts, metadata, viewport, global CSS
+│   ├── page.tsx                # Entry -> BakeryApp
+│   ├── globals.css             # Tailwind + cozy bakery styles
 │   └── manifest.webmanifest
 ├── components/
-│   ├── BakeryApp.tsx       # Top-level shell + tick loop + modal orchestration
-│   ├── Welcome.tsx         # Naming screen + difficulty picker
-│   ├── Topbar.tsx          # Bakery sign, coins/level/reviews HUD, open-close button
-│   ├── CustomerQueue.tsx   # Customer cards with order, patience, serve button
-│   ├── StationGrid.tsx     # 4 prep stations + recipe picker sheet
-│   ├── ReadyTray.tsx       # "Ready to serve" glass case
-│   ├── InventoryStrip.tsx  # Pantry strip at the bottom
-│   ├── RecipeBook.tsx      # Tabbed recipe book modal
-│   ├── Supermarket.tsx     # Shopping list + checkout
-│   ├── ReviewsPanel.tsx    # Review feed + lifetime stats
-│   ├── SettingsPanel.tsx   # Rename, pace, reset
-│   ├── foods/FoodArt.tsx   # All food SVGs (donuts, cupcakes, drinks, etc.)
-│   └── ui/                 # Modal, ProgressRing/Bar, Stars
+│   ├── BakeryApp.tsx           # Top-level shell + tick loop + modal orchestration
+│   ├── Welcome.tsx             # Naming screen + pace picker
+│   ├── Topbar.tsx              # Bakery sign + HUD
+│   ├── StationPicker.tsx       # Recipe picker bottom-sheet for one station
+│   ├── CounterPanel.tsx        # Serve customers + open/close shop
+│   ├── PantryPanel.tsx         # Pantry view with link to supermarket
+│   ├── Supermarket.tsx         # Shopping list + checkout
+│   ├── RecipeBook.tsx          # Tabbed recipe book modal
+│   ├── ReviewsPanel.tsx        # Review feed + lifetime stats
+│   ├── SettingsPanel.tsx       # Rename, pace, reset
+│   ├── foods/FoodArt.tsx       # All food SVGs
+│   ├── ui/                     # Modal, ProgressRing/Bar, Stars
+│   └── world/
+│       ├── Bakery3D.tsx        # Raycaster canvas + controls + minimap + joysticks
+│       └── textures.ts         # Procedural wall/sprite textures
 ├── game/
-│   ├── types.ts            # All TypeScript types
-│   ├── ingredients.ts      # Ingredient registry
-│   ├── recipes.ts          # All 20+ recipes (drinks, pastries, scratch, pet)
-│   ├── customers.ts        # Customer archetypes + flavor lines
-│   ├── reviews.ts          # Cute review templates + funny-name generator
-│   ├── util.ts             # uid, shuffle, multisetEqual…
-│   └── store.ts            # Zustand store (state + persist + tick)
-└── ...
+│   ├── types.ts                # TypeScript types
+│   ├── ingredients.ts          # Ingredient registry
+│   ├── recipes.ts              # All recipes (drinks/pastries/scratch/pet)
+│   ├── customers.ts            # Customer archetypes
+│   ├── reviews.ts              # Review templates + funny-name generator
+│   ├── world.ts                # 3D map grid + hotspot positions
+│   ├── util.ts                 # uid, shuffle, multisetEqual…
+│   └── store.ts                # Zustand store (state + persist + tick)
 ```
+
+### The 3D engine
+
+`components/world/Bakery3D.tsx` is a self-contained raycasting engine:
+- Grid-based DDA ray stepping per column (classic Wolf/Doom technique)
+- Wall slice texture mapping with per-face shading and distance fog
+- Billboard sprites (totems + customers) with per-column z-buffer
+- Vignette overlay for warmth
+- Pre-baked procedural textures in `textures.ts` (no image assets)
+- 60 Hz `requestAnimationFrame` loop; internal render width capped at 520px and upscaled, so mobile stays smooth
+- Keyboard (WASD / arrows) + dual touch joysticks + context-sensitive interact button
 
 ---
 
