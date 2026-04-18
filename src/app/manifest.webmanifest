@@ -1,0 +1,10 @@
+{
+  "name": "Aina's Bakery",
+  "short_name": "Aina's Bakery",
+  "description": "A cozy bakery and drink shop simulator.",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#fbf3e1",
+  "background_color": "#fdf6e6",
+  "icons": []
+}
