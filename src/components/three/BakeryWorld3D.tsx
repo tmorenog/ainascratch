@@ -55,6 +55,7 @@ export function BakeryWorld3D({
 
   const [prompt, setPrompt] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
+  const [isTouch, setIsTouch] = useState(false);
   const activeHotspotRef = useRef<Hotspot | null>(null);
   const activeCustomerRef = useRef<Customer | null>(null);
   const customersRef = useRef<Customer[]>(customers);
@@ -64,6 +65,17 @@ export function BakeryWorld3D({
   const toggleStoreRef = useRef(toggleStore);
   const signUpdateRef = useRef<((open: boolean) => void) | null>(null);
   const signFaceRef = useRef<THREE.Mesh | null>(null);
+  // Shared by the on-screen mobile joystick overlay and the per-frame tick.
+  const moveVecRef = useRef({ x: 0, y: 0 });
+  const onInteractRef = useRef(onInteract);
+  useEffect(() => {
+    onInteractRef.current = onInteract;
+  }, [onInteract]);
+  useEffect(() => {
+    const turnOn = () => setIsTouch(true);
+    window.addEventListener("touchstart", turnOn, { once: true, passive: true });
+    return () => window.removeEventListener("touchstart", turnOn);
+  }, []);
 
   useEffect(() => {
     toggleStoreRef.current = toggleStore;
@@ -394,23 +406,16 @@ export function BakeryWorld3D({
     };
     document.addEventListener("mousemove", onMouseMove);
 
-    // Touch joysticks
+    // Canvas touches all drive look (drag-to-turn). The visible on-screen
+    // joystick (rendered below as React elements) writes to moveVecRef
+    // independently and absorbs its own touches so they never reach here.
     const touchState = {
-      moveId: -1,
-      moveBase: { x: 0, y: 0 },
-      moveVec: { x: 0, y: 0 },
       lookId: -1,
       lookLast: { x: 0, y: 0 },
     };
     const onTouchStart = (e: TouchEvent) => {
       for (const t of Array.from(e.changedTouches)) {
-        const rect = renderer.domElement.getBoundingClientRect();
-        const isLeft = t.clientX - rect.left < rect.width / 2;
-        if (isLeft && touchState.moveId === -1) {
-          touchState.moveId = t.identifier;
-          touchState.moveBase = { x: t.clientX, y: t.clientY };
-          touchState.moveVec = { x: 0, y: 0 };
-        } else if (!isLeft && touchState.lookId === -1) {
+        if (touchState.lookId === -1) {
           touchState.lookId = t.identifier;
           touchState.lookLast = { x: t.clientX, y: t.clientY };
         }
@@ -418,17 +423,12 @@ export function BakeryWorld3D({
     };
     const onTouchMove = (e: TouchEvent) => {
       for (const t of Array.from(e.changedTouches)) {
-        if (t.identifier === touchState.moveId) {
-          const dx = t.clientX - touchState.moveBase.x;
-          const dy = t.clientY - touchState.moveBase.y;
-          const max = 60;
-          touchState.moveVec.x = Math.max(-1, Math.min(1, dx / max));
-          touchState.moveVec.y = Math.max(-1, Math.min(1, dy / max));
-        } else if (t.identifier === touchState.lookId) {
+        if (t.identifier === touchState.lookId) {
           const dx = t.clientX - touchState.lookLast.x;
           const dy = t.clientY - touchState.lookLast.y;
-          camera.rotation.y -= dx * 0.005;
-          camera.rotation.x -= dy * 0.005;
+          // Gentler sensitivity so a kid's flick doesn't spin the world.
+          camera.rotation.y -= dx * 0.0035;
+          camera.rotation.x -= dy * 0.0035;
           camera.rotation.x = Math.max(-1.2, Math.min(1.2, camera.rotation.x));
           touchState.lookLast = { x: t.clientX, y: t.clientY };
         }
@@ -436,10 +436,6 @@ export function BakeryWorld3D({
     };
     const onTouchEnd = (e: TouchEvent) => {
       for (const t of Array.from(e.changedTouches)) {
-        if (t.identifier === touchState.moveId) {
-          touchState.moveId = -1;
-          touchState.moveVec = { x: 0, y: 0 };
-        }
         if (t.identifier === touchState.lookId) touchState.lookId = -1;
       }
     };
@@ -567,9 +563,9 @@ export function BakeryWorld3D({
       if (keys.has("KeyS")) moveF -= 1;
       if (keys.has("KeyA")) moveR -= 1;
       if (keys.has("KeyD")) moveR += 1;
-      // touch joystick
-      moveF += -touchState.moveVec.y;
-      moveR += touchState.moveVec.x;
+      // on-screen joystick (mobile)
+      moveF += -moveVecRef.current.y;
+      moveR += moveVecRef.current.x;
 
       const mag = Math.hypot(moveF, moveR);
       if (mag > 0) {
@@ -674,17 +670,146 @@ export function BakeryWorld3D({
       )}
 
       {/* controls hint */}
-      {!locked && !placingFurniture && (
+      {!locked && !placingFurniture && !isTouch && (
         <div className="pointer-events-none absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-white/80 text-cocoa-700 text-xs px-3 py-1 rounded-full">
           Drag mouse to look around • WASD to walk • ← ↑ ↓ → to turn • E to interact
         </div>
       )}
-      {placingFurniture && (
-        <div className="pointer-events-none absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-berry-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-          Click to place • Esc to cancel
+      {!locked && !placingFurniture && isTouch && (
+        <div className="pointer-events-none absolute top-3 left-1/2 -translate-x-1/2 z-10 bg-white/85 text-cocoa-700 text-[11px] px-3 py-1 rounded-full">
+          Drag to look • Joystick to walk • Tap ✨ to interact
         </div>
       )}
+      {placingFurniture && (
+        <div className="pointer-events-none absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-berry-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+          {isTouch ? "Tap to place • ✕ to cancel" : "Click to place • Esc to cancel"}
+        </div>
+      )}
+
+      {/* Mobile controls: visible joystick (bottom-left) and interact
+          button (bottom-right). Only rendered once a touch has been seen
+          so desktop users aren't cluttered. */}
+      {isTouch && !placingFurniture && (
+        <>
+          <Joystick moveVecRef={moveVecRef} pausedRef={pausedRef} />
+          <InteractButton
+            visible={!!prompt}
+            label={prompt ?? undefined}
+            onTap={() => {
+              if (pausedRef.current) return;
+              const hs = activeHotspotRef.current;
+              if (hs) onInteractRef.current(hs, activeCustomerRef.current);
+            }}
+          />
+        </>
+      )}
     </div>
+  );
+}
+
+function Joystick({
+  moveVecRef,
+  pausedRef,
+}: {
+  moveVecRef: React.MutableRefObject<{ x: number; y: number }>;
+  pausedRef: React.MutableRefObject<boolean>;
+}) {
+  const baseRef = useRef<HTMLDivElement | null>(null);
+  const thumbRef = useRef<HTMLDivElement | null>(null);
+  const touchIdRef = useRef<number>(-1);
+  const centerRef = useRef({ x: 0, y: 0 });
+  const RADIUS = 52; // px — how far the thumb can travel
+
+  function updateThumb(x: number, y: number) {
+    if (thumbRef.current) {
+      thumbRef.current.style.transform = `translate(${x}px, ${y}px)`;
+    }
+  }
+
+  function onStart(e: React.TouchEvent<HTMLDivElement>) {
+    if (pausedRef.current) return;
+    const t = e.changedTouches[0];
+    if (!t || touchIdRef.current !== -1) return;
+    const rect = baseRef.current!.getBoundingClientRect();
+    centerRef.current = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    };
+    touchIdRef.current = t.identifier;
+  }
+  function onMove(e: React.TouchEvent<HTMLDivElement>) {
+    for (const t of Array.from(e.changedTouches)) {
+      if (t.identifier !== touchIdRef.current) continue;
+      let dx = t.clientX - centerRef.current.x;
+      let dy = t.clientY - centerRef.current.y;
+      const d = Math.hypot(dx, dy);
+      if (d > RADIUS) {
+        dx = (dx / d) * RADIUS;
+        dy = (dy / d) * RADIUS;
+      }
+      updateThumb(dx, dy);
+      moveVecRef.current.x = dx / RADIUS;
+      moveVecRef.current.y = dy / RADIUS;
+    }
+  }
+  function onEnd(e: React.TouchEvent<HTMLDivElement>) {
+    for (const t of Array.from(e.changedTouches)) {
+      if (t.identifier !== touchIdRef.current) continue;
+      touchIdRef.current = -1;
+      moveVecRef.current.x = 0;
+      moveVecRef.current.y = 0;
+      updateThumb(0, 0);
+    }
+  }
+
+  return (
+    <div
+      ref={baseRef}
+      className="pointer-events-auto absolute left-5 bottom-5 z-30 w-32 h-32 rounded-full bg-white/30 border-2 border-white/60 backdrop-blur-sm shadow-bakery touch-none select-none"
+      onTouchStart={onStart}
+      onTouchMove={onMove}
+      onTouchEnd={onEnd}
+      onTouchCancel={onEnd}
+      aria-label="Walk joystick"
+    >
+      <div
+        ref={thumbRef}
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-berry-400 border-2 border-white shadow-bakery"
+      />
+    </div>
+  );
+}
+
+function InteractButton({
+  visible,
+  label,
+  onTap,
+}: {
+  visible: boolean;
+  label?: string;
+  onTap: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onTouchStart={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onTap();
+      }}
+      onClick={onTap}
+      className={`pointer-events-auto absolute right-6 bottom-8 z-30 w-24 h-24 rounded-full border-2 border-white text-white font-black text-lg shadow-bakery active:scale-95 transition-transform touch-none select-none ${
+        visible ? "bg-berry-500 animate-pulse" : "bg-cocoa-500/60"
+      }`}
+      aria-label={label ? `Interact: ${label}` : "Interact"}
+    >
+      <div className="flex flex-col items-center justify-center leading-tight">
+        <span className="text-2xl">✨</span>
+        <span className="text-[10px] font-bold">
+          {visible ? label : "near…"}
+        </span>
+      </div>
+    </button>
   );
 }
 

@@ -723,8 +723,11 @@ export function buildSeatingArea(): THREE.Group {
     g.add(buildTable(x, z));
     // put chairs on the two sides facing away from the wall (towards +/-x)
     const inward = x < 0 ? 1 : -1;
+    // Side chair (between the table and the aisle) — faces the table.
     g.add(buildChair(x + inward * 0.7, z, inward < 0 ? Math.PI / 2 : -Math.PI / 2));
-    g.add(buildChair(x, z + 0.75, 0));
+    // Chair on the +Z side of the table — must look back toward the
+    // table at smaller Z, so it faces -Z (yaw = PI), not +Z.
+    g.add(buildChair(x, z + 0.75, Math.PI));
   }
 
   return g;
