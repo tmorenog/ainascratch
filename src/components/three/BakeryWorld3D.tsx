@@ -17,6 +17,7 @@ import {
   buildStationSignboards,
   buildStationProps,
   buildPantry,
+  buildSeatingArea,
   buildOutdoors,
   makeOpenSign,
   disposeAllSceneryMaterials,
@@ -167,6 +168,7 @@ export function BakeryWorld3D({
     scene.add(buildStationSignboards(HOTSPOTS));
     scene.add(buildStationProps());
     scene.add(buildPantry());
+    scene.add(buildSeatingArea());
     const outdoors = buildOutdoors();
     scene.add(outdoors);
 
@@ -455,6 +457,12 @@ export function BakeryWorld3D({
       { x: 0, z: 1.2, w: 2.6, d: 0.9 },
       // pantry
       { x: 4.0, z: -3.8, w: 1.5, d: 0.4 },
+      // cafe tables (round, approximated as square collider a bit bigger
+      // than the top so chairs stay walkable)
+      { x: -5.0, z: 1.0, w: 1.0, d: 1.0 },
+      { x: 5.0, z: 1.0, w: 1.0, d: 1.0 },
+      { x: -5.0, z: 4.0, w: 1.0, d: 1.0 },
+      { x: 5.0, z: 4.0, w: 1.0, d: 1.0 },
     ];
     function collides(x: number, z: number, r: number): boolean {
       for (const c of colliders) {

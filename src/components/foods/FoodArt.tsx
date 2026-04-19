@@ -694,6 +694,90 @@ const OliveOilCakeArt = () => (
   </g>
 );
 
+const PineappleJuiceArt = () => (
+  <g>
+    <Plate w={60} />
+    {/* glass */}
+    <path
+      d="M30 28 h40 l-3 46 a6 6 0 0 1 -6 6 h-22 a6 6 0 0 1 -6 -6 z"
+      fill="#ffd761"
+      stroke="#c08a0f"
+      strokeWidth="1.2"
+      opacity="0.95"
+    />
+    {/* bubbles */}
+      <circle cx="40" cy="52" r="1.6" fill="#fff" opacity="0.8" />
+    <circle cx="55" cy="58" r="1.2" fill="#fff" opacity="0.7" />
+    <circle cx="48" cy="64" r="1.2" fill="#fff" opacity="0.8" />
+    <circle cx="60" cy="50" r="1" fill="#fff" opacity="0.7" />
+    {/* pineapple wedge on rim */}
+    <path d="M22 30 q6 -8 14 -8 q-2 6 -2 10 q-8 2 -12 -2 z" fill="#ffd761" stroke="#c08a0f" strokeWidth="0.8" />
+    <path d="M26 26 v-6 M30 24 v-6 M34 26 v-6" stroke="#2f7a43" strokeWidth="1.2" />
+    {/* leafy umbrella */}
+    <path d="M56 14 l10 -6 l-2 10 z" fill="#4ec47e" />
+    <rect x="56" y="14" width="2" height="22" fill="#e87aa0" />
+  </g>
+);
+
+const AlmondMilkArt = () => (
+  <g>
+    <Plate w={60} />
+    {/* glass */}
+    <path
+      d="M30 28 h40 l-3 46 a6 6 0 0 1 -6 6 h-22 a6 6 0 0 1 -6 -6 z"
+      fill="url(#milk)"
+      stroke="#b7a577"
+      strokeWidth="1.2"
+    />
+    {/* foam */}
+    <ellipse cx="50" cy="28" rx="20" ry="4" fill="#fff" />
+    <path d="M34 28 q6 -6 16 -5 q10 -1 16 5" fill="#fff" stroke="#e0d7b9" strokeWidth="0.6" />
+    {/* almond silhouette in middle */}
+    <path
+      d="M44 50 q6 -10 12 0 q-6 10 -12 0 z"
+      fill="#d9b78a"
+      stroke="#8b6a3b"
+      strokeWidth="0.6"
+      opacity="0.9"
+    />
+    <path d="M50 44 v10" stroke="#8b6a3b" strokeWidth="0.5" opacity="0.6" />
+    {/* straw */}
+    <rect x="55" y="14" width="3" height="24" rx="1.2" fill="#b7a577" />
+  </g>
+);
+
+const MunchkinsArt = () => (
+  <g>
+    <Plate w={90} />
+    {/* paper cup */}
+    <path
+      d="M22 50 l4 28 a4 4 0 0 0 4 3 h40 a4 4 0 0 0 4 -3 l4 -28 z"
+      fill="#fff"
+      stroke="#c9b98a"
+      strokeWidth="1.2"
+    />
+    <path
+      d="M26 56 l2 20 M34 56 l1 22 M42 56 l1 22 M50 56 v22 M58 56 l-1 22 M66 56 l-1 22 M74 56 l-2 20"
+      stroke="#e0d2a6"
+      strokeWidth="0.8"
+    />
+    {/* munchkin balls piled at the top of the cup */}
+    <circle cx="34" cy="46" r="7" fill="url(#dough)" stroke="#8b5a2b" strokeWidth="0.8" />
+    <circle cx="48" cy="42" r="8" fill="url(#glaze)" stroke="#b5577c" strokeWidth="0.8" />
+    <circle cx="62" cy="46" r="7" fill="url(#chocolate)" stroke="#3d1d0c" strokeWidth="0.8" />
+    <circle cx="40" cy="38" r="6.5" fill="url(#dough)" stroke="#8b5a2b" strokeWidth="0.8" />
+    <circle cx="56" cy="36" r="6.5" fill="url(#gold)" stroke="#b07626" strokeWidth="0.8" />
+    {/* sprinkles on the pink one */}
+    <rect x="44" y="38" width="2.5" height="1" fill="#ff4f85" transform="rotate(20 45 38)" />
+    <rect x="50" y="40" width="2.5" height="1" fill="#4ec47e" transform="rotate(-25 51 40)" />
+    <rect x="47" y="44" width="2.5" height="1" fill="#f5d24b" transform="rotate(45 48 44)" />
+    <rect x="52" y="36" width="2.5" height="1" fill="#ffffff" transform="rotate(-5 53 36)" />
+    {/* little glaze shines */}
+    <ellipse cx="46" cy="40" rx="3" ry="1" fill="url(#shine)" />
+    <ellipse cx="60" cy="44" rx="3" ry="1" fill="url(#shine)" />
+  </g>
+);
+
 /* ---------- Pet treats ---------- */
 
 const DogBoneArt = () => (
@@ -735,12 +819,15 @@ const FOOD_ART_BY_ID: Record<string, React.FC> = {
   milkshake: MilkshakeArt,
   smoothie: SmoothieArt,
   lemonade: LemonadeArt,
+  pineapple_juice: PineappleJuiceArt,
+  almond_milk: AlmondMilkArt,
   coffee: CoffeeArt,
   tea: TeaArt,
   mocha: MochaArt,
   berry_smoothie: BerrySmoothieArt,
   glazed_donut: GlazedDonutArt,
   sprinkle_donut: SprinkleDonutArt,
+  munchkins: MunchkinsArt,
   chocolate_cupcake: ChocolateCupcakeArt,
   blueberry_muffin: BlueberryMuffinArt,
   cinnamon_roll: CinnamonRollArt,

@@ -105,6 +105,22 @@ export const INGREDIENTS: Record<IngredientId, Ingredient> = {
     unit: "shake",
     startingAmount: 10,
   },
+  pineapple: {
+    id: "pineapple",
+    name: "Pineapple",
+    emoji: "🍍",
+    pricePerUnit: 3,
+    unit: "slice",
+    startingAmount: 10,
+  },
+  almond: {
+    id: "almond",
+    name: "Almonds",
+    emoji: "🌰",
+    pricePerUnit: 3,
+    unit: "handful",
+    startingAmount: 10,
+  },
   pet_mix: {
     id: "pet_mix",
     name: "Pet-Safe Mix",

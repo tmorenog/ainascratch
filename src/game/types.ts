@@ -17,6 +17,8 @@ export type IngredientId =
   | "icing"
   | "lemon"
   | "cinnamon"
+  | "pineapple"
+  | "almond"
   | "pet_mix";
 
 export type StationId = "drink" | "pastry" | "oven" | "scratch" | "pet";

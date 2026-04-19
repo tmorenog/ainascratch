@@ -582,6 +582,154 @@ export function buildPantry(): THREE.Group {
   return g;
 }
 
+/* ---------------- CAFE SEATING ---------------- */
+/**
+ * A few little cafe tables with chairs so customers have somewhere to sit
+ * and sip their drinks. Each table gets a tiny vase with cheerful flowers.
+ */
+export function buildSeatingArea(): THREE.Group {
+  const g = new THREE.Group();
+  g.name = "seating";
+
+  const woodTop = mat({ color: "#e2b87c", roughness: 0.6 });
+  const woodLeg = mat({ color: "#7c5236", roughness: 0.7 });
+  const chairSeat = mat({ color: "#d6708d", roughness: 0.7 });
+  const chairBack = mat({ color: "#c45576", roughness: 0.7 });
+  const vaseM = mat({ color: "#9acbd1", roughness: 0.35 });
+  const stemM = mat({ color: "#4ec47e" });
+  const petalColors = ["#ff7aa0", "#ffd24d", "#a879ff", "#ff6b6b", "#4ec4e8"];
+  const centerM = mat({ color: "#ffe27a" });
+
+  const tableTopR = 0.42;
+  const tableH = 0.78;
+
+  function buildFlower(color: string): THREE.Group {
+    const flower = new THREE.Group();
+    // 5 petals as squashed spheres around a small center
+    const petalM = mat({ color, roughness: 0.5 });
+    const petalGeo = new THREE.SphereGeometry(0.045, 10, 8);
+    for (let i = 0; i < 5; i++) {
+      const petal = new THREE.Mesh(petalGeo, petalM);
+      const a = (i / 5) * Math.PI * 2;
+      petal.position.set(Math.cos(a) * 0.045, 0, Math.sin(a) * 0.045);
+      petal.scale.set(1, 0.5, 1);
+      flower.add(petal);
+    }
+    const center = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), centerM);
+    flower.add(center);
+    return flower;
+  }
+
+  function buildChair(x: number, z: number, facing: number): THREE.Group {
+    const chair = new THREE.Group();
+    // seat
+    const seat = new THREE.Mesh(
+      new THREE.BoxGeometry(0.36, 0.05, 0.36),
+      chairSeat,
+    );
+    seat.position.y = 0.46;
+    chair.add(seat);
+    // 4 legs
+    const legGeo = new THREE.BoxGeometry(0.04, 0.46, 0.04);
+    [
+      [-0.15, 0.23, -0.15],
+      [0.15, 0.23, -0.15],
+      [-0.15, 0.23, 0.15],
+      [0.15, 0.23, 0.15],
+    ].forEach(([lx, ly, lz]) => {
+      const leg = new THREE.Mesh(legGeo, woodLeg);
+      leg.position.set(lx, ly, lz);
+      chair.add(leg);
+    });
+    // backrest
+    const back = new THREE.Mesh(
+      new THREE.BoxGeometry(0.36, 0.42, 0.04),
+      chairBack,
+    );
+    back.position.set(0, 0.68, -0.16);
+    chair.add(back);
+    chair.position.set(x, 0, z);
+    chair.rotation.y = facing;
+    return chair;
+  }
+
+  function buildTable(x: number, z: number): THREE.Group {
+    const t = new THREE.Group();
+    // round top
+    const top = new THREE.Mesh(
+      new THREE.CylinderGeometry(tableTopR, tableTopR, 0.05, 24),
+      woodTop,
+    );
+    top.position.y = tableH;
+    t.add(top);
+    // pedestal
+    const post = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.05, 0.07, tableH - 0.05, 12),
+      woodLeg,
+    );
+    post.position.y = (tableH - 0.05) / 2;
+    t.add(post);
+    // foot
+    const foot = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.22, 0.25, 0.05, 18),
+      woodLeg,
+    );
+    foot.position.y = 0.025;
+    t.add(foot);
+    // vase with flowers in the middle of the table
+    const vase = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.05, 0.07, 0.14, 14),
+      vaseM,
+    );
+    vase.position.y = tableH + 0.07;
+    t.add(vase);
+    const rim = new THREE.Mesh(
+      new THREE.TorusGeometry(0.05, 0.01, 8, 14),
+      vaseM,
+    );
+    rim.position.y = tableH + 0.14;
+    rim.rotation.x = Math.PI / 2;
+    t.add(rim);
+    // 3 flowers poking out at slightly different heights
+    const flowerSpots: [number, number, number, string][] = [
+      [0, tableH + 0.24, 0, petalColors[0]],
+      [0.03, tableH + 0.22, 0.02, petalColors[1]],
+      [-0.025, tableH + 0.23, -0.02, petalColors[2]],
+    ];
+    flowerSpots.forEach(([fx, fy, fz, color]) => {
+      const stem = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.006, 0.006, 0.14, 6),
+        stemM,
+      );
+      stem.position.set(fx, fy - 0.07, fz);
+      t.add(stem);
+      const flower = buildFlower(color);
+      flower.position.set(fx, fy, fz);
+      t.add(flower);
+    });
+    t.position.set(x, 0, z);
+    return t;
+  }
+
+  // Three little tables tucked against the side walls so the middle aisle
+  // from the entrance to the counter stays clear.
+  const spots: [number, number][] = [
+    [-5.0, 1.0],
+    [5.0, 1.0],
+    [-5.0, 4.0],
+    [5.0, 4.0],
+  ];
+  for (const [x, z] of spots) {
+    g.add(buildTable(x, z));
+    // put chairs on the two sides facing away from the wall (towards +/-x)
+    const inward = x < 0 ? 1 : -1;
+    g.add(buildChair(x + inward * 0.7, z, inward < 0 ? Math.PI / 2 : -Math.PI / 2));
+    g.add(buildChair(x, z + 0.75, 0));
+  }
+
+  return g;
+}
+
 /* ---------------- BACK DOOR / OUTDOOR AREA ---------------- */
 export function buildOutdoors(): THREE.Group {
   const g = new THREE.Group();
