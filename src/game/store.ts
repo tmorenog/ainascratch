@@ -575,7 +575,7 @@ export const useGame = create<GameState>()(
       storage: createJSONStorage(() => localStorage),
       // Bump whenever we add recipes or ingredients so returning players
       // automatically get the new menu + a full inventory slot list.
-      version: 2,
+      version: 3,
       migrate: (persisted, _version) => {
         const p = (persisted ?? {}) as Partial<GameState>;
         // Merge in any newly-unlocked recipes that weren't in the save.

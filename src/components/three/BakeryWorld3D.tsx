@@ -32,7 +32,7 @@ import {
   makeFurnitureByKind,
   disposeAllFurnitureMaterials,
 } from "./furniture3d";
-import { disposeAllCachedTextures } from "./textures3d";
+import { disposeAllCachedTextures, heartTexture } from "./textures3d";
 
 interface Props {
   onInteract: (hotspot: Hotspot, customer: Customer | null) => void;
@@ -65,6 +65,9 @@ export function BakeryWorld3D({
   const toggleStoreRef = useRef(toggleStore);
   const signUpdateRef = useRef<((open: boolean) => void) | null>(null);
   const signFaceRef = useRef<THREE.Mesh | null>(null);
+  // Fires when the player is next to a dog/cat — spawns hearts + wags
+  // the tail. Wired up inside the main useEffect.
+  const petTriggerRef = useRef<() => void>(() => {});
   // Shared by the on-screen mobile joystick overlay and the per-frame tick.
   const moveVecRef = useRef({ x: 0, y: 0 });
   const onInteractRef = useRef(onInteract);
@@ -292,6 +295,48 @@ export function BakeryWorld3D({
       scene.add(ghost);
     }
 
+    // ---- Hearts that float up when a pet is petted ----
+    const heartTex = heartTexture();
+    type FloatingHeart = { sprite: THREE.Sprite; born: number; life: number; drift: number };
+    const hearts: FloatingHeart[] = [];
+    function spawnHearts(pos: THREE.Vector3, count = 5) {
+      for (let i = 0; i < count; i++) {
+        const mat = new THREE.SpriteMaterial({
+          map: heartTex,
+          transparent: true,
+          depthWrite: false,
+        });
+        const sp = new THREE.Sprite(mat);
+        sp.scale.set(0.16, 0.16, 1);
+        sp.position.set(
+          pos.x + (Math.random() - 0.5) * 0.16,
+          pos.y + 0.35,
+          pos.z + (Math.random() - 0.5) * 0.16,
+        );
+        scene.add(sp);
+        hearts.push({
+          sprite: sp,
+          born: performance.now(),
+          life: 1200 + Math.random() * 400,
+          drift: (Math.random() - 0.5) * 0.6,
+        });
+      }
+    }
+
+    // Which pet is currently in petting range, and when it was last pet
+    // (used to time head-bob + tail-wag animation).
+    let activePetCustomerId: string | null = null;
+    let activePetRef: THREE.Group | null = null;
+    const petLastPetAt = new Map<string, number>();
+
+    function tryPet() {
+      if (!activePetRef || !activePetCustomerId) return;
+      spawnHearts(activePetRef.position);
+      petLastPetAt.set(activePetCustomerId, performance.now());
+    }
+    // Expose via ref so the on-screen Interact button can trigger this too.
+    petTriggerRef.current = tryPet;
+
     // ---- Controls (pointer lock + WASD + touch) ----
     const keys = new Set<string>();
     const onKeyDown = (e: KeyboardEvent) => {
@@ -299,7 +344,11 @@ export function BakeryWorld3D({
       keys.add(e.code);
       if (e.code === "KeyE" || e.code === "Space") {
         const hs = activeHotspotRef.current;
-        if (hs) onInteract(hs, activeCustomerRef.current);
+        if (hs) {
+          onInteract(hs, activeCustomerRef.current);
+        } else if (activePetRef) {
+          tryPet();
+        }
       }
     };
     const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code);
@@ -596,7 +645,77 @@ export function BakeryWorld3D({
       }
       activeHotspotRef.current = best;
       activeCustomerRef.current = customerHit;
-      setPrompt(best ? best.prompt : null);
+
+      // Pet proximity — check each customer's pet and pick the closest one
+      // within a small radius. Pets "beat" station hotspots if the player
+      // is literally standing next to them.
+      let nearestPet: THREE.Group | null = null;
+      let nearestPetCustId: string | null = null;
+      let nearestPetD = 1.2;
+      for (const cf of customerFigs) {
+        if (!cf.pet) continue;
+        const d = Math.hypot(
+          cf.pet.position.x - camera.position.x,
+          cf.pet.position.z - camera.position.z,
+        );
+        if (d < nearestPetD) {
+          nearestPet = cf.pet;
+          nearestPetCustId = cf.id;
+          nearestPetD = d;
+        }
+      }
+      activePetRef = nearestPet;
+      activePetCustomerId = nearestPetCustId;
+
+      let promptText = best ? best.prompt : null;
+      if (nearestPet) {
+        const kind = (nearestPet.userData.pet as { kind: "dog" | "cat" }).kind;
+        promptText = `Pet the ${kind}`;
+      }
+      setPrompt(promptText);
+
+      // Animate every pet — gentle idle breathing, plus a joyful bounce +
+      // tail wag in the 1.2s after being petted.
+      for (const cf of customerFigs) {
+        if (!cf.pet) continue;
+        const parts = cf.pet.userData.pet as {
+          head: THREE.Group;
+          tail: THREE.Group;
+          kind: "dog" | "cat";
+        };
+        const lastPet = petLastPetAt.get(cf.id) ?? -Infinity;
+        const since = now - lastPet;
+        const petting = since < 1200;
+        if (petting) {
+          const t = since / 1200;
+          const bob = Math.sin(t * Math.PI * 4) * 0.05 * (1 - t);
+          parts.head.position.y = 0.33 + bob;
+          parts.head.rotation.z = Math.sin(t * Math.PI * 6) * 0.12 * (1 - t);
+          parts.tail.rotation.y = Math.sin(t * Math.PI * 8) * 0.9;
+        } else {
+          const breathe = Math.sin(now * 0.004) * 0.008;
+          parts.head.position.y = 0.33 + breathe;
+          parts.head.rotation.z = 0;
+          parts.tail.rotation.y = Math.sin(now * 0.002) * 0.25;
+        }
+      }
+
+      // Animate floating hearts — rise, drift sideways, fade, then remove.
+      for (let i = hearts.length - 1; i >= 0; i--) {
+        const h = hearts[i];
+        const t = (now - h.born) / h.life;
+        if (t >= 1) {
+          scene.remove(h.sprite);
+          h.sprite.material.dispose();
+          hearts.splice(i, 1);
+          continue;
+        }
+        h.sprite.position.y += dt * 0.9;
+        h.sprite.position.x += dt * h.drift * 0.3;
+        h.sprite.material.opacity = 1 - t;
+        const s = 0.16 * (0.6 + t * 0.6);
+        h.sprite.scale.set(s, s, 1);
+      }
 
       // update animated entities
       customerFigs.forEach((cf) => cf.fig.update(now));
@@ -698,7 +817,11 @@ export function BakeryWorld3D({
             onTap={() => {
               if (pausedRef.current) return;
               const hs = activeHotspotRef.current;
-              if (hs) onInteractRef.current(hs, activeCustomerRef.current);
+              if (hs) {
+                onInteractRef.current(hs, activeCustomerRef.current);
+              } else {
+                petTriggerRef.current();
+              }
             }}
           />
         </>

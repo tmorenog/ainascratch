@@ -241,6 +241,33 @@ function drawHeart(
   g.fill();
 }
 
+export function heartTexture(): THREE.Texture {
+  return cachedTex("heart", () => {
+    const c = document.createElement("canvas");
+    c.width = 128;
+    c.height = 128;
+    const g = c.getContext("2d")!;
+    g.clearRect(0, 0, 128, 128);
+    const grad = g.createLinearGradient(0, 0, 0, 128);
+    grad.addColorStop(0, "#ff7fa9");
+    grad.addColorStop(1, "#e51a5f");
+    g.fillStyle = grad;
+    g.strokeStyle = "#ffffff";
+    g.lineWidth = 6;
+    const cx = 64, top = 38, r = 22;
+    g.beginPath();
+    g.moveTo(cx, top + r);
+    g.bezierCurveTo(cx, top, cx - r * 1.5, top, cx - r * 1.5, top + r * 0.7);
+    g.bezierCurveTo(cx - r * 1.5, top + r * 1.7, cx, top + r * 2.3, cx, top + r * 3);
+    g.bezierCurveTo(cx, top + r * 2.3, cx + r * 1.5, top + r * 1.7, cx + r * 1.5, top + r * 0.7);
+    g.bezierCurveTo(cx + r * 1.5, top, cx, top, cx, top + r);
+    g.closePath();
+    g.fill();
+    g.stroke();
+    return c;
+  });
+}
+
 export function disposeAllCachedTextures() {
   cache.forEach((t) => t.dispose());
   cache.clear();

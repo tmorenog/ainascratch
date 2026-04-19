@@ -343,63 +343,197 @@ function roundRect(g: CanvasRenderingContext2D, x: number, y: number, w: number,
   g.closePath();
 }
 
-/** Pet companion — small low-poly dog/cat that stands next to a customer. */
+/** Pet companion — a very cute low-poly dog/cat. Big sparkly eyes, rosy
+ * cheeks, tiny smile, floppy dog ears or pointy pink-lined cat ears,
+ * whiskers for the cat and a pink tongue for the dog. The head and tail
+ * are exposed via `group.userData.pet` so the game can bob/wag them
+ * when the player pets them. */
 export function makePet(kind: "dog" | "cat"): THREE.Group {
   const g = new THREE.Group();
-  const bodyColor = kind === "dog" ? "#a4693b" : "#cfcfcf";
+  const bodyColor = kind === "dog" ? "#c79162" : "#f6f4ec";
+  const bellyColor = kind === "dog" ? "#ecd9b9" : "#ffffff";
+  const earAccent = kind === "dog" ? "#8b5a2b" : "#e5e1d3";
   const bodyM = mat(bodyColor);
-  const darkM = mat("#3a1c10");
+  const bellyM = mat(bellyColor);
+  const earAccentM = mat(earAccent);
+  const darkM = mat("#1c110a");
+  const whiteM = mat("#ffffff");
+  const softPinkM = mat("#ffbad1");
+  const hotPinkM = mat("#ff5e85");
 
-  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 0.18, 6, 10), bodyM);
+  // ---- BODY ----
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.13, 0.18, 10, 14), bodyM);
   body.rotation.z = Math.PI / 2;
-  body.position.set(0, 0.18, 0);
+  body.position.set(-0.02, 0.2, 0);
   g.add(body);
+  // lighter tummy patch
+  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.09, 14, 12), bellyM);
+  belly.position.set(-0.02, 0.14, 0);
+  belly.scale.set(1.1, 0.55, 0.55);
+  g.add(belly);
 
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 14), bodyM);
-  head.position.set(0.18, 0.27, 0);
+  // ---- HEAD (in its own group so we can bob it when petted) ----
+  const head = new THREE.Group();
+  head.position.set(0.18, 0.33, 0);
   g.add(head);
+  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.16, 20, 16), bodyM);
+  skull.scale.set(1, 0.98, 1);
+  head.add(skull);
 
-  // ears
+  // Rosy cheeks — two little pink circles on the face
+  const cheekGeo = new THREE.CircleGeometry(0.03, 16);
+  const cheekM = mat("#ff92ae");
+  const cheekL = new THREE.Mesh(cheekGeo, cheekM);
+  cheekL.position.set(0.11, -0.01, 0.1);
+  cheekL.rotation.y = Math.PI / 2;
+  head.add(cheekL);
+  const cheekR = cheekL.clone();
+  cheekR.position.z = -0.1;
+  head.add(cheekR);
+
+  // Huge anime eyes — dark ovals
+  const eyeGeo = new THREE.SphereGeometry(0.04, 14, 12);
+  const eyeL = new THREE.Mesh(eyeGeo, darkM);
+  eyeL.position.set(0.14, 0.04, 0.07);
+  eyeL.scale.set(0.45, 1, 1);
+  head.add(eyeL);
+  const eyeR = eyeL.clone();
+  eyeR.position.z = -0.07;
+  head.add(eyeR);
+  // Two sparkly highlights per eye — big + small
+  const shineA = new THREE.Mesh(new THREE.SphereGeometry(0.014, 10, 8), whiteM);
+  shineA.position.set(0.158, 0.055, 0.078);
+  shineA.scale.set(0.55, 1.1, 1.1);
+  const shineB = new THREE.Mesh(new THREE.SphereGeometry(0.008, 10, 8), whiteM);
+  shineB.position.set(0.158, 0.02, 0.063);
+  head.add(shineA, shineB);
+  const shineA2 = shineA.clone();
+  shineA2.position.z = -0.078;
+  const shineB2 = shineB.clone();
+  shineB2.position.z = -0.063;
+  head.add(shineA2, shineB2);
+
+  // Button nose — pink for cat, dark for dog
+  const nose = new THREE.Mesh(
+    new THREE.SphereGeometry(0.024, 14, 12),
+    kind === "cat" ? hotPinkM : darkM,
+  );
+  nose.position.set(0.18, -0.02, 0);
+  nose.scale.set(0.9, 0.7, 1.1);
+  head.add(nose);
+
+  // Tiny smile — a thin half-torus on the front of the face
+  const smile = new THREE.Mesh(
+    new THREE.TorusGeometry(0.025, 0.005, 8, 16, Math.PI),
+    darkM,
+  );
+  smile.position.set(0.172, -0.065, 0);
+  smile.rotation.y = -Math.PI / 2; // face +X
+  smile.rotation.z = Math.PI; // arc opens upward => smile
+  head.add(smile);
+
   if (kind === "dog") {
-    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.12, 10), bodyM);
-    ear.position.set(0.14, 0.42, 0.07);
-    ear.rotation.z = -0.4;
-    const ear2 = ear.clone();
-    ear2.position.z = -0.07;
-    g.add(ear, ear2);
+    // Floppy squishable ears on the sides of the head
+    const earGeo = new THREE.SphereGeometry(0.075, 14, 12);
+    const earL = new THREE.Mesh(earGeo, earAccentM);
+    earL.position.set(-0.02, 0.05, 0.14);
+    earL.scale.set(0.55, 1.3, 0.85);
+    earL.rotation.x = 0.25;
+    head.add(earL);
+    const earR = earL.clone();
+    earR.position.z = -0.14;
+    earR.rotation.x = -0.25;
+    head.add(earR);
+    // Little pink tongue sticking out under the smile
+    const tongue = new THREE.Mesh(
+      new THREE.SphereGeometry(0.022, 12, 10),
+      hotPinkM,
+    );
+    tongue.position.set(0.185, -0.085, 0);
+    tongue.scale.set(0.7, 0.55, 1.3);
+    head.add(tongue);
+    // A marking spot on the left side of the face for character
+    const spot = new THREE.Mesh(
+      new THREE.SphereGeometry(0.055, 12, 10),
+      earAccentM,
+    );
+    spot.position.set(0.05, 0.08, 0.11);
+    spot.scale.set(0.5, 0.8, 0.5);
+    head.add(spot);
   } else {
-    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.09, 10), bodyM);
-    ear.position.set(0.17, 0.38, 0.06);
-    const ear2 = ear.clone();
-    ear2.position.z = -0.06;
-    g.add(ear, ear2);
+    // Pointy cat ears with pink insides
+    const earGeo = new THREE.ConeGeometry(0.05, 0.12, 12);
+    const earL = new THREE.Mesh(earGeo, bodyM);
+    earL.position.set(-0.02, 0.16, 0.09);
+    head.add(earL);
+    const earR = earL.clone();
+    earR.position.z = -0.09;
+    head.add(earR);
+    const innerGeo = new THREE.ConeGeometry(0.028, 0.08, 12);
+    const innerL = new THREE.Mesh(innerGeo, softPinkM);
+    innerL.position.set(-0.01, 0.15, 0.09);
+    head.add(innerL);
+    const innerR = innerL.clone();
+    innerR.position.z = -0.09;
+    head.add(innerR);
+    // Whiskers — three on each side
+    const whiskerM = mat("#fdf6de");
+    const whiskerGeo = new THREE.CylinderGeometry(0.002, 0.002, 0.11, 4);
+    for (const side of [1, -1]) {
+      for (const dy of [0.015, -0.005, -0.025]) {
+        const w = new THREE.Mesh(whiskerGeo, whiskerM);
+        w.position.set(0.17, dy, 0.055 * side);
+        w.rotation.z = Math.PI / 2;
+        w.rotation.y = side > 0 ? 0.35 : -0.35;
+        head.add(w);
+      }
+    }
   }
 
-  // legs
-  const legGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.14, 8);
-  const legs: THREE.Mesh[] = [];
+  // ---- LEGS ----
+  const legGeo = new THREE.CylinderGeometry(0.032, 0.028, 0.14, 10);
   for (let i = 0; i < 4; i++) {
-    const l = new THREE.Mesh(legGeo, darkM);
-    const x = i < 2 ? 0.1 : -0.1;
-    const z = i % 2 === 0 ? 0.06 : -0.06;
+    const l = new THREE.Mesh(legGeo, bodyM);
+    const x = i < 2 ? 0.1 : -0.12;
+    const z = i % 2 === 0 ? 0.07 : -0.07;
     l.position.set(x, 0.07, z);
-    legs.push(l);
+    g.add(l);
   }
-  g.add(...legs);
 
-  // tail
-  const tail = new THREE.Mesh(new THREE.CapsuleGeometry(0.02, 0.15, 4, 6), bodyM);
-  tail.position.set(-0.16, 0.26, 0);
-  tail.rotation.z = -0.6;
-  g.add(tail);
+  // ---- TAIL (own group so we can wag it) ----
+  const tailGroup = new THREE.Group();
+  tailGroup.position.set(-0.17, 0.22, 0);
+  const tail = new THREE.Mesh(new THREE.CapsuleGeometry(0.025, 0.14, 6, 10), bodyM);
+  if (kind === "dog") {
+    tail.position.set(-0.02, 0.06, 0);
+    tail.rotation.z = -0.9;
+  } else {
+    tail.position.set(-0.02, 0.08, 0);
+    tail.rotation.z = -0.5;
+    tail.rotation.x = 0.4;
+  }
+  tailGroup.add(tail);
+  g.add(tailGroup);
 
-  // eyes
-  const eyeGeo = new THREE.SphereGeometry(0.014, 6, 6);
-  const eye1 = new THREE.Mesh(eyeGeo, darkM);
-  eye1.position.set(0.28, 0.3, 0.04);
-  const eye2 = eye1.clone();
-  eye2.position.z = -0.04;
-  g.add(eye1, eye2);
+  // ---- COLLAR with a tiny charm ----
+  const collarColor = kind === "dog" ? "#d72a58" : "#ffa4c6";
+  const collar = new THREE.Mesh(
+    new THREE.TorusGeometry(0.12, 0.015, 10, 24),
+    mat(collarColor),
+  );
+  collar.position.set(0.09, 0.24, 0);
+  collar.rotation.y = Math.PI / 2;
+  g.add(collar);
+  const charm = new THREE.Mesh(
+    new THREE.SphereGeometry(0.022, 12, 10),
+    mat("#ffd64a"),
+  );
+  charm.position.set(0.115, 0.15, 0);
+  g.add(charm);
+
+  // Expose the movable bits so the game loop can animate them when petted.
+  g.userData.pet = { kind, head, tail: tailGroup, skull };
+  g.userData.kind = "pet";
 
   return g;
 }
