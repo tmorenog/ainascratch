@@ -595,38 +595,127 @@ function makeBirdSprite(x: number, y: number, z: number): THREE.Sprite {
 
 function buildSupermarket(x: number, z: number): THREE.Group {
   const g = new THREE.Group();
-  // building
-  const wall = new THREE.Mesh(
-    new THREE.BoxGeometry(8, 4, 6),
-    mat({ color: "#e0d8c8" }),
+  const wallM = mat({ color: "#e0d8c8", roughness: 0.85 });
+  const trimM = mat({ color: "#5a4030" });
+
+  // Floor (tile look)
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(8, 6),
+    mat({ color: "#f2ecdc", roughness: 0.7 }),
   );
-  wall.position.set(0, 2, -3);
-  wall.castShadow = wall.receiveShadow = true;
-  g.add(wall);
-  // roof
-  const roof = new THREE.Mesh(
-    new THREE.BoxGeometry(8.4, 0.3, 6.4),
-    mat({ color: "#8a4d3a" }),
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.set(0, 0.01, -3);
+  g.add(floor);
+
+  // Back wall
+  const back = new THREE.Mesh(new THREE.BoxGeometry(8, 4, 0.2), wallM);
+  back.position.set(0, 2, -6);
+  g.add(back);
+  // Side walls
+  const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 4, 6), wallM);
+  sideL.position.set(-4, 2, -3);
+  g.add(sideL);
+  const sideR = sideL.clone();
+  sideR.position.x = 4;
+  g.add(sideR);
+  // Ceiling
+  const ceiling = new THREE.Mesh(
+    new THREE.BoxGeometry(8, 0.1, 6),
+    mat({ color: "#f6f0e0", roughness: 0.9 }),
   );
+  ceiling.position.set(0, 4, -3);
+  g.add(ceiling);
+
+  // Front wall: panels leaving a center door + two big glass windows
+  // Corner pillars and lintel
+  const corner = new THREE.Mesh(new THREE.BoxGeometry(0.6, 4, 0.2), wallM);
+  corner.position.set(-3.7, 2, 0);
+  g.add(corner);
+  const cornerR = corner.clone();
+  cornerR.position.x = 3.7;
+  g.add(cornerR);
+  const lintel = new THREE.Mesh(new THREE.BoxGeometry(8, 1.2, 0.2), wallM);
+  lintel.position.set(0, 3.4, 0);
+  g.add(lintel);
+  // Low walls under each window
+  const sill = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.8, 0.2), wallM);
+  sill.position.set(-2.1, 0.4, 0);
+  g.add(sill);
+  const sillR = sill.clone();
+  sillR.position.x = 2.1;
+  g.add(sillR);
+  // Mullions between door and windows
+  const mull = new THREE.Mesh(new THREE.BoxGeometry(0.2, 2.8, 0.2), wallM);
+  mull.position.set(-0.9, 1.4, 0);
+  g.add(mull);
+  const mullR = mull.clone();
+  mullR.position.x = 0.9;
+  g.add(mullR);
+
+  // Glass windows (see the food inside!)
+  const glassM = mat({
+    color: "#cfe9ff",
+    roughness: 0.15,
+    metalness: 0.0,
+    transparent: true,
+    opacity: 0.25,
+  });
+  for (const wx of [-2.1, 2.1]) {
+    const w = new THREE.Mesh(new THREE.BoxGeometry(2.4, 2, 0.04), glassM);
+    w.position.set(wx, 1.8, 0);
+    g.add(w);
+    // window frame
+    const frame = new THREE.Mesh(
+      new THREE.BoxGeometry(2.5, 0.06, 0.05),
+      trimM,
+    );
+    frame.position.set(wx, 0.8, 0.06);
+    g.add(frame);
+    const frame2 = frame.clone();
+    frame2.position.y = 2.8;
+    g.add(frame2);
+  }
+
+  // Glass double doors
+  const doorM = mat({
+    color: "#cfe9ff",
+    roughness: 0.1,
+    metalness: 0.1,
+    transparent: true,
+    opacity: 0.3,
+  });
+  const doorL = new THREE.Mesh(new THREE.BoxGeometry(0.78, 2.6, 0.06), doorM);
+  doorL.position.set(-0.4, 1.3, 0);
+  g.add(doorL);
+  const doorR = doorL.clone();
+  doorR.position.x = 0.4;
+  g.add(doorR);
+  // door frame
+  const doorFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(1.8, 0.1, 0.12),
+    trimM,
+  );
+  doorFrame.position.set(0, 2.65, 0.05);
+  g.add(doorFrame);
+  // handles
+  const handleM = mat({ color: "#c0c0c0", metalness: 0.7, roughness: 0.3 });
+  for (const hx of [-0.08, 0.08]) {
+    const h = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.015, 0.015, 0.4, 8),
+      handleM,
+    );
+    h.rotation.z = Math.PI / 2;
+    h.position.set(hx, 1.3, 0.07);
+    g.add(h);
+  }
+
+  // Pitched roof
+  const roofG = new THREE.BoxGeometry(8.4, 0.3, 6.4);
+  const roof = new THREE.Mesh(roofG, mat({ color: "#8a4d3a" }));
   roof.position.set(0, 4.2, -3);
   g.add(roof);
-  // door
-  const door = new THREE.Mesh(
-    new THREE.BoxGeometry(1.4, 2.4, 0.06),
-    mat({ color: "#3a2a18" }),
-  );
-  door.position.set(0, 1.2, 0.05);
-  g.add(door);
-  // windows
-  for (const wx of [-2.5, 2.5]) {
-    const w = new THREE.Mesh(
-      new THREE.BoxGeometry(1.6, 1.4, 0.06),
-      mat({ color: "#a8d8f0", roughness: 0.2, transparent: true, opacity: 0.6 }),
-    );
-    w.position.set(wx, 2.1, 0.05);
-    g.add(w);
-  }
-  // signboard
+
+  // Signboard
   const c = document.createElement("canvas");
   c.width = 512;
   c.height = 128;
@@ -644,17 +733,206 @@ function buildSupermarket(x: number, z: number): THREE.Group {
     new THREE.PlaneGeometry(5, 1.2),
     mat({ map: tex, side: THREE.DoubleSide }),
   );
-  sign.position.set(0, 3.4, 0.06);
+  sign.position.set(0, 3.4, 0.11);
   g.add(sign);
 
-  // awning
+  // Awning
   const awning = new THREE.Mesh(
     new THREE.BoxGeometry(2.4, 0.08, 0.8),
     mat({ color: "#ef476f" }),
   );
-  awning.position.set(0, 2.55, 0.45);
+  awning.position.set(0, 2.9, 0.45);
   g.add(awning);
 
+  // --- Interior: produce shelves ---
+  g.add(makeMarketShelf(-2.6, -4.6, 2.4));
+  g.add(makeMarketShelf(2.6, -4.6, 2.4));
+  const mid = makeMarketShelf(0, -4.8, 2.0);
+  g.add(mid);
+
+  // --- Register counter + cashier ---
+  const counter = new THREE.Mesh(
+    new THREE.BoxGeometry(2.2, 0.95, 0.7),
+    mat({ color: "#9c6d3f" }),
+  );
+  counter.position.set(1.6, 0.475, -1.4);
+  g.add(counter);
+  const register = new THREE.Mesh(
+    new THREE.BoxGeometry(0.3, 0.28, 0.26),
+    mat({ color: "#3a4f63", metalness: 0.4 }),
+  );
+  register.position.set(2.2, 1.1, -1.4);
+  g.add(register);
+  // little screen
+  const screen = new THREE.Mesh(
+    new THREE.BoxGeometry(0.2, 0.1, 0.02),
+    mat({ color: "#86ff9f", emissive: "#86ff9f", emissiveIntensity: 0.4 }),
+  );
+  screen.position.set(2.2, 1.15, -1.27);
+  g.add(screen);
+  // basket
+  const basket = new THREE.Mesh(
+    new THREE.BoxGeometry(0.45, 0.12, 0.3),
+    mat({ color: "#c97a5a" }),
+  );
+  basket.position.set(1.0, 1.0, -1.4);
+  g.add(basket);
+  // some items on the counter
+  const items = ["#ec4899", "#f59e0b", "#86d8a6"];
+  for (let i = 0; i < 3; i++) {
+    const it = new THREE.Mesh(
+      new THREE.BoxGeometry(0.12, 0.16, 0.1),
+      mat({ color: items[i] }),
+    );
+    it.position.set(0.85 + i * 0.14, 1.1, -1.4);
+    g.add(it);
+  }
+
+  // Cashier figure (low-poly, static)
+  g.add(makeCashier(2.0, -1.9));
+
+  // Ceiling lights (glow-only, no real point lights to keep perf)
+  for (const lx of [-2, 0, 2]) {
+    const lamp = new THREE.Mesh(
+      new THREE.BoxGeometry(1.6, 0.06, 0.25),
+      mat({ color: "#fff4d0", emissive: "#fff4d0", emissiveIntensity: 0.5 }),
+    );
+    lamp.position.set(lx, 3.95, -3);
+    g.add(lamp);
+  }
+
   g.position.set(x, 0, z);
+  return g;
+}
+
+function makeMarketShelf(x: number, z: number, height: number): THREE.Group {
+  const g = new THREE.Group();
+  const frameM = mat({ color: "#b6b4a9" });
+  const w = 2.0;
+  const d = 0.5;
+  // back board
+  const back = new THREE.Mesh(
+    new THREE.BoxGeometry(w, height, 0.04),
+    frameM,
+  );
+  back.position.set(0, height / 2, -d / 2);
+  g.add(back);
+  // sides
+  const side = new THREE.Mesh(
+    new THREE.BoxGeometry(0.04, height, d),
+    frameM,
+  );
+  side.position.set(-w / 2, height / 2, 0);
+  g.add(side);
+  const side2 = side.clone();
+  side2.position.x = w / 2;
+  g.add(side2);
+  // shelves with produce boxes
+  const productColors = [
+    "#ef4444",
+    "#f59e0b",
+    "#facc15",
+    "#86d8a6",
+    "#60a5fa",
+    "#a78bfa",
+    "#ec4899",
+    "#fbbf24",
+  ];
+  const shelfCount = Math.max(2, Math.floor(height / 0.45));
+  for (let s = 0; s < shelfCount; s++) {
+    const sy = 0.15 + s * (height - 0.2) / shelfCount;
+    const shelf = new THREE.Mesh(
+      new THREE.BoxGeometry(w, 0.04, d),
+      frameM,
+    );
+    shelf.position.set(0, sy, 0);
+    g.add(shelf);
+    // 4 product boxes per shelf
+    for (let p = 0; p < 4; p++) {
+      const color = productColors[(s * 4 + p) % productColors.length];
+      const box = new THREE.Mesh(
+        new THREE.BoxGeometry(0.38, 0.3, 0.3),
+        mat({ color }),
+      );
+      box.position.set(-w / 2 + 0.3 + p * 0.46, sy + 0.18, 0);
+      g.add(box);
+      // tiny "label" accent
+      const label = new THREE.Mesh(
+        new THREE.BoxGeometry(0.34, 0.06, 0.01),
+        mat({ color: "#fff" }),
+      );
+      label.position.set(box.position.x, sy + 0.18, 0.16);
+      g.add(label);
+    }
+  }
+  g.position.set(x, 0, z);
+  return g;
+}
+
+function makeCashier(x: number, z: number): THREE.Group {
+  const g = new THREE.Group();
+  const skinM = mat({ color: "#f3c8a4" });
+  const shirtM = mat({ color: "#3aa1d0" });
+  const pantsM = mat({ color: "#2a2a2a" });
+  const hairM = mat({ color: "#3a2418" });
+  const eyeM = mat({ color: "#1a1008" });
+  // legs
+  const leg = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.08, 0.75, 10),
+    pantsM,
+  );
+  leg.position.set(-0.1, 0.375, 0);
+  g.add(leg);
+  const leg2 = leg.clone();
+  leg2.position.x = 0.1;
+  g.add(leg2);
+  // torso (uniform with blue apron)
+  const torso = new THREE.Mesh(
+    new THREE.BoxGeometry(0.46, 0.55, 0.26),
+    shirtM,
+  );
+  torso.position.set(0, 1.03, 0);
+  g.add(torso);
+  const apron = new THREE.Mesh(
+    new THREE.BoxGeometry(0.4, 0.6, 0.03),
+    mat({ color: "#ef4444" }),
+  );
+  apron.position.set(0, 0.9, 0.14);
+  g.add(apron);
+  // arms
+  const armGeo = new THREE.CapsuleGeometry(0.07, 0.28, 6, 10);
+  const arm = new THREE.Mesh(armGeo, shirtM);
+  arm.position.set(-0.3, 1.05, 0);
+  g.add(arm);
+  const arm2 = arm.clone();
+  arm2.position.x = 0.3;
+  g.add(arm2);
+  // head
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.14, 22, 18), skinM);
+  head.position.set(0, 1.5, 0);
+  g.add(head);
+  // hair
+  const hair = new THREE.Mesh(
+    new THREE.SphereGeometry(0.148, 22, 18, 0, Math.PI * 2, 0, Math.PI * 0.55),
+    hairM,
+  );
+  hair.position.set(0, 1.53, 0);
+  g.add(hair);
+  // eyes
+  for (const ex of [-0.05, 0.05]) {
+    const e = new THREE.Mesh(new THREE.SphereGeometry(0.017, 8, 6), eyeM);
+    e.position.set(ex, 1.52, 0.12);
+    g.add(e);
+  }
+  // visor/name tag hint
+  const tag = new THREE.Mesh(
+    new THREE.BoxGeometry(0.1, 0.06, 0.02),
+    mat({ color: "#fff" }),
+  );
+  tag.position.set(0.12, 1.2, 0.14);
+  g.add(tag);
+
+  g.position.set(x, 0, z);
+  g.rotation.y = Math.PI; // face the front door
   return g;
 }

@@ -355,21 +355,36 @@ export function BakeryWorld3D({
 
     const doorLeft = -3.0 - 1.6 / 2 + 0.2;
     const doorRight = -3.0 + 1.6 / 2 - 0.2;
+    const outdoorMinX = doorLeft - 10;
+    const outdoorMaxX = doorRight + 10;
+    const outdoorMinZ = -ROOM.depth / 2 - 30;
+
+    // Track which side the player last stood on so we don't teleport
+    // them across the back wall when they walk sideways outdoors.
+    let wasOutdoor = false;
     function applyBounds(pos: THREE.Vector3) {
-      const isOutdoor = pos.z < -ROOM.depth / 2;
+      const isOutdoor = wasOutdoor
+        ? pos.z <= -ROOM.depth / 2 + 0.1 // allow slight drift back indoors only via door
+        : pos.z < -ROOM.depth / 2;
       if (isOutdoor) {
-        // Outdoor zone: narrow sidewalk corridor running to the supermarket
-        pos.z = Math.max(-ROOM.depth / 2 - 30, pos.z);
-        pos.x = Math.max(doorLeft - 10, Math.min(doorRight + 10, pos.x));
+        // Outdoor corridor leading to the supermarket
+        pos.z = Math.max(outdoorMinZ, pos.z);
+        pos.x = Math.max(outdoorMinX, Math.min(outdoorMaxX, pos.x));
+        const inDoorColumn = pos.x > doorLeft && pos.x < doorRight;
+        if (!inDoorColumn) {
+          // Not under the doorway — back wall is solid; clamp at -depth/2
+          pos.z = Math.min(-ROOM.depth / 2 - 0.05, pos.z);
+        }
+        wasOutdoor = true;
       } else {
-        // Indoor zone: clamp to room walls
+        // Indoor zone
         pos.x = Math.max(-ROOM.width / 2 + 0.3, Math.min(ROOM.width / 2 - 0.3, pos.x));
         pos.z = Math.min(ROOM.depth / 2 - 0.3, pos.z);
         const inDoorColumn = pos.x > doorLeft && pos.x < doorRight;
         if (!inDoorColumn) {
-          // Only block -Z if not under the doorway
           pos.z = Math.max(-ROOM.depth / 2 + 0.3, pos.z);
         }
+        wasOutdoor = false;
       }
       pos.y = PLAYER.eyeHeight;
     }
