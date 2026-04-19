@@ -810,9 +810,13 @@ function buildSupermarket(x: number, z: number): THREE.Group {
   });
   const doorL = new THREE.Mesh(new THREE.BoxGeometry(0.78, 2.6, 0.06), doorM);
   doorL.position.set(-0.4, 1.3, 0);
+  doorL.name = "sm-door-l";
+  doorL.userData.baseX = -0.4;
   g.add(doorL);
   const doorR = doorL.clone();
   doorR.position.x = 0.4;
+  doorR.name = "sm-door-r";
+  doorR.userData.baseX = 0.4;
   g.add(doorR);
   // door frame
   const doorFrame = new THREE.Mesh(

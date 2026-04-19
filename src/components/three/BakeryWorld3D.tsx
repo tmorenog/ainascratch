@@ -80,11 +80,22 @@ export function BakeryWorld3D({
   useEffect(() => {
     placingRef.current = placingFurniture;
   }, [placingFurniture]);
+  const wasLockedRef = useRef(false);
   useEffect(() => {
     pausedRef.current = inputPaused;
-    // Release mouse lock so the user can click UI buttons freely
-    if (inputPaused && document.pointerLockElement) {
-      document.exitPointerLock();
+    if (inputPaused) {
+      // Release mouse lock so the user can click UI buttons freely
+      if (document.pointerLockElement) {
+        wasLockedRef.current = true;
+        document.exitPointerLock();
+      }
+    } else if (wasLockedRef.current) {
+      // Dialog/modal closed: if the player was in pointer-lock mouse-look
+      // mode before, re-engage so mouse movement keeps turning the camera.
+      wasLockedRef.current = false;
+      const mount = mountRef.current;
+      const canvas = mount?.querySelector("canvas") as HTMLCanvasElement | null;
+      canvas?.requestPointerLock?.();
     }
   }, [inputPaused]);
 
@@ -158,6 +169,16 @@ export function BakeryWorld3D({
     scene.add(buildPantry());
     const outdoors = buildOutdoors();
     scene.add(outdoors);
+
+    // Supermarket sliding doors — we animate their X positions as the
+    // player approaches. The builder tagged them with names + baseX.
+    const smDoorL = outdoors.getObjectByName("sm-door-l") as THREE.Mesh | null;
+    const smDoorR = outdoors.getObjectByName("sm-door-r") as THREE.Mesh | null;
+    const smDoorBaseLX = smDoorL?.userData.baseX ?? -0.4;
+    const smDoorBaseRX = smDoorR?.userData.baseX ?? 0.4;
+    // World position of the supermarket door center.
+    const SM_DOOR_CENTER = { x: -3.0, z: -ROOM.depth / 2 - 30 };
+
     // Hanging OPEN/CLOSED sign on the front window — clickable.
     const sign = makeOpenSign();
     scene.add(sign.group);
@@ -567,6 +588,22 @@ export function BakeryWorld3D({
           s.position.y = 6 + Math.sin(now * 0.001 + seed) * 0.4;
         }
       });
+
+      // Supermarket sliding doors — open as the player walks up.
+      if (smDoorL && smDoorR) {
+        const ddx = camera.position.x - SM_DOOR_CENTER.x;
+        const ddz = camera.position.z - SM_DOOR_CENTER.z;
+        const distToDoor = Math.hypot(ddx, ddz);
+        // fully open at 3m or closer, fully closed past 6m
+        const openT = Math.max(0, Math.min(1, (6 - distToDoor) / 3));
+        const slide = openT * 0.55;
+        const targetLX = smDoorBaseLX - slide;
+        const targetRX = smDoorBaseRX + slide;
+        // smooth lerp
+        const k = 1 - Math.pow(0.001, dt); // time-based smoothing
+        smDoorL.position.x += (targetLX - smDoorL.position.x) * k;
+        smDoorR.position.x += (targetRX - smDoorR.position.x) * k;
+      }
 
       renderer.render(scene, camera);
       rafId = requestAnimationFrame(tick);
