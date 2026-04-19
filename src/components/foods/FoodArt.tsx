@@ -556,6 +556,144 @@ const CroissantArt = () => (
   </g>
 );
 
+const ChocolateCroissantArt = () => (
+  <g>
+    <Plate w={85} />
+    <path
+      d="M18 60 q8 -26 32 -26 q24 0 32 26 q-10 6 -28 -4 q-18 10 -36 4 z"
+      fill="url(#gold)"
+      stroke="#6b3f14"
+      strokeWidth="1"
+    />
+    {/* chocolate peeking out the ends */}
+    <path
+      d="M16 58 q2 -8 8 -10 q3 5 2 12 z M84 58 q-2 -8 -8 -10 q-3 5 -2 12 z"
+      fill="#3a1d0a"
+    />
+    {/* dark drizzle across the top */}
+    <path
+      d="M24 40 q10 -4 22 2 q12 6 30 -2"
+      fill="none"
+      stroke="#3a1d0a"
+      strokeWidth="2.2"
+    />
+    <path
+      d="M28 50 q8 -2 18 3 q12 6 26 -2"
+      fill="none"
+      stroke="#5a2b0f"
+      strokeWidth="1.5"
+      opacity="0.8"
+    />
+    <ellipse cx="44" cy="40" rx="12" ry="2" fill="url(#shine)" />
+  </g>
+);
+
+const WhiteChocMuffinArt = () => (
+  <g>
+    <Plate w={80} />
+    {/* wrapper */}
+    <path
+      d="M26 58 l4 24 a4 4 0 0 0 4 3 h32 a4 4 0 0 0 4 -3 l4 -24 z"
+      fill="#e3b7d6"
+    />
+    <path
+      d="M28 58 l1 5 M34 58 l-1 5 M40 58 l1 5 M46 58 l-1 5 M52 58 l1 5 M58 58 l-1 5 M64 58 l1 5 M70 58 l-1 5"
+      stroke="#c289b4"
+      strokeWidth="1"
+    />
+    {/* pale vanilla muffin top */}
+    <path
+      d="M20 58 q6 -32 30 -32 q24 0 30 32 z"
+      fill="#fff5e2"
+      stroke="#e3d2a8"
+      strokeWidth="1"
+    />
+    {/* white choc chunks */}
+    <circle cx="36" cy="42" r="3" fill="#fffbea" stroke="#e9d9a6" strokeWidth="0.8" />
+    <circle cx="52" cy="34" r="3" fill="#fffbea" stroke="#e9d9a6" strokeWidth="0.8" />
+    <circle cx="64" cy="44" r="2.6" fill="#fffbea" stroke="#e9d9a6" strokeWidth="0.8" />
+    <circle cx="44" cy="48" r="2.4" fill="#fffbea" stroke="#e9d9a6" strokeWidth="0.8" />
+    {/* sprinkles */}
+    <Sprinkles seed={4} />
+    <ellipse cx="42" cy="34" rx="8" ry="2" fill="url(#shine)" />
+  </g>
+);
+
+const RedVelvetMuffinArt = () => (
+  <g>
+    <Plate w={80} />
+    {/* wrapper */}
+    <path
+      d="M26 58 l4 24 a4 4 0 0 0 4 3 h32 a4 4 0 0 0 4 -3 l4 -24 z"
+      fill="#fff7e6"
+    />
+    <path
+      d="M28 58 l1 5 M34 58 l-1 5 M40 58 l1 5 M46 58 l-1 5 M52 58 l1 5 M58 58 l-1 5 M64 58 l1 5 M70 58 l-1 5"
+      stroke="#ead7a8"
+      strokeWidth="1"
+    />
+    {/* deep red cocoa muffin */}
+    <path
+      d="M20 58 q6 -32 30 -32 q24 0 30 32 z"
+      fill="#b2253a"
+      stroke="#7a1624"
+      strokeWidth="1"
+    />
+    {/* cream-cheese swirl on top */}
+    <path
+      d="M28 40 q8 -18 22 -18 q14 0 22 18 q-6 -4 -12 2 q-6 -6 -10 0 q-6 -6 -10 0 q-6 -6 -12 -2 z"
+      fill="#fffbea"
+      stroke="#e9d9a6"
+      strokeWidth="0.8"
+    />
+    {/* swirl lines */}
+    <path
+      d="M36 30 q6 -6 14 -6 q10 0 14 6"
+      fill="none"
+      stroke="#e3d2a8"
+      strokeWidth="1"
+    />
+    <ellipse cx="44" cy="28" rx="8" ry="2" fill="url(#shine)" />
+  </g>
+);
+
+const OliveOilCakeArt = () => (
+  <g>
+    <Plate w={90} />
+    {/* round cake body */}
+    <ellipse cx="50" cy="66" rx="34" ry="8" fill="#c89649" />
+    <path
+      d="M16 66 v-24 a34 8 0 0 0 68 0 v24 a34 8 0 0 1 -68 0 z"
+      fill="#e2b868"
+      stroke="#a77837"
+      strokeWidth="1"
+    />
+    {/* crackly top */}
+    <ellipse cx="50" cy="42" rx="34" ry="8" fill="#eec987" stroke="#a77837" strokeWidth="1" />
+    <path
+      d="M22 42 q8 -4 16 0 q8 -4 16 0 q8 -4 18 0"
+      fill="none"
+      stroke="#a77837"
+      strokeWidth="1"
+      opacity="0.7"
+    />
+    <path
+      d="M28 44 q6 3 12 0 M46 46 q6 3 12 0 M62 44 q4 2 8 0"
+      fill="none"
+      stroke="#8a5a22"
+      strokeWidth="0.8"
+      opacity="0.6"
+    />
+    {/* lemon zest flecks */}
+    <circle cx="34" cy="40" r="1.2" fill="#f5d24b" />
+    <circle cx="46" cy="38" r="1.1" fill="#f5d24b" />
+    <circle cx="58" cy="40" r="1.3" fill="#f5d24b" />
+    <circle cx="66" cy="42" r="1" fill="#f5d24b" />
+    {/* olive oil drizzle sheen */}
+    <ellipse cx="46" cy="40" rx="16" ry="2" fill="url(#shine)" />
+  </g>
+);
+
 /* ---------- Pet treats ---------- */
 
 const DogBoneArt = () => (
@@ -612,6 +750,10 @@ const FOOD_ART_BY_ID: Record<string, React.FC> = {
   scratch_pie: BerryPieArt,
   decorated_cake: DecoratedCakeArt,
   croissant: CroissantArt,
+  chocolate_croissant: ChocolateCroissantArt,
+  white_choc_muffin: WhiteChocMuffinArt,
+  red_velvet_muffin: RedVelvetMuffinArt,
+  olive_oil_cake: OliveOilCakeArt,
   dog_bone: DogBoneArt,
   cat_fish: CatFishArt,
 };

@@ -652,8 +652,16 @@ export function buildOutdoors(): THREE.Group {
   roof.rotation.y = Math.PI / 4;
   g.add(roof);
 
-  // Supermarket facade at the end of the path
-  g.add(buildSupermarket(DOOR_POS.x, -ROOM.depth / 2 - 30));
+  // Supermarket facade at the end of the path. We keep a reference to its
+  // sliding door meshes on `g.userData` so the renderer can animate them
+  // without relying on name-based lookup (which can fail after clones).
+  const market = buildSupermarket(DOOR_POS.x, -ROOM.depth / 2 - 30);
+  g.add(market);
+  g.userData.supermarketDoors = market.userData.doors;
+  g.userData.supermarketDoorCenter = {
+    x: DOOR_POS.x,
+    z: -ROOM.depth / 2 - 30,
+  };
 
   // Birds (animated sprites)
   for (let i = 0; i < 5; i++) {
@@ -808,16 +816,17 @@ function buildSupermarket(x: number, z: number): THREE.Group {
     transparent: true,
     opacity: 0.3,
   });
-  const doorL = new THREE.Mesh(new THREE.BoxGeometry(0.78, 2.6, 0.06), doorM);
+  const doorGeo = new THREE.BoxGeometry(0.78, 2.6, 0.06);
+  const doorL = new THREE.Mesh(doorGeo, doorM);
   doorL.position.set(-0.4, 1.3, 0);
   doorL.name = "sm-door-l";
-  doorL.userData.baseX = -0.4;
   g.add(doorL);
-  const doorR = doorL.clone();
-  doorR.position.x = 0.4;
+  const doorR = new THREE.Mesh(doorGeo, doorM);
+  doorR.position.set(0.4, 1.3, 0);
   doorR.name = "sm-door-r";
-  doorR.userData.baseX = 0.4;
   g.add(doorR);
+  // Stash the doors on userData so the caller can animate them directly.
+  g.userData.doors = { left: doorL, right: doorR, baseLX: -0.4, baseRX: 0.4 };
   // door frame
   const doorFrame = new THREE.Mesh(
     new THREE.BoxGeometry(1.8, 0.1, 0.12),

@@ -170,14 +170,17 @@ export function BakeryWorld3D({
     const outdoors = buildOutdoors();
     scene.add(outdoors);
 
-    // Supermarket sliding doors — we animate their X positions as the
-    // player approaches. The builder tagged them with names + baseX.
-    const smDoorL = outdoors.getObjectByName("sm-door-l") as THREE.Mesh | null;
-    const smDoorR = outdoors.getObjectByName("sm-door-r") as THREE.Mesh | null;
-    const smDoorBaseLX = smDoorL?.userData.baseX ?? -0.4;
-    const smDoorBaseRX = smDoorR?.userData.baseX ?? 0.4;
-    // World position of the supermarket door center.
-    const SM_DOOR_CENTER = { x: -3.0, z: -ROOM.depth / 2 - 30 };
+    // Supermarket sliding doors — the builder stashes the mesh refs and
+    // door center on userData so we can animate them every frame without
+    // relying on name lookup.
+    const smDoors = outdoors.userData.supermarketDoors as
+      | { left: THREE.Mesh; right: THREE.Mesh; baseLX: number; baseRX: number }
+      | undefined;
+    const SM_DOOR_CENTER =
+      (outdoors.userData.supermarketDoorCenter as { x: number; z: number }) ?? {
+        x: -3.0,
+        z: -ROOM.depth / 2 - 30,
+      };
 
     // Hanging OPEN/CLOSED sign on the front window — clickable.
     const sign = makeOpenSign();
@@ -512,6 +515,21 @@ export function BakeryWorld3D({
       syncFurniture();
       updateGhost();
 
+      // Supermarket sliding doors — animated even when paused so they can
+      // finish easing open after the market modal appears.
+      if (smDoors) {
+        const ddx = camera.position.x - SM_DOOR_CENTER.x;
+        const ddz = camera.position.z - SM_DOOR_CENTER.z;
+        const distToDoor = Math.hypot(ddx, ddz);
+        const openT = Math.max(0, Math.min(1, (9 - distToDoor) / 5));
+        const slide = openT * 0.7;
+        const targetLX = smDoors.baseLX - slide;
+        const targetRX = smDoors.baseRX + slide;
+        const k = 1 - Math.pow(0.0001, dt);
+        smDoors.left.position.x += (targetLX - smDoors.left.position.x) * k;
+        smDoors.right.position.x += (targetRX - smDoors.right.position.x) * k;
+      }
+
       if (pausedRef.current) {
         renderer.render(scene, camera);
         rafId = requestAnimationFrame(tick);
@@ -588,22 +606,6 @@ export function BakeryWorld3D({
           s.position.y = 6 + Math.sin(now * 0.001 + seed) * 0.4;
         }
       });
-
-      // Supermarket sliding doors — open as the player walks up.
-      if (smDoorL && smDoorR) {
-        const ddx = camera.position.x - SM_DOOR_CENTER.x;
-        const ddz = camera.position.z - SM_DOOR_CENTER.z;
-        const distToDoor = Math.hypot(ddx, ddz);
-        // fully open at 3m or closer, fully closed past 6m
-        const openT = Math.max(0, Math.min(1, (6 - distToDoor) / 3));
-        const slide = openT * 0.55;
-        const targetLX = smDoorBaseLX - slide;
-        const targetRX = smDoorBaseRX + slide;
-        // smooth lerp
-        const k = 1 - Math.pow(0.001, dt); // time-based smoothing
-        smDoorL.position.x += (targetLX - smDoorL.position.x) * k;
-        smDoorR.position.x += (targetRX - smDoorR.position.x) * k;
-      }
 
       renderer.render(scene, camera);
       rafId = requestAnimationFrame(tick);
