@@ -131,6 +131,7 @@ export function BakeryApp() {
         onOpenSupermarket={() => setOpenMarket(true)}
         onOpenReviews={() => setOpenReviews(true)}
         onOpenSettings={() => setOpenSettings(true)}
+        onOpenCreator={() => setOpenCreator(true)}
       />
 
       <main className="flex-1 relative overflow-hidden">

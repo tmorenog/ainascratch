@@ -10,6 +10,7 @@ interface TopbarProps {
   onOpenSupermarket: () => void;
   onOpenReviews: () => void;
   onOpenSettings: () => void;
+  onOpenCreator: () => void;
 }
 
 export function Topbar({
@@ -17,6 +18,7 @@ export function Topbar({
   onOpenSupermarket,
   onOpenReviews,
   onOpenSettings,
+  onOpenCreator,
 }: TopbarProps) {
   const bakeryName = useGame((s) => s.bakeryName);
   const coins = useGame((s) => s.coins);
@@ -82,6 +84,13 @@ export function Topbar({
           </div>
 
           <div className="flex items-center gap-1.5 md:gap-2">
+            <button
+              className="rounded-full px-3 py-1.5 text-sm font-bold bg-berry-500 text-white shadow-soft hover:bg-berry-600 animate-wiggle"
+              title={t("inventBlurb")}
+              onClick={onOpenCreator}
+            >
+              🧪 {t("inventRecipe")}
+            </button>
             <button className="btn-icon" title={t("recipeBook")} onClick={onOpenRecipes}>📖</button>
             <button className="btn-icon" title={t("supermarket")} onClick={onOpenSupermarket}>🛒</button>
             <button className="btn-icon" title={t("reviews")} onClick={onOpenReviews}>⭐</button>
