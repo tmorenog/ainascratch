@@ -226,8 +226,20 @@ function pickOrder(
   for (let i = 0; i < itemCount; i++) {
     order.push(randomChoice(weighted).id);
   }
-  if (hasPet === "dog") order.push("dog_bone");
-  if (hasPet === "cat") order.push("cat_fish");
+  // Pet treat slot: by default the standard dog_bone / cat_fish, but
+  // "Everyone-Safe" recipes are allergy-friendly and fine for pets too,
+  // so they get mixed into the pool when any are available.
+  if (hasPet) {
+    const safePool = [
+      ...RECIPES.filter(
+        (r) => r.category === "safe" && unlocked.has(r.id),
+      ),
+      ...customRecipes.filter((r) => r.category === "safe"),
+    ];
+    const defaultId = hasPet === "dog" ? "dog_bone" : "cat_fish";
+    const petPool: string[] = [defaultId, ...safePool.map((r) => r.id)];
+    order.push(randomChoice(petPool));
+  }
   return order;
 }
 
