@@ -508,6 +508,15 @@ export function BakeryWorld3D({
       { x: 5.0, z: 1.0, w: 1.0, d: 1.0 },
       { x: -5.0, z: 4.0, w: 1.0, d: 1.0 },
       { x: 5.0, z: 4.0, w: 1.0, d: 1.0 },
+      // Supermarket cashier counter (world coords: local (1.6, -1.4) +
+      // group offset (-3, -ROOM.depth/2 - 30))
+      { x: -1.4, z: -ROOM.depth / 2 - 31.4, w: 2.4, d: 0.9 },
+      // Supermarket shelves along the back (local (-2.6,-4.6), (2.6,-4.6),
+      // (0,-4.8)). We keep them thin so the aisles between shelves are
+      // still walkable.
+      { x: -5.6, z: -ROOM.depth / 2 - 34.6, w: 2.2, d: 0.7 },
+      { x: -0.4, z: -ROOM.depth / 2 - 34.6, w: 2.2, d: 0.7 },
+      { x: -3.0, z: -ROOM.depth / 2 - 34.8, w: 2.2, d: 0.7 },
     ];
     function collides(x: number, z: number, r: number): boolean {
       for (const c of colliders) {
@@ -522,33 +531,68 @@ export function BakeryWorld3D({
     const doorRight = -3.0 + 1.6 / 2 - 0.2;
     const outdoorMinX = doorLeft - 10;
     const outdoorMaxX = doorRight + 10;
-    const outdoorMinZ = -ROOM.depth / 2 - 30;
 
-    // Track which side the player last stood on so we don't teleport
-    // them across the back wall when they walk sideways outdoors.
+    // Supermarket interior bounds. The market group is placed at
+    // (DOOR_POS.x, 0, -ROOM.depth/2 - 30); its footprint is 8m wide
+    // (x ± 4 around DOOR_POS.x) and 6m deep (local z from 0 to -6).
+    // The sliding doors are centred on x=DOOR_POS.x at local z=0.
+    const SM_CENTER_X = -3.0;
+    const SM_FRONT_Z = -ROOM.depth / 2 - 30; // world z of the doors
+    const SM_BACK_Z = -ROOM.depth / 2 - 36 + 0.3; // inner back wall
+    const SM_LEFT_X = SM_CENTER_X - 4 + 0.3;
+    const SM_RIGHT_X = SM_CENTER_X + 4 - 0.3;
+    const smDoorLeft = SM_CENTER_X - 0.72;
+    const smDoorRight = SM_CENTER_X + 0.72;
+
+    // Track zones so we don't teleport the player across walls when they
+    // walk sideways near a doorway.
     let wasOutdoor = false;
+    let wasMarket = false;
     function applyBounds(pos: THREE.Vector3) {
-      const isOutdoor = wasOutdoor
-        ? pos.z <= -ROOM.depth / 2 + 0.1 // allow slight drift back indoors only via door
-        : pos.z < -ROOM.depth / 2;
-      if (isOutdoor) {
-        // Outdoor corridor leading to the supermarket
-        pos.z = Math.max(outdoorMinZ, pos.z);
+      const isMarket = wasMarket
+        ? pos.z <= SM_FRONT_Z + 0.1
+        : pos.z < SM_FRONT_Z;
+      const isOutdoor =
+        !isMarket &&
+        (wasOutdoor
+          ? pos.z <= -ROOM.depth / 2 + 0.1
+          : pos.z < -ROOM.depth / 2);
+
+      if (isMarket) {
+        // Inside the supermarket
+        pos.x = Math.max(SM_LEFT_X, Math.min(SM_RIGHT_X, pos.x));
+        pos.z = Math.max(SM_BACK_Z, pos.z);
+        // Front wall is solid except the door column
+        const inSmDoor = pos.x > smDoorLeft && pos.x < smDoorRight;
+        if (!inSmDoor) {
+          pos.z = Math.min(SM_FRONT_Z - 0.05, pos.z);
+        }
+        wasMarket = true;
+        wasOutdoor = true;
+      } else if (isOutdoor) {
+        // Outdoor corridor leading from the bakery to the supermarket
         pos.x = Math.max(outdoorMinX, Math.min(outdoorMaxX, pos.x));
-        const inDoorColumn = pos.x > doorLeft && pos.x < doorRight;
-        if (!inDoorColumn) {
-          // Not under the doorway — back wall is solid; clamp at -depth/2
+        // Market front wall (solid except through its door column)
+        const inSmDoor = pos.x > smDoorLeft && pos.x < smDoorRight;
+        if (!inSmDoor) {
+          pos.z = Math.max(SM_FRONT_Z + 0.05, pos.z);
+        }
+        // Bakery back wall (solid except through its door column)
+        const inBakeryDoor = pos.x > doorLeft && pos.x < doorRight;
+        if (!inBakeryDoor) {
           pos.z = Math.min(-ROOM.depth / 2 - 0.05, pos.z);
         }
+        wasMarket = false;
         wasOutdoor = true;
       } else {
-        // Indoor zone
+        // Indoor bakery
         pos.x = Math.max(-ROOM.width / 2 + 0.3, Math.min(ROOM.width / 2 - 0.3, pos.x));
         pos.z = Math.min(ROOM.depth / 2 - 0.3, pos.z);
-        const inDoorColumn = pos.x > doorLeft && pos.x < doorRight;
-        if (!inDoorColumn) {
+        const inBakeryDoor = pos.x > doorLeft && pos.x < doorRight;
+        if (!inBakeryDoor) {
           pos.z = Math.max(-ROOM.depth / 2 + 0.3, pos.z);
         }
+        wasMarket = false;
         wasOutdoor = false;
       }
       pos.y = PLAYER.eyeHeight;

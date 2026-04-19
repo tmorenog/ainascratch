@@ -104,12 +104,16 @@ export const HOTSPOTS: Hotspot[] = [
     prompt: "Step out back",
   },
   {
+    // Standing in front of the cashier's register inside the supermarket.
+    // The cashier counter is at (DOOR_POS.x + 1.6, -ROOM.depth/2 - 31.4); we
+    // put the hotspot just in front of it so the player has to physically
+    // walk up to the counter to pay.
     id: "supermarket",
     kind: "supermarket",
-    position: [DOOR_POS.x, 0, -ROOM.depth / 2 - 29],
+    position: [DOOR_POS.x + 1.6, 0, -ROOM.depth / 2 - 30.7],
     facing: Math.PI,
     label: "Supermarket",
-    prompt: "Shop for supplies",
+    prompt: "Pay the cashier",
   },
   {
     id: "counter-customer",
