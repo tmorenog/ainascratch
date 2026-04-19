@@ -94,6 +94,7 @@ export type TKey =
   | "baked"
   | "petTreats"
   | "everyoneSafe"
+  | "plushies"
   | "everyoneSafeBlurb"
   | "safeFilterHint"
   | "recipeIcon"
@@ -193,6 +194,7 @@ const en: Dict = {
   baked: "Baked",
   petTreats: "Pet treats",
   everyoneSafe: "Everyone-Safe",
+  plushies: "Plushies",
   everyoneSafeBlurb: "No nuts, no chocolate, no coffee — safe for people and pets alike.",
   safeFilterHint: "Only allergy-friendly ingredients are shown.",
   recipeIcon: "Icon",
@@ -283,6 +285,7 @@ const es: Dict = {
   baked: "Horneado",
   petTreats: "Para mascotas",
   everyoneSafe: "Apto para todos",
+  plushies: "Peluches",
   everyoneSafeBlurb:
     "Sin frutos secos, chocolate ni café — seguro para personas y mascotas.",
   safeFilterHint: "Solo se muestran ingredientes sin alérgenos.",
@@ -375,6 +378,7 @@ const fr: Dict = {
   baked: "Au four",
   petTreats: "Friandises animales",
   everyoneSafe: "Pour tout le monde",
+  plushies: "Peluches",
   everyoneSafeBlurb:
     "Sans noix, sans chocolat, sans café — sans risque pour petits et animaux.",
   safeFilterHint: "Seuls les ingrédients sans allergènes sont affichés.",
@@ -468,6 +472,7 @@ const it: Dict = {
   baked: "Al forno",
   petTreats: "Per animali",
   everyoneSafe: "Per tutti",
+  plushies: "Peluche",
   everyoneSafeBlurb:
     "Senza frutta secca, cioccolato o caffè — sicuro per persone e animali.",
   safeFilterHint: "Vengono mostrati solo ingredienti senza allergeni.",
@@ -561,6 +566,7 @@ const pt: Dict = {
   baked: "Assados",
   petTreats: "Para pets",
   everyoneSafe: "Para todos",
+  plushies: "Pelúcias",
   everyoneSafeBlurb:
     "Sem castanhas, chocolate ou café — seguro para pessoas e bichinhos.",
   safeFilterHint: "Só aparecem ingredientes sem alergênicos.",

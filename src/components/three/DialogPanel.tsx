@@ -15,6 +15,7 @@ const CATEGORY_EMOJI: Record<Recipe["category"], string> = {
   scratch: "🥧",
   pet: "🦴",
   safe: "🌱",
+  plush: "🧸",
 };
 
 function recipeById(id: string, custom: Recipe[]): Recipe | undefined {

@@ -18,6 +18,7 @@ const TABS: { id: TabId; label: string; emoji: string }[] = [
   { id: "scratch", label: "Baked", emoji: "🥣" },
   { id: "pet", label: "Pet Treats", emoji: "🐾" },
   { id: "safe", label: "Everyone-Safe", emoji: "🌱" },
+  { id: "plush", label: "Plushies", emoji: "🧸" },
   { id: "mine", label: "Mine", emoji: "🧪" },
 ];
 
@@ -124,6 +125,11 @@ export function RecipeBook({
                     {r.category === "safe" && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-mint-100 text-mint-700 border border-mint-200 font-bold">
                         🌱 {t("everyoneSafe")}
+                      </span>
+                    )}
+                    {r.category === "plush" && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-berry-100 text-berry-700 border border-berry-200 font-bold">
+                        🧸 {t("plushies")}
                       </span>
                     )}
                     {r.isRecommended && (

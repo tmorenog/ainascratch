@@ -23,7 +23,13 @@ export type IngredientId =
 
 export type StationId = "drink" | "pastry" | "oven" | "scratch" | "pet";
 
-export type RecipeCategory = "drink" | "pastry" | "scratch" | "pet" | "safe";
+export type RecipeCategory =
+  | "drink"
+  | "pastry"
+  | "scratch"
+  | "pet"
+  | "safe"
+  | "plush";
 
 export interface Ingredient {
   id: IngredientId;

@@ -9,7 +9,13 @@ import { useT } from "@/game/i18n";
 
 const CATEGORIES: {
   id: RecipeCategory;
-  labelKey: "drinks" | "pastries" | "baked" | "petTreats" | "everyoneSafe";
+  labelKey:
+    | "drinks"
+    | "pastries"
+    | "baked"
+    | "petTreats"
+    | "everyoneSafe"
+    | "plushies";
   emoji: string;
 }[] = [
   { id: "drink", labelKey: "drinks", emoji: "🥤" },
@@ -17,6 +23,7 @@ const CATEGORIES: {
   { id: "scratch", labelKey: "baked", emoji: "🥣" },
   { id: "pet", labelKey: "petTreats", emoji: "🐾" },
   { id: "safe", labelKey: "everyoneSafe", emoji: "🌱" },
+  { id: "plush", labelKey: "plushies", emoji: "🧸" },
 ];
 
 /** Ingredients people and pets can all enjoy — no nuts, no chocolate,
@@ -192,7 +199,7 @@ export function RecipeCreator({
           <label className="block text-xs font-bold uppercase tracking-wide text-cocoa-400 mb-1">
             {t("recipeCategory")}
           </label>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
             {CATEGORIES.map((c) => {
               const active = category === c.id;
               return (

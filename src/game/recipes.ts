@@ -479,6 +479,85 @@ export const RECIPES: Recipe[] = [
     unlocked: true,
     description: "Purrfectly crispy little fish.",
   },
+
+  // ---------------- Plushies (merch, no ingredients, level 5+) ----------------
+  // These are themed collectibles you grab off the shelf and wrap up.
+  // Zero ingredients — you pay for them once at the supermarket by restocking
+  // later — and a single short "wrap it up" step so they still flow through
+  // the pastry counter prep loop like any other item.
+  {
+    id: "donut_bear_plush",
+    name: "Donut Bear Plush",
+    category: "plush",
+    station: "pastry",
+    ingredients: {},
+    steps: [
+      { label: "Pick one off the plush shelf", durationMs: 1500 },
+      { label: "Tie a pink ribbon bow", durationMs: 2000 },
+      { label: "Tuck into a gift box", durationMs: 2000 },
+    ],
+    prepMs: 5500,
+    price: 18,
+    unlocked: false,
+    unlockLevel: 5,
+    emoji: "🧸",
+    description: "A teddy wearing a sprinkled donut hat — squishy and very huggable.",
+    funFact: "First plushie on the merch shelf — a bakery bestseller!",
+  },
+  {
+    id: "croissant_cat_plush",
+    name: "Chocolate Croissant Cat",
+    category: "plush",
+    station: "pastry",
+    ingredients: {},
+    steps: [
+      { label: "Pick one off the plush shelf", durationMs: 1500 },
+      { label: "Fluff the flaky croissant tail", durationMs: 2000 },
+      { label: "Wrap in crinkly paper", durationMs: 2000 },
+    ],
+    prepMs: 5500,
+    price: 20,
+    unlocked: false,
+    unlockLevel: 5,
+    emoji: "🐱",
+    description: "Kitten curled inside a buttery croissant — too cute to resist.",
+  },
+  {
+    id: "cupcake_bunny_plush",
+    name: "Cupcake Bunny",
+    category: "plush",
+    station: "pastry",
+    ingredients: {},
+    steps: [
+      { label: "Pick one off the plush shelf", durationMs: 1500 },
+      { label: "Puff up the frosting ears", durationMs: 2000 },
+      { label: "Pop into a sweet pastel bag", durationMs: 2000 },
+    ],
+    prepMs: 5500,
+    price: 16,
+    unlocked: false,
+    unlockLevel: 5,
+    emoji: "🐰",
+    description: "A bunny nestled in a cupcake wrapper, with icing-swirl ears.",
+  },
+  {
+    id: "coffee_cup_puppy_plush",
+    name: "Coffee Cup Puppy",
+    category: "plush",
+    station: "pastry",
+    ingredients: {},
+    steps: [
+      { label: "Lift one from the cozy shelf", durationMs: 1500 },
+      { label: "Smooth out the steamy swirl", durationMs: 2000 },
+      { label: "Box with a tiny tag", durationMs: 2000 },
+    ],
+    prepMs: 5500,
+    price: 19,
+    unlocked: false,
+    unlockLevel: 5,
+    emoji: "🐶",
+    description: "A puppy peeking out of a latte cup — the cutest barista.",
+  },
 ];
 
 export const RECIPE_BY_ID = Object.fromEntries(
