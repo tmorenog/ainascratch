@@ -512,7 +512,7 @@ export const useGame = create<GameState>()(
           correct &&
           stars >= 5 &&
           customer.hasPet &&
-          Math.random() < 0.2
+          Math.random() < 0.25
         ) {
           giftedPets = [
             ...s.giftedPets,
