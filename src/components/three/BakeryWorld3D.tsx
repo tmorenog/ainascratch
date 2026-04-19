@@ -95,21 +95,31 @@ export function BakeryWorld3D({
     camera.rotation.order = "YXZ";
 
     // ---- Lights ----
-    scene.add(new THREE.HemisphereLight("#fff6dc", "#88734a", 0.55));
-    const sun = new THREE.DirectionalLight("#fff2c8", 0.9);
-    sun.position.set(6, 12, -4);
+    scene.add(new THREE.AmbientLight("#fff4dc", 0.55));
+    scene.add(new THREE.HemisphereLight("#fff6dc", "#c9a26a", 0.85));
+    const sun = new THREE.DirectionalLight("#fff2c8", 1.2);
+    sun.position.set(6, 14, -4);
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
     sun.shadow.camera.near = 1;
-    sun.shadow.camera.far = 40;
-    sun.shadow.camera.left = -12;
-    sun.shadow.camera.right = 12;
-    sun.shadow.camera.top = 12;
-    sun.shadow.camera.bottom = -12;
+    sun.shadow.camera.far = 44;
+    sun.shadow.camera.left = -14;
+    sun.shadow.camera.right = 14;
+    sun.shadow.camera.top = 14;
+    sun.shadow.camera.bottom = -14;
     scene.add(sun);
-    const warm = new THREE.PointLight("#ffd08a", 0.6, 8, 1.5);
-    warm.position.set(0, 2.8, 0);
-    scene.add(warm);
+    // Warm ceiling lights scattered across the bakery
+    for (const [x, z] of [
+      [-3, -1],
+      [3, -1],
+      [0, 1.5],
+      [-5, 2],
+      [5, 2],
+    ] as const) {
+      const pl = new THREE.PointLight("#ffd08a", 0.9, 9, 1.4);
+      pl.position.set(x, 2.9, z);
+      scene.add(pl);
+    }
 
     // ---- Static scenery ----
     const room = buildRoom();
@@ -122,19 +132,8 @@ export function BakeryWorld3D({
     const outdoors = buildOutdoors();
     scene.add(outdoors);
 
-    // ---- Baker avatar (the player sees their own hands when interacting,
-    //      but also a body drawn behind the camera is nice for shadows) ----
-    const baker = makeCharacter({
-      skin: "#fbd6b2",
-      shirt: "#e87aa0",
-      pants: "#3a2a18",
-      hair: "#fff",
-      hairStyle: "chef",
-      apron: true,
-      scale: 1.0,
-    });
-    baker.root.position.set(0, 0, 2.2);
-    scene.add(baker.root);
+    // The player IS the baker — no avatar drawn in front of the camera,
+    // since that made customers look like they were wearing chef hats.
 
     // ---- Customer figure instance map ----
     type CustFig = { id: string; fig: CharacterFigure; pet?: THREE.Group };
@@ -384,7 +383,7 @@ export function BakeryWorld3D({
       camera.getWorldDirection(forward);
       forward.y = 0;
       forward.normalize();
-      const right = new THREE.Vector3(forward.z, 0, -forward.x);
+      const right = new THREE.Vector3(-forward.z, 0, forward.x);
 
       let moveF = 0, moveR = 0;
       if (keys.has("KeyW") || keys.has("ArrowUp")) moveF += 1;
@@ -428,7 +427,6 @@ export function BakeryWorld3D({
 
       // update animated entities
       customerFigs.forEach((cf) => cf.fig.update(now));
-      baker.update(now);
 
       // animate birds (sine-wave drift)
       outdoors.traverse((o) => {

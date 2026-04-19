@@ -18,9 +18,9 @@
  */
 
 export const ROOM = {
-  width: 10, // X
-  depth: 10, // Z
-  height: 3.4,
+  width: 14, // X
+  depth: 13, // Z
+  height: 3.6,
 };
 
 export const DOOR_POS = { x: -3.0, z: -ROOM.depth / 2 + 0.02 }; // back wall -Z
