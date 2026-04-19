@@ -133,20 +133,21 @@ export function DialogPanel({
     const result = onServe(extra);
     if (result === "refused") {
       setOutcome({ kind: "refused", extra });
+      // Fade the broken heart away first, then dismiss the panel.
+      setTimeout(() => setOutcome(null), 1100);
       setTimeout(onClose, 1600);
     } else if (result === "success" || result === "wrong") {
       setOutcome({ kind: "accepted", extra });
+      setTimeout(() => setOutcome(null), 800);
       setTimeout(onClose, 1100);
     }
   }
 
   function handleCatch() {
     const result = onCatch();
-    if (result === "caught") {
-      setOutcome({ kind: "caught", extra: 0 });
-      setTimeout(onClose, 1400);
-    } else if (result === "escaped") {
-      setOutcome({ kind: "escaped", extra: 0 });
+    if (result === "caught" || result === "escaped") {
+      setOutcome({ kind: result, extra: 0 });
+      setTimeout(() => setOutcome(null), 1000);
       setTimeout(onClose, 1400);
     }
   }
