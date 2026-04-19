@@ -8,6 +8,10 @@ import { INGREDIENTS } from "@/game/ingredients";
 import type { IngredientId, Recipe, StationId } from "@/game/types";
 import { FoodArt } from "../foods/FoodArt";
 
+function resolveRecipe(id: string, custom: Recipe[]): Recipe | undefined {
+  return RECIPE_BY_ID[id] ?? custom.find((r) => r.id === id);
+}
+
 const STATION_TITLE: Record<StationId, { title: string; emoji: string }> = {
   drink: { title: "Drink Bar", emoji: "🥤" },
   pastry: { title: "Pastry Counter", emoji: "🧁" },
@@ -47,6 +51,8 @@ export function PrepScene({
   const startPrep = useGame((s) => s.startPrep);
   const collectReady = useGame((s) => s.collectReady);
   const unlocked = useGame((s) => s.unlockedRecipeIds);
+  const customRecipes = useGame((s) => s.customRecipes);
+  const specialRecipeId = useGame((s) => s.specialRecipeId);
   const slot = useGame((s) => (stationId ? s.prep[stationId] : undefined));
 
   const [now, setNow] = useState(() => Date.now());
@@ -66,8 +72,17 @@ export function PrepScene({
 
   if (!stationId) return null;
 
-  const recipes = RECIPES.filter((r) => r.station === stationId && unlocked.includes(r.id));
-  const slotRecipe = slot ? RECIPE_BY_ID[slot.recipeId] : null;
+  // Show base recipes (unlocked) + all the chef's own inventions that match
+  // this station. Specials float to the top so they're easy to re-make.
+  const recipes = [
+    ...RECIPES.filter((r) => r.station === stationId && unlocked.includes(r.id)),
+    ...customRecipes.filter((r) => r.station === stationId),
+  ].sort((a, b) => {
+    const aw = (a.id === specialRecipeId ? 2 : 0) + (a.isRecommended ? 1 : 0);
+    const bw = (b.id === specialRecipeId ? 2 : 0) + (b.isRecommended ? 1 : 0);
+    return bw - aw;
+  });
+  const slotRecipe = slot ? resolveRecipe(slot.recipeId, customRecipes) ?? null : null;
   const progress = slot
     ? Math.min(1, (now - slot.startedAt) / (slot.endsAt - slot.startedAt))
     : 0;
@@ -128,7 +143,7 @@ export function PrepScene({
             {slotRecipe ? (
               <div className="panel max-w-2xl mx-auto">
                 <div className="flex items-center gap-3">
-                  <FoodArt id={slotRecipe.id} size={56} />
+                  <FoodArt id={slotRecipe.id} size={56} emoji={slotRecipe.emoji} />
                   <div className="flex-1 min-w-0">
                     <div className="font-display text-lg text-cocoa-600 truncate">
                       {slotRecipe.name}
@@ -154,7 +169,7 @@ export function PrepScene({
               </div>
             ) : combining ? (
               <CombiningPanel
-                recipe={RECIPE_BY_ID[combining.recipeId]}
+                recipe={resolveRecipe(combining.recipeId, customRecipes)!}
                 added={combining.added}
                 station={stationId}
                 onAdd={(ing) =>
@@ -253,9 +268,13 @@ function RecipeChoice({
       className="rounded-2xl border border-cream-200 p-2 text-left bg-white/80 shadow-soft transition hover:bg-cream-100 disabled:opacity-60"
     >
       <div className="flex items-center gap-2">
-        <FoodArt id={recipe.id} size={56} withShadow={false} />
+        <FoodArt id={recipe.id} size={56} withShadow={false} emoji={recipe.emoji} />
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-cocoa-600 truncate">{recipe.name}</div>
+          <div className="flex items-center gap-1">
+            <span className="font-bold text-cocoa-600 truncate">{recipe.name}</span>
+            {recipe.isSpecial && <span title="Chef's Special">⭐</span>}
+            {recipe.isRecommended && <span title="Recommended">👍</span>}
+          </div>
           <div className="text-[11px] text-cocoa-400 truncate">{recipe.description}</div>
           <div className="flex items-center gap-1.5 text-[11px] mt-0.5">
             <span className="chip !py-0 !px-2">🪙 ${recipe.price}</span>
@@ -359,7 +378,7 @@ function PrepStage({
           transition={{ duration: done ? 0.5 : 2, repeat: done ? 0 : Infinity }}
         >
           {recipe ? (
-            <FoodArt id={recipe.id} size={220} />
+            <FoodArt id={recipe.id} size={220} emoji={recipe.emoji} />
           ) : (
             <div className="w-[220px] h-[220px] rounded-full bg-white/40 border-2 border-dashed border-cocoa-300" />
           )}
@@ -688,7 +707,7 @@ function CombiningPanel({
   return (
     <div className="panel max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-2">
-        <FoodArt id={recipe.id} size={48} withShadow={false} />
+        <FoodArt id={recipe.id} size={48} withShadow={false} emoji={recipe.emoji} />
         <div className="flex-1 min-w-0">
           <div className="font-display text-lg text-cocoa-600 truncate">
             Combining: {recipe.name}

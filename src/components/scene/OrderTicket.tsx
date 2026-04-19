@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { Customer } from "@/game/types";
 import { RECIPE_BY_ID } from "@/game/recipes";
 import { FoodArt } from "../foods/FoodArt";
+import { useGame } from "@/game/store";
 
 /**
  * The black order ticket that lives along the bottom of the screen.
@@ -20,6 +21,7 @@ export function OrderTicket({
   onServe?: () => void;
   canServe?: boolean;
 }) {
+  const customRecipes = useGame((s) => s.customRecipes);
   return (
     <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 w-[min(720px,94vw)]">
       <AnimatePresence mode="wait">
@@ -80,13 +82,14 @@ export function OrderTicket({
 
               <div className="mt-2 flex flex-wrap gap-2">
                 {customer.order.map((id, i) => {
-                  const recipe = RECIPE_BY_ID[id];
+                  const recipe =
+                    RECIPE_BY_ID[id] ?? customRecipes.find((r) => r.id === id);
                   return (
                     <div
                       key={i}
                       className="flex items-center gap-1.5 rounded-xl bg-white/5 border border-white/10 px-2 py-1"
                     >
-                      <FoodArt id={id} size={32} withShadow={false} />
+                      <FoodArt id={id} size={32} withShadow={false} emoji={recipe?.emoji} />
                       <span className="text-xs font-bold text-cream-100">
                         {recipe?.name ?? id}
                       </span>

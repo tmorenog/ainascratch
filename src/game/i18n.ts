@@ -81,7 +81,36 @@ export type TKey =
   // Serve buttons
   | "serveFor"
   | "tryExtra"
-  | "dareExtra";
+  | "dareExtra"
+  // Recipe creator
+  | "inventRecipe"
+  | "inventRecipeTitle"
+  | "inventBlurb"
+  | "recipeName"
+  | "recipePlaceholder"
+  | "recipeCategory"
+  | "drinks"
+  | "pastries"
+  | "baked"
+  | "petTreats"
+  | "recipeIcon"
+  | "recipeIngredients"
+  | "recipePrice"
+  | "recipeDesc"
+  | "recipeDescPlaceholder"
+  | "ingredientCostHint"
+  | "useSuggested"
+  | "markSpecial"
+  | "markSpecialBlurb"
+  | "markRecommended"
+  | "markRecommendedBlurb"
+  | "special"
+  | "recommended"
+  | "addToMenu"
+  | "chefsSpecial"
+  | "removeRecipe"
+  | "yourCreations"
+  | "noCreationsYet";
 
 type Dict = Record<TKey, string>;
 
@@ -150,6 +179,34 @@ const en: Dict = {
   serveFor: "Serve for ${price}",
   tryExtra: "Try +${extra}",
   dareExtra: "Dare +${extra}",
+  inventRecipe: "Invent recipe",
+  inventRecipeTitle: "Invent a recipe",
+  inventBlurb: "Dream up your own dish and put it on the menu.",
+  recipeName: "Recipe name",
+  recipePlaceholder: "Aina's Rainbow Cloud",
+  recipeCategory: "Category",
+  drinks: "Drinks",
+  pastries: "Pastries",
+  baked: "Baked",
+  petTreats: "Pet treats",
+  recipeIcon: "Icon",
+  recipeIngredients: "Ingredients",
+  recipePrice: "Price",
+  recipeDesc: "Description",
+  recipeDescPlaceholder: "A magical new treat…",
+  ingredientCostHint: "Ingredient cost: ${cost} · suggested price: ${suggested}",
+  useSuggested: "Use suggested",
+  markSpecial: "Chef's special",
+  markSpecialBlurb: "Spotlighted — customers order it much more.",
+  markRecommended: "Recommended",
+  markRecommendedBlurb: "A friendly nudge — ordered a little more.",
+  special: "Special",
+  recommended: "Recommended",
+  addToMenu: "Add to menu ✨",
+  chefsSpecial: "Chef's Special",
+  removeRecipe: "Remove",
+  yourCreations: "Your creations",
+  noCreationsYet: "Nothing invented yet — hit the + Invent button to get cooking!",
 };
 
 const es: Dict = {
@@ -209,6 +266,35 @@ const es: Dict = {
   serveFor: "Servir por ${price}",
   tryExtra: "Prueba +${extra}",
   dareExtra: "Atrévete +${extra}",
+  inventRecipe: "Inventar receta",
+  inventRecipeTitle: "Inventa una receta",
+  inventBlurb: "Inventa tu propio plato y ponlo en la carta.",
+  recipeName: "Nombre de la receta",
+  recipePlaceholder: "Nube Arcoíris de Aina",
+  recipeCategory: "Categoría",
+  drinks: "Bebidas",
+  pastries: "Pastelería",
+  baked: "Horneado",
+  petTreats: "Para mascotas",
+  recipeIcon: "Icono",
+  recipeIngredients: "Ingredientes",
+  recipePrice: "Precio",
+  recipeDesc: "Descripción",
+  recipeDescPlaceholder: "Un nuevo capricho mágico…",
+  ingredientCostHint:
+    "Coste de ingredientes: ${cost} · precio sugerido: ${suggested}",
+  useSuggested: "Usar sugerido",
+  markSpecial: "Especial del chef",
+  markSpecialBlurb: "Destacado — los clientes lo piden mucho más.",
+  markRecommended: "Recomendado",
+  markRecommendedBlurb: "Un guiño amable — se pide un poco más.",
+  special: "Especial",
+  recommended: "Recomendado",
+  addToMenu: "Añadir al menú ✨",
+  chefsSpecial: "Especial del chef",
+  removeRecipe: "Quitar",
+  yourCreations: "Tus creaciones",
+  noCreationsYet: "Aún no has inventado nada — ¡pulsa + Inventar y a cocinar!",
 };
 
 const fr: Dict = {
@@ -268,6 +354,36 @@ const fr: Dict = {
   serveFor: "Servir pour {price} $",
   tryExtra: "Tente +{extra} $",
   dareExtra: "Ose +{extra} $",
+  inventRecipe: "Inventer une recette",
+  inventRecipeTitle: "Invente une recette",
+  inventBlurb: "Imagine ton propre plat et mets-le à la carte.",
+  recipeName: "Nom de la recette",
+  recipePlaceholder: "Nuage arc-en-ciel d'Aina",
+  recipeCategory: "Catégorie",
+  drinks: "Boissons",
+  pastries: "Pâtisseries",
+  baked: "Au four",
+  petTreats: "Friandises animales",
+  recipeIcon: "Icône",
+  recipeIngredients: "Ingrédients",
+  recipePrice: "Prix",
+  recipeDesc: "Description",
+  recipeDescPlaceholder: "Une nouvelle gourmandise magique…",
+  ingredientCostHint:
+    "Coût des ingrédients : {cost} $ · prix conseillé : {suggested} $",
+  useSuggested: "Utiliser conseillé",
+  markSpecial: "Spéciale du chef",
+  markSpecialBlurb: "À l'honneur — les clients en commandent bien plus.",
+  markRecommended: "Recommandé",
+  markRecommendedBlurb: "Un petit clin d'œil — commandé un peu plus souvent.",
+  special: "Spéciale",
+  recommended: "Recommandé",
+  addToMenu: "Ajouter au menu ✨",
+  chefsSpecial: "Spéciale du chef",
+  removeRecipe: "Retirer",
+  yourCreations: "Tes créations",
+  noCreationsYet:
+    "Rien d'inventé pour l'instant — clique sur + Inventer pour commencer !",
 };
 
 const it: Dict = {
@@ -327,6 +443,36 @@ const it: Dict = {
   serveFor: "Servi per ${price}",
   tryExtra: "Prova +${extra}",
   dareExtra: "Osa +${extra}",
+  inventRecipe: "Inventa ricetta",
+  inventRecipeTitle: "Inventa una ricetta",
+  inventBlurb: "Inventa il tuo piatto e mettilo nel menu.",
+  recipeName: "Nome della ricetta",
+  recipePlaceholder: "Nuvola arcobaleno di Aina",
+  recipeCategory: "Categoria",
+  drinks: "Bevande",
+  pastries: "Pasticceria",
+  baked: "Al forno",
+  petTreats: "Per animali",
+  recipeIcon: "Icona",
+  recipeIngredients: "Ingredienti",
+  recipePrice: "Prezzo",
+  recipeDesc: "Descrizione",
+  recipeDescPlaceholder: "Una nuova golosità magica…",
+  ingredientCostHint:
+    "Costo ingredienti: ${cost} · prezzo consigliato: ${suggested}",
+  useSuggested: "Usa consigliato",
+  markSpecial: "Speciale dello chef",
+  markSpecialBlurb: "In primo piano — i clienti lo ordinano molto di più.",
+  markRecommended: "Consigliato",
+  markRecommendedBlurb: "Un piccolo cenno — ordinato un po' più spesso.",
+  special: "Speciale",
+  recommended: "Consigliato",
+  addToMenu: "Aggiungi al menu ✨",
+  chefsSpecial: "Speciale dello chef",
+  removeRecipe: "Rimuovi",
+  yourCreations: "Le tue creazioni",
+  noCreationsYet:
+    "Ancora nessuna invenzione — premi + Inventa per iniziare!",
 };
 
 const pt: Dict = {
@@ -386,6 +532,36 @@ const pt: Dict = {
   serveFor: "Servir por ${price}",
   tryExtra: "Tente +${extra}",
   dareExtra: "Ouse +${extra}",
+  inventRecipe: "Inventar receita",
+  inventRecipeTitle: "Invente uma receita",
+  inventBlurb: "Invente seu próprio prato e coloque no cardápio.",
+  recipeName: "Nome da receita",
+  recipePlaceholder: "Nuvem Arco-íris da Aina",
+  recipeCategory: "Categoria",
+  drinks: "Bebidas",
+  pastries: "Doces",
+  baked: "Assados",
+  petTreats: "Para pets",
+  recipeIcon: "Ícone",
+  recipeIngredients: "Ingredientes",
+  recipePrice: "Preço",
+  recipeDesc: "Descrição",
+  recipeDescPlaceholder: "Uma nova delícia mágica…",
+  ingredientCostHint:
+    "Custo dos ingredientes: ${cost} · preço sugerido: ${suggested}",
+  useSuggested: "Usar sugerido",
+  markSpecial: "Especial do chef",
+  markSpecialBlurb: "Em destaque — clientes pedem muito mais.",
+  markRecommended: "Recomendado",
+  markRecommendedBlurb: "Um incentivo amigável — pedido um pouco mais.",
+  special: "Especial",
+  recommended: "Recomendado",
+  addToMenu: "Adicionar ao menu ✨",
+  chefsSpecial: "Especial do chef",
+  removeRecipe: "Remover",
+  yourCreations: "Suas criações",
+  noCreationsYet:
+    "Nada inventado ainda — toque em + Inventar para começar!",
 };
 
 const DICTS: Record<Lang, Dict> = { en, es, fr, it, pt };

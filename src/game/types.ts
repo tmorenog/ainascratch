@@ -53,6 +53,16 @@ export interface Recipe {
   unlockLevel?: number;
   description: string;
   funFact?: string;
+  /** Custom recipes invented by the player. When true, FoodArt falls back to
+   *  the `emoji` field below and the recipe is mixed into the menu. */
+  isCustom?: boolean;
+  /** The chef's one-and-only spotlight pick. Customers order it more often
+   *  and it's badged with a gold star in the UI. Only one recipe at a time. */
+  isSpecial?: boolean;
+  /** A softer thumbs-up badge. Small nudge on spawn weight + a 👍 chip. */
+  isRecommended?: boolean;
+  /** Emoji used as the "art" for custom recipes (no SVG registered). */
+  emoji?: string;
 }
 
 export interface CustomerArchetype {

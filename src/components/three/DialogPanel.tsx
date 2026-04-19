@@ -6,6 +6,7 @@ import { DIALOG_OPTIONS, DIALOG_RESPONSES } from "@/game/world3d";
 import { RECIPES } from "@/game/recipes";
 import { customerReply } from "@/game/chat";
 import { useT } from "@/game/i18n";
+import { useGame } from "@/game/store";
 import type { Customer, Recipe } from "@/game/types";
 
 const CATEGORY_EMOJI: Record<Recipe["category"], string> = {
@@ -15,8 +16,8 @@ const CATEGORY_EMOJI: Record<Recipe["category"], string> = {
   pet: "🦴",
 };
 
-function recipeById(id: string): Recipe | undefined {
-  return RECIPES.find((r) => r.id === id);
+function recipeById(id: string, custom: Recipe[]): Recipe | undefined {
+  return RECIPES.find((r) => r.id === id) ?? custom.find((r) => r.id === id);
 }
 
 function joinWithAnd(items: string[]): string {
@@ -46,6 +47,7 @@ export function DialogPanel({
   canServe: boolean;
 }) {
   const t = useT();
+  const customRecipes = useGame((s) => s.customRecipes);
   type ChatMessage = { from: "you" | "them"; text: string };
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
@@ -94,7 +96,7 @@ export function DialogPanel({
     orderCounts.set(id, (orderCounts.get(id) ?? 0) + 1);
   }
   const orderEntries = Array.from(orderCounts.entries()).map(([id, count]) => {
-    const r = recipeById(id);
+    const r = recipeById(id, customRecipes);
     return {
       id,
       count,
@@ -108,7 +110,7 @@ export function DialogPanel({
 
   // Fair price for this order — used to calculate "haggle" options.
   const basePrice = customer.order.reduce(
-    (sum, id) => sum + (recipeById(id)?.price ?? 0),
+    (sum, id) => sum + (recipeById(id, customRecipes)?.price ?? 0),
     0,
   );
   const smallBump = Math.max(1, Math.round(basePrice * 0.25));
@@ -169,7 +171,7 @@ export function DialogPanel({
   }
 
   const stolenRecipe = customer.stolenRecipeId
-    ? recipeById(customer.stolenRecipeId)
+    ? recipeById(customer.stolenRecipeId, customRecipes)
     : undefined;
 
   return (

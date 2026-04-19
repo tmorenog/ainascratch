@@ -9,6 +9,8 @@ import type {
   IngredientId,
   PrepSlot,
   ReadyItem,
+  Recipe,
+  RecipeCategory,
   Review,
   StationId,
   Stats,
@@ -75,6 +77,20 @@ export interface GiftedPet {
   at: number;
 }
 
+/** Input from the RecipeCreator — just the fields the chef cares about.
+ *  The store fills in id, steps, unlocked, isCustom, etc. */
+export interface CustomRecipeInput {
+  name: string;
+  emoji: string;
+  category: RecipeCategory;
+  ingredients: Partial<Record<IngredientId, number>>;
+  price: number;
+  prepMs: number;
+  description?: string;
+  isSpecial?: boolean;
+  isRecommended?: boolean;
+}
+
 interface GameState {
   // setup
   bakeryName: string;
@@ -113,6 +129,13 @@ interface GameState {
   // Pets gifted by 5-star customers who loved the food. Persisted.
   giftedPets: GiftedPet[];
 
+  // Player-invented recipes. Fully integrated into the menu — the chef
+  // can prep them at the matching station and customers can order them.
+  customRecipes: Recipe[];
+  // Id of the single spotlight "special" recipe (any recipe, base or
+  // custom) currently featured. Customers order it more often.
+  specialRecipeId: string | null;
+
   // session timing
   lastTickAt: number;
   nextSpawnAt: number;
@@ -146,6 +169,12 @@ interface GameState {
   buyFurniture: (kind: string, x: number, z: number, rot: number, price: number) => boolean;
   removeFurniture: (id: string) => void;
 
+  // Chef's custom recipes
+  addCustomRecipe: (input: CustomRecipeInput) => string;
+  removeCustomRecipe: (id: string) => void;
+  setSpecial: (id: string | null) => void;
+  toggleRecommended: (id: string) => void;
+
   tick: (now: number) => void;
 }
 
@@ -171,24 +200,60 @@ function emptyStats(): Stats {
   };
 }
 
-function pickOrder(unlocked: Set<string>, hasPet?: "dog" | "cat"): string[] {
-  const candidates = RECIPES.filter(
-    (r) => unlocked.has(r.id) && r.category !== "pet",
-  );
+function pickOrder(
+  unlocked: Set<string>,
+  customRecipes: Recipe[],
+  specialRecipeId: string | null,
+  hasPet?: "dog" | "cat",
+): string[] {
+  // Build a weighted candidate list. Special = 3x weight, recommended =
+  // 1.8x. Custom recipes are always "unlocked" the moment they're invented.
+  const pool: Recipe[] = [
+    ...RECIPES.filter((r) => unlocked.has(r.id)),
+    ...customRecipes,
+  ].filter((r) => r.category !== "pet");
+  const weighted: Recipe[] = [];
+  for (const r of pool) {
+    let w = 1;
+    if (r.id === specialRecipeId) w = 3;
+    else if (r.isRecommended) w = 1.8;
+    // push w copies (rounded) so randomChoice naturally weights it
+    const n = Math.max(1, Math.round(w * 2));
+    for (let i = 0; i < n; i++) weighted.push(r);
+  }
   const itemCount = Math.random() < 0.55 ? 1 : Math.random() < 0.85 ? 2 : 3;
   const order: string[] = [];
   for (let i = 0; i < itemCount; i++) {
-    order.push(randomChoice(candidates).id);
+    order.push(randomChoice(weighted).id);
   }
   if (hasPet === "dog") order.push("dog_bone");
   if (hasPet === "cat") order.push("cat_fish");
   return order;
 }
 
-function spawnCustomer(unlockedRecipeIds: string[], difficulty: Difficulty): Customer {
+/** Recipe lookup that falls back to the player's custom list. Lets the
+ *  rest of the store stay agnostic about where a recipe originated. */
+function findRecipe(
+  id: string,
+  customRecipes: Recipe[],
+): Recipe | undefined {
+  return RECIPE_BY_ID[id] ?? customRecipes.find((r) => r.id === id);
+}
+
+function spawnCustomer(
+  unlockedRecipeIds: string[],
+  customRecipes: Recipe[],
+  specialRecipeId: string | null,
+  difficulty: Difficulty,
+): Customer {
   const archetype = randomChoice(CUSTOMER_ARCHETYPES);
   const [pMin, pMax] = DIFFICULTY_PROFILES[difficulty].patienceMs;
-  const order = pickOrder(new Set(unlockedRecipeIds), archetype.hasPet);
+  const order = pickOrder(
+    new Set(unlockedRecipeIds),
+    customRecipes,
+    specialRecipeId,
+    archetype.hasPet,
+  );
   return {
     id: uid("cust"),
     archetypeId: archetype.id,
@@ -255,6 +320,8 @@ export const useGame = create<GameState>()(
       tipEvents: [],
       furniture: [],
       giftedPets: [],
+      customRecipes: [],
+      specialRecipeId: null,
 
       lastTickAt: Date.now(),
       nextSpawnAt: Date.now() + 4000,
@@ -287,6 +354,8 @@ export const useGame = create<GameState>()(
           tipEvents: [],
           furniture: [],
           giftedPets: [],
+          customRecipes: [],
+          specialRecipeId: null,
           lastTickAt: Date.now(),
           nextSpawnAt: Date.now() + 4000,
         }),
@@ -322,9 +391,10 @@ export const useGame = create<GameState>()(
 
       startPrep: (recipeId) => {
         const s = get();
-        const recipe = RECIPE_BY_ID[recipeId];
+        const recipe = findRecipe(recipeId, s.customRecipes);
         if (!recipe) return false;
-        if (!s.unlockedRecipeIds.includes(recipeId)) return false;
+        // Custom recipes are always available; base recipes need to be unlocked.
+        if (!recipe.isCustom && !s.unlockedRecipeIds.includes(recipeId)) return false;
         if (s.prep[recipe.station]) return false;
         // check ingredients
         for (const [k, v] of Object.entries(recipe.ingredients) as [IngredientId, number][]) {
@@ -393,7 +463,7 @@ export const useGame = create<GameState>()(
 
         // earnings (base)
         const basePay = customer.order.reduce(
-          (sum, id) => sum + (RECIPE_BY_ID[id]?.price ?? 0),
+          (sum, id) => sum + (findRecipe(id, s.customRecipes)?.price ?? 0),
           0,
         );
 
@@ -591,7 +661,7 @@ export const useGame = create<GameState>()(
         const caught = Math.random() < 0.7;
         const now = Date.now();
         const stolenId = customer.stolenRecipeId;
-        const recipe = stolenId ? RECIPE_BY_ID[stolenId] : undefined;
+        const recipe = stolenId ? findRecipe(stolenId, s.customRecipes) : undefined;
         if (caught) {
           const bounty = 4 + Math.floor(Math.random() * 5); // $4-$8 bravery bonus
           const restored: ReadyItem | null = stolenId
@@ -675,6 +745,90 @@ export const useGame = create<GameState>()(
         });
       },
 
+      addCustomRecipe: (input) => {
+        const s = get();
+        const id = uid("custom");
+        const stationFor: Record<RecipeCategory, StationId> = {
+          drink: "drink",
+          pastry: "pastry",
+          scratch: "scratch",
+          pet: "pet",
+        };
+        // Step labels are auto-generated from ingredient list so the prep
+        // scene still shows a step ticker. Durations split the total prepMs.
+        const ings = Object.entries(input.ingredients) as [IngredientId, number][];
+        const stepCount = Math.max(2, Math.min(4, ings.length + 1));
+        const perStep = Math.round(input.prepMs / stepCount);
+        const actionByCategory: Record<RecipeCategory, string[]> = {
+          drink: ["Pour the base", "Stir it all together", "Garnish with love"],
+          pastry: ["Shape it up", "Decorate with joy", "Plate with a wink"],
+          scratch: ["Mix the batter", "Shape & rest", "Bake until golden", "Cool and finish"],
+          pet: ["Mix pet-safe dough", "Shape into treats", "Bake gently"],
+        };
+        const actions = actionByCategory[input.category];
+        const steps = Array.from({ length: stepCount }, (_, i) => ({
+          label: actions[i % actions.length],
+          durationMs: perStep,
+        }));
+        const recipe: Recipe = {
+          id,
+          name: input.name.trim().slice(0, 40) || "Mystery Treat",
+          category: input.category,
+          station: stationFor[input.category],
+          ingredients: input.ingredients,
+          steps,
+          prepMs: input.prepMs,
+          price: input.price,
+          unlocked: true,
+          description: input.description?.slice(0, 120) ||
+            `${input.name} — the chef's own creation.`,
+          emoji: input.emoji || "🍴",
+          isCustom: true,
+          isSpecial: !!input.isSpecial,
+          isRecommended: !!input.isRecommended,
+        };
+        // Only one Special at a time. Promoting a new one demotes the old.
+        let specialRecipeId = s.specialRecipeId;
+        let customRecipes = [...s.customRecipes, recipe];
+        if (input.isSpecial) {
+          specialRecipeId = id;
+          customRecipes = customRecipes.map((r) =>
+            r.id === id ? r : { ...r, isSpecial: false },
+          );
+        }
+        set({ customRecipes, specialRecipeId });
+        return id;
+      },
+
+      removeCustomRecipe: (id) => {
+        const s = get();
+        set({
+          customRecipes: s.customRecipes.filter((r) => r.id !== id),
+          specialRecipeId: s.specialRecipeId === id ? null : s.specialRecipeId,
+        });
+      },
+
+      setSpecial: (id) => {
+        const s = get();
+        // id must resolve to a real recipe (base or custom), or null to clear.
+        if (id !== null && !findRecipe(id, s.customRecipes)) return;
+        const customRecipes = s.customRecipes.map((r) => ({
+          ...r,
+          isSpecial: r.id === id,
+        }));
+        set({ specialRecipeId: id, customRecipes });
+      },
+
+      toggleRecommended: (id) => {
+        const s = get();
+        // Only custom recipes toggle this on themselves; for base recipes
+        // we treat it as a no-op (they can still be made Special).
+        const customRecipes = s.customRecipes.map((r) =>
+          r.id === id ? { ...r, isRecommended: !r.isRecommended } : r,
+        );
+        set({ customRecipes });
+      },
+
       tick: (now) => {
         const s = get();
         const updates: Partial<GameState> = { lastTickAt: now };
@@ -732,7 +886,12 @@ export const useGame = create<GameState>()(
         const readyAfter: ReadyItem[] = updates.ready ?? s.ready;
         const queueLimit = DIFFICULTY_PROFILES[s.difficulty].maxQueue;
         if (s.isOpen && now >= s.nextSpawnAt && customersAfter.length < queueLimit) {
-          let c = spawnCustomer(s.unlockedRecipeIds, s.difficulty);
+          let c = spawnCustomer(
+            s.unlockedRecipeIds,
+            s.customRecipes,
+            s.specialRecipeId,
+            s.difficulty,
+          );
           // Once in a while (25/65 ≈ 38%) a "customer" is actually a robber
           // who grabs one ready item off the tray and bolts. We only swap
           // them in if there's something to steal, otherwise they'd be a
@@ -780,7 +939,7 @@ export const useGame = create<GameState>()(
       storage: createJSONStorage(() => localStorage),
       // Bump whenever we add recipes or ingredients so returning players
       // automatically get the new menu + a full inventory slot list.
-      version: 5,
+      version: 6,
       migrate: (persisted, _version) => {
         const p = (persisted ?? {}) as Partial<GameState>;
         // Merge in any newly-unlocked recipes that weren't in the save.
@@ -797,6 +956,8 @@ export const useGame = create<GameState>()(
           inventory: mergedInventory,
           giftedPets: p.giftedPets ?? [],
           language: p.language ?? ("en" as Lang),
+          customRecipes: p.customRecipes ?? [],
+          specialRecipeId: p.specialRecipeId ?? null,
         } as GameState;
       },
       partialize: (s) => ({
@@ -814,6 +975,8 @@ export const useGame = create<GameState>()(
         stats: s.stats,
         furniture: s.furniture,
         giftedPets: s.giftedPets,
+        customRecipes: s.customRecipes,
+        specialRecipeId: s.specialRecipeId,
       }),
     },
   ),

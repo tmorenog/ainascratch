@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Welcome } from "./Welcome";
 import { Topbar } from "./Topbar";
 import { RecipeBook } from "./RecipeBook";
+import { RecipeCreator } from "./RecipeCreator";
 import { Supermarket } from "./Supermarket";
 import { ReviewsPanel } from "./ReviewsPanel";
 import { SettingsPanel } from "./SettingsPanel";
@@ -38,6 +39,7 @@ export function BakeryApp() {
   const [openSettings, setOpenSettings] = useState(false);
   const [openPantry, setOpenPantry] = useState(false);
   const [openShop, setOpenShop] = useState(false);
+  const [openCreator, setOpenCreator] = useState(false);
   const [prepStation, setPrepStation] = useState<StationId | null>(null);
   const [dialogCustomer, setDialogCustomer] = useState<Customer | null>(null);
   const [placingKind, setPlacingKind] = useState<string | null>(null);
@@ -141,7 +143,8 @@ export function BakeryApp() {
             openRecipes ||
             openReviews ||
             openSettings ||
-            openShop
+            openShop ||
+            openCreator
           }
           placingFurniture={placingKind}
           onPlaceFurniture={(kind, x, z) => {
@@ -184,6 +187,13 @@ export function BakeryApp() {
             🛋️ {t("furniture")}
           </button>
           <button
+            onClick={() => setOpenCreator(true)}
+            className="rounded-full px-4 py-2 bg-berry-500 text-white font-bold shadow-bakery hover:bg-berry-600"
+            title={t("inventBlurb")}
+          >
+            🧪 {t("inventRecipe")}
+          </button>
+          <button
             onClick={toggleMute}
             className="rounded-full px-4 py-2 bg-cream-50 text-cocoa-700 font-bold shadow-bakery"
             title={muted ? t("unmuteMusic") : t("muteMusic")}
@@ -194,7 +204,18 @@ export function BakeryApp() {
       </main>
 
       {/* Modals */}
-      <RecipeBook open={openRecipes} onClose={() => setOpenRecipes(false)} />
+      <RecipeBook
+        open={openRecipes}
+        onClose={() => setOpenRecipes(false)}
+        onInvent={() => {
+          setOpenRecipes(false);
+          setOpenCreator(true);
+        }}
+      />
+      <RecipeCreator
+        open={openCreator}
+        onClose={() => setOpenCreator(false)}
+      />
       <Supermarket open={openMarket} onClose={() => setOpenMarket(false)} />
       <ReviewsPanel open={openReviews} onClose={() => setOpenReviews(false)} />
       <SettingsPanel open={openSettings} onClose={() => setOpenSettings(false)} />

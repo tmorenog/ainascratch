@@ -850,13 +850,48 @@ export function FoodArt({
   size = 80,
   className = "",
   withShadow = true,
+  emoji,
 }: {
   id: string;
   size?: number;
   className?: string;
   withShadow?: boolean;
+  /** Fallback icon for custom recipes that don't have a hand-built SVG.
+   *  Rendered as a big emoji sitting on a pastel plate. */
+  emoji?: string;
 }) {
   const Art = FOOD_ART_BY_ID[id];
+  // Custom recipe path: pretty pastel plate + large emoji at the center.
+  if (!Art && emoji) {
+    return (
+      <svg
+        viewBox="0 0 100 100"
+        width={size}
+        height={size}
+        className={className}
+        role="img"
+        aria-label={id}
+      >
+        {defs}
+        {withShadow && (
+          <ellipse cx="50" cy="86" rx="30" ry="4" fill="#000" opacity="0.15" />
+        )}
+        {/* soft pastel plate */}
+        <ellipse cx="50" cy="80" rx="36" ry="7" fill="#f3e4c0" />
+        <ellipse cx="50" cy="54" rx="34" ry="26" fill="#fff5e2" stroke="#e3d2a8" strokeWidth="1" />
+        <ellipse cx="50" cy="54" rx="24" ry="18" fill="#fffbea" />
+        <text
+          x="50"
+          y="66"
+          textAnchor="middle"
+          fontSize="52"
+          style={{ fontFamily: "system-ui, 'Apple Color Emoji', 'Segoe UI Emoji'" }}
+        >
+          {emoji}
+        </text>
+      </svg>
+    );
+  }
   return (
     <svg
       viewBox="0 0 100 100"
