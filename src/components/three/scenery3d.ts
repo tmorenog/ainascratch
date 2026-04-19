@@ -147,14 +147,36 @@ export function buildRoom(): THREE.Group {
   rightWall.rotation.y = -Math.PI / 2;
   g.add(rightWall);
 
-  // ceiling
+  // ceiling — a box pulled slightly below the wall tops so there is no
+  // z-fighting seam and so the ceiling has a bit of thickness visible at
+  // the edges. A subtle warm-cream color catches light from the pendants.
+  const ceilY = ROOM.height - 0.02;
   const ceiling = new THREE.Mesh(
-    new THREE.PlaneGeometry(ROOM.width, ROOM.depth),
-    mat({ color: "#fff7e6" }),
+    new THREE.BoxGeometry(ROOM.width - 0.02, 0.06, ROOM.depth - 0.02),
+    mat({ color: "#fff1d6", roughness: 0.9 }),
   );
-  ceiling.rotation.x = Math.PI / 2;
-  ceiling.position.y = ROOM.height;
+  ceiling.position.set(0, ceilY + 0.03, 0);
+  ceiling.receiveShadow = true;
   g.add(ceiling);
+
+  // Wooden beams across the ceiling — warmth and depth so it's not flat.
+  const beamM = mat({ color: "#7c5236", roughness: 0.75 });
+  for (const bz of [-3.5, 0, 3.5]) {
+    const beam = new THREE.Mesh(
+      new THREE.BoxGeometry(ROOM.width - 0.2, 0.16, 0.22),
+      beamM,
+    );
+    beam.position.set(0, ceilY - 0.09, bz);
+    g.add(beam);
+  }
+
+  // Pendant lamps hanging under the same points where the point lights sit.
+  const lampCoords: [number, number][] = [
+    [-3, -1], [3, -1], [0, 1.5], [-5, 2], [5, 2],
+  ];
+  for (const [lx, lz] of lampCoords) {
+    g.add(makePendantLamp(lx, ceilY, lz));
+  }
 
   // floor trim
   const trimGeo = new THREE.BoxGeometry(ROOM.width, 0.12, 0.04);
@@ -174,6 +196,108 @@ export function buildRoom(): THREE.Group {
   g.add(trim4);
 
   return g;
+}
+
+function makePendantLamp(x: number, ceilY: number, z: number): THREE.Group {
+  const g = new THREE.Group();
+  // ceiling rose where the cord meets the ceiling
+  const rose = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.07, 0.07, 0.03, 12),
+    mat({ color: "#5a4030", roughness: 0.7 }),
+  );
+  rose.position.set(x, ceilY - 0.015, z);
+  g.add(rose);
+  // cord
+  const cord = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.012, 0.012, 0.55, 6),
+    mat({ color: "#2a2118" }),
+  );
+  cord.position.set(x, ceilY - 0.31, z);
+  g.add(cord);
+  // brass-ish shade (cone)
+  const shade = new THREE.Mesh(
+    new THREE.ConeGeometry(0.2, 0.24, 18, 1, true),
+    mat({ color: "#d7884a", roughness: 0.55, metalness: 0.3, side: THREE.DoubleSide }),
+  );
+  shade.position.set(x, ceilY - 0.58, z);
+  shade.rotation.x = Math.PI;
+  g.add(shade);
+  // glowing bulb
+  const bulb = new THREE.Mesh(
+    new THREE.SphereGeometry(0.09, 16, 12),
+    mat({
+      color: "#fff3c4",
+      emissive: "#fff0b4",
+      emissiveIntensity: 1.3,
+      roughness: 0.4,
+    }),
+  );
+  bulb.position.set(x, ceilY - 0.66, z);
+  g.add(bulb);
+  return g;
+}
+
+/* ---------------- OPEN / CLOSED SIGN ---------------- */
+/**
+ * A small hanging sign on the front window. The returned object includes an
+ * `update(isOpen)` function that redraws the canvas texture so the sign
+ * reflects the current shop state. `setClickable` adds the mesh to the list
+ * of things the scene's raycaster checks against.
+ */
+export function makeOpenSign(): {
+  group: THREE.Group;
+  face: THREE.Mesh;
+  update: (isOpen: boolean) => void;
+} {
+  const group = new THREE.Group();
+  group.name = "openSign";
+
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 160;
+  const ctx = canvas.getContext("2d")!;
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+
+  function draw(isOpen: boolean) {
+    ctx.fillStyle = isOpen ? "#7bc97b" : "#ef476f";
+    ctx.fillRect(0, 0, 256, 160);
+    ctx.strokeStyle = "#fffbea";
+    ctx.lineWidth = 8;
+    ctx.strokeRect(10, 10, 236, 140);
+    ctx.fillStyle = "#fffbea";
+    ctx.font = "800 72px 'Fraunces', Georgia, serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(isOpen ? "OPEN" : "CLOSED", 128, 82);
+    ctx.font = "600 22px 'Fraunces', Georgia, serif";
+    ctx.fillText("click me!", 128, 138);
+    tex.needsUpdate = true;
+  }
+  draw(false);
+
+  const face = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.9, 0.56),
+    mat({ map: tex, side: THREE.DoubleSide, roughness: 0.7 }),
+  );
+  face.name = "openSignFace";
+  // Mount on the front window, a bit left of center, inside-facing.
+  face.position.set(2.2, 1.7, ROOM.depth / 2 - 0.08);
+  face.rotation.y = Math.PI; // show face to someone standing inside
+  group.add(face);
+
+  // Chain loops
+  const chainM = mat({ color: "#5a4030", roughness: 0.6 });
+  for (const cx of [-0.35, 0.35]) {
+    const chain = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.01, 0.01, 0.24, 6),
+      chainM,
+    );
+    chain.position.set(2.2 + cx, 2.08, ROOM.depth / 2 - 0.08);
+    group.add(chain);
+  }
+
+  return { group, face, update: draw };
 }
 
 /* ---------------- L-COUNTER + STATIONS ---------------- */

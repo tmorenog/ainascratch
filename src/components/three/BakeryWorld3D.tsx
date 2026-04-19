@@ -18,6 +18,7 @@ import {
   buildStationProps,
   buildPantry,
   buildOutdoors,
+  makeOpenSign,
   disposeAllSceneryMaterials,
 } from "./scenery3d";
 import {
@@ -48,6 +49,8 @@ export function BakeryWorld3D({
   const mountRef = useRef<HTMLDivElement | null>(null);
   const customers = useGame((s) => s.customers);
   const furniture = useGame((s) => s.furniture);
+  const isOpen = useGame((s) => s.isOpen);
+  const toggleStore = useGame((s) => s.toggleStore);
 
   const [prompt, setPrompt] = useState<string | null>(null);
   const [locked, setLocked] = useState(false);
@@ -57,6 +60,16 @@ export function BakeryWorld3D({
   const furnitureRef = useRef(furniture);
   const placingRef = useRef(placingFurniture);
   const pausedRef = useRef(inputPaused);
+  const toggleStoreRef = useRef(toggleStore);
+  const signUpdateRef = useRef<((open: boolean) => void) | null>(null);
+  const signFaceRef = useRef<THREE.Mesh | null>(null);
+
+  useEffect(() => {
+    toggleStoreRef.current = toggleStore;
+  }, [toggleStore]);
+  useEffect(() => {
+    signUpdateRef.current?.(isOpen);
+  }, [isOpen]);
 
   useEffect(() => {
     customersRef.current = customers;
@@ -120,7 +133,9 @@ export function BakeryWorld3D({
     sun.shadow.camera.top = 14;
     sun.shadow.camera.bottom = -14;
     scene.add(sun);
-    // Warm ceiling lights scattered across the bakery
+    // Warm pendant-lamp lights. Positioned just under the shades so the
+    // light cone points down toward the floor instead of splashing across
+    // the ceiling.
     for (const [x, z] of [
       [-3, -1],
       [3, -1],
@@ -128,8 +143,8 @@ export function BakeryWorld3D({
       [-5, 2],
       [5, 2],
     ] as const) {
-      const pl = new THREE.PointLight("#ffd08a", 0.9, 9, 1.4);
-      pl.position.set(x, 2.9, z);
+      const pl = new THREE.PointLight("#ffd08a", 0.7, 8, 1.6);
+      pl.position.set(x, 2.6, z);
       scene.add(pl);
     }
 
@@ -143,6 +158,12 @@ export function BakeryWorld3D({
     scene.add(buildPantry());
     const outdoors = buildOutdoors();
     scene.add(outdoors);
+    // Hanging OPEN/CLOSED sign on the front window — clickable.
+    const sign = makeOpenSign();
+    scene.add(sign.group);
+    signUpdateRef.current = sign.update;
+    signFaceRef.current = sign.face;
+    sign.update(useGame.getState().isOpen);
 
     // The player IS the baker — no avatar drawn in front of the camera,
     // since that made customers look like they were wearing chef hats.
@@ -247,7 +268,8 @@ export function BakeryWorld3D({
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
 
-    const onCanvasClick = () => {
+    const clickRay = new THREE.Raycaster();
+    const onCanvasClick = (e: MouseEvent) => {
       if (pausedRef.current) return;
       const kind = placingRef.current;
       if (kind) {
@@ -261,6 +283,25 @@ export function BakeryWorld3D({
         onPlaceFurniture(kind, clamp(x, -ROOM.width / 2 + 0.4, ROOM.width / 2 - 0.4),
           clamp(z, -ROOM.depth / 2 + 0.4, ROOM.depth / 2 - 0.4));
         return;
+      }
+      // Raycast against the OPEN/CLOSED sign. If hit, toggle the store and
+      // don't request pointer lock so the user can click it again.
+      const face = signFaceRef.current;
+      if (face) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        let nx: number, ny: number;
+        if (document.pointerLockElement === renderer.domElement) {
+          nx = 0; ny = 0; // crosshair is always at center when locked
+        } else {
+          nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+          ny = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        }
+        clickRay.setFromCamera(new THREE.Vector2(nx, ny), camera);
+        const hit = clickRay.intersectObject(face, false);
+        if (hit.length > 0 && hit[0].distance < 20) {
+          toggleStoreRef.current();
+          return;
+        }
       }
       renderer.domElement.requestPointerLock();
     };
@@ -409,13 +450,15 @@ export function BakeryWorld3D({
         return;
       }
 
-      // Arrow keys turn the camera so mobile / non-pointer-lock users can
-      // still look around without grabbing the mouse.
+      // Arrow keys turn the camera (yaw + pitch) so mobile / non-pointer-lock
+      // users can look around without grabbing the mouse. Arrow keys do NOT
+      // move the player — WASD handles movement — so the two never conflict.
       const turnSpeed = 1.8 * dt;
       if (keys.has("ArrowLeft")) camera.rotation.y += turnSpeed;
       if (keys.has("ArrowRight")) camera.rotation.y -= turnSpeed;
       if (keys.has("ArrowUp")) camera.rotation.x = Math.max(-1.2, camera.rotation.x - turnSpeed);
       if (keys.has("ArrowDown")) camera.rotation.x = Math.min(1.2, camera.rotation.x + turnSpeed);
+      camera.rotation.z = 0; // never roll
 
       // move player
       const speed = keys.has("ShiftLeft") || keys.has("ShiftRight") ? PLAYER.runSpeed : PLAYER.walkSpeed;
@@ -426,8 +469,8 @@ export function BakeryWorld3D({
       const right = new THREE.Vector3(-forward.z, 0, forward.x);
 
       let moveF = 0, moveR = 0;
-      if (keys.has("KeyW") || keys.has("ArrowUp")) moveF += 1;
-      if (keys.has("KeyS") || keys.has("ArrowDown")) moveF -= 1;
+      if (keys.has("KeyW")) moveF += 1;
+      if (keys.has("KeyS")) moveF -= 1;
       if (keys.has("KeyA")) moveR -= 1;
       if (keys.has("KeyD")) moveR += 1;
       // touch joystick
@@ -537,7 +580,7 @@ export function BakeryWorld3D({
       {/* lock hint */}
       {!locked && !placingFurniture && (
         <div className="pointer-events-none absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-white/80 text-cocoa-700 text-xs px-3 py-1 rounded-full">
-          Click to look around • WASD to walk • E to interact
+          Click to look around • WASD to walk • ← ↑ ↓ → to turn • E to interact
         </div>
       )}
       {placingFurniture && (
