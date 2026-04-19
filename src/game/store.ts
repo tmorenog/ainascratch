@@ -59,6 +59,14 @@ export interface TipEvent {
   at: number;
 }
 
+export interface PlacedFurniture {
+  id: string; // instance id
+  kind: string; // catalog id
+  x: number;
+  z: number;
+  rot: number;
+}
+
 interface GameState {
   // setup
   bakeryName: string;
@@ -90,6 +98,9 @@ interface GameState {
   levelUps: LevelUpEvent[]; // pending toasts
   tipEvents: TipEvent[]; // pending coin tosses
 
+  // furniture placed in the 3D bakery (persists)
+  furniture: PlacedFurniture[];
+
   // session timing
   lastTickAt: number;
   nextSpawnAt: number;
@@ -109,6 +120,9 @@ interface GameState {
   acknowledgeTip: (id: string) => void;
 
   orderSupplies: (items: Partial<Record<IngredientId, number>>) => void;
+
+  buyFurniture: (kind: string, x: number, z: number, rot: number, price: number) => boolean;
+  removeFurniture: (id: string) => void;
 
   tick: (now: number) => void;
 }
@@ -216,6 +230,7 @@ export const useGame = create<GameState>()(
       stats: emptyStats(),
       levelUps: [],
       tipEvents: [],
+      furniture: [],
 
       lastTickAt: Date.now(),
       nextSpawnAt: Date.now() + 4000,
@@ -244,9 +259,25 @@ export const useGame = create<GameState>()(
           stats: emptyStats(),
           levelUps: [],
           tipEvents: [],
+          furniture: [],
           lastTickAt: Date.now(),
           nextSpawnAt: Date.now() + 4000,
         }),
+
+      buyFurniture: (kind, x, z, rot, price) => {
+        const s = get();
+        if (s.coins < price) return false;
+        set({
+          coins: s.coins - price,
+          furniture: [
+            ...s.furniture,
+            { id: uid("fur"), kind, x, z, rot },
+          ],
+        });
+        return true;
+      },
+      removeFurniture: (id) =>
+        set((s) => ({ furniture: s.furniture.filter((f) => f.id !== id) })),
 
       acknowledgeLevelUp: (id) =>
         set((s) => ({ levelUps: s.levelUps.filter((e) => e.id !== id) })),
@@ -554,6 +585,7 @@ export const useGame = create<GameState>()(
         inventory: s.inventory,
         reviews: s.reviews.slice(0, 30),
         stats: s.stats,
+        furniture: s.furniture,
       }),
     },
   ),
