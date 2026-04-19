@@ -36,12 +36,14 @@ interface Props {
   onInteract: (hotspot: Hotspot, customer: Customer | null) => void;
   placingFurniture: string | null;
   onPlaceFurniture: (kind: string, x: number, z: number) => void;
+  inputPaused?: boolean;
 }
 
 export function BakeryWorld3D({
   onInteract,
   placingFurniture,
   onPlaceFurniture,
+  inputPaused = false,
 }: Props) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const customers = useGame((s) => s.customers);
@@ -54,6 +56,7 @@ export function BakeryWorld3D({
   const customersRef = useRef<Customer[]>(customers);
   const furnitureRef = useRef(furniture);
   const placingRef = useRef(placingFurniture);
+  const pausedRef = useRef(inputPaused);
 
   useEffect(() => {
     customersRef.current = customers;
@@ -64,6 +67,13 @@ export function BakeryWorld3D({
   useEffect(() => {
     placingRef.current = placingFurniture;
   }, [placingFurniture]);
+  useEffect(() => {
+    pausedRef.current = inputPaused;
+    // Release mouse lock so the user can click UI buttons freely
+    if (inputPaused && document.pointerLockElement) {
+      document.exitPointerLock();
+    }
+  }, [inputPaused]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -90,9 +100,11 @@ export function BakeryWorld3D({
       0.05,
       200,
     );
-    // Start inside the bakery near the service counter
-    camera.position.set(0, PLAYER.eyeHeight, 3.0);
+    // Start inside the bakery behind the service counter, facing the
+    // customer side so the first thing you see is the queue area.
+    camera.position.set(0, PLAYER.eyeHeight, -0.3);
     camera.rotation.order = "YXZ";
+    camera.rotation.y = Math.PI; // face +Z (where the service counter is)
 
     // ---- Lights ----
     scene.add(new THREE.AmbientLight("#fff4dc", 0.55));
@@ -224,6 +236,7 @@ export function BakeryWorld3D({
     // ---- Controls (pointer lock + WASD + touch) ----
     const keys = new Set<string>();
     const onKeyDown = (e: KeyboardEvent) => {
+      if (pausedRef.current) return;
       keys.add(e.code);
       if (e.code === "KeyE" || e.code === "Space") {
         const hs = activeHotspotRef.current;
@@ -235,6 +248,7 @@ export function BakeryWorld3D({
     window.addEventListener("keyup", onKeyUp);
 
     const onCanvasClick = () => {
+      if (pausedRef.current) return;
       const kind = placingRef.current;
       if (kind) {
         // place at point 1.2m in front of camera on the floor
@@ -258,6 +272,7 @@ export function BakeryWorld3D({
     document.addEventListener("pointerlockchange", onLockChange);
 
     const onMouseMove = (e: MouseEvent) => {
+      if (pausedRef.current) return;
       if (document.pointerLockElement !== renderer.domElement) return;
       camera.rotation.y -= e.movementX * 0.0025;
       camera.rotation.x -= e.movementY * 0.0025;
@@ -341,24 +356,20 @@ export function BakeryWorld3D({
     const doorLeft = -3.0 - 1.6 / 2 + 0.2;
     const doorRight = -3.0 + 1.6 / 2 - 0.2;
     function applyBounds(pos: THREE.Vector3) {
-      // Indoor zone: inside four walls, except allow crossing the back wall
-      // through the door cutout.
-      const insideX = pos.x > -ROOM.width / 2 + 0.3 && pos.x < ROOM.width / 2 - 0.3;
-      const insideZ = pos.z > -ROOM.depth / 2 + 0.3 && pos.z < ROOM.depth / 2 - 0.3;
-      const inDoorColumn = pos.x > doorLeft && pos.x < doorRight;
-      if (insideZ) {
-        // inside the room along Z — keep inside the side walls
-        pos.x = Math.max(-ROOM.width / 2 + 0.3, Math.min(ROOM.width / 2 - 0.3, pos.x));
-        // front wall
-        pos.z = Math.min(ROOM.depth / 2 - 0.3, pos.z);
-      } else if (inDoorColumn) {
-        // stepping out through the back door into the alley/outdoor zone
+      const isOutdoor = pos.z < -ROOM.depth / 2;
+      if (isOutdoor) {
+        // Outdoor zone: narrow sidewalk corridor running to the supermarket
         pos.z = Math.max(-ROOM.depth / 2 - 30, pos.z);
-        // constrain to the sidewalk-ish corridor (let them wander a bit)
-        pos.x = Math.max(doorLeft - 8, Math.min(doorRight + 8, pos.x));
-      } else if (insideX) {
-        // they were trying to cross the back wall away from the door — block.
-        pos.z = Math.max(-ROOM.depth / 2 + 0.3, pos.z);
+        pos.x = Math.max(doorLeft - 10, Math.min(doorRight + 10, pos.x));
+      } else {
+        // Indoor zone: clamp to room walls
+        pos.x = Math.max(-ROOM.width / 2 + 0.3, Math.min(ROOM.width / 2 - 0.3, pos.x));
+        pos.z = Math.min(ROOM.depth / 2 - 0.3, pos.z);
+        const inDoorColumn = pos.x > doorLeft && pos.x < doorRight;
+        if (!inDoorColumn) {
+          // Only block -Z if not under the doorway
+          pos.z = Math.max(-ROOM.depth / 2 + 0.3, pos.z);
+        }
       }
       pos.y = PLAYER.eyeHeight;
     }
@@ -377,6 +388,20 @@ export function BakeryWorld3D({
       syncFurniture();
       updateGhost();
 
+      if (pausedRef.current) {
+        renderer.render(scene, camera);
+        rafId = requestAnimationFrame(tick);
+        return;
+      }
+
+      // Arrow keys turn the camera so mobile / non-pointer-lock users can
+      // still look around without grabbing the mouse.
+      const turnSpeed = 1.8 * dt;
+      if (keys.has("ArrowLeft")) camera.rotation.y += turnSpeed;
+      if (keys.has("ArrowRight")) camera.rotation.y -= turnSpeed;
+      if (keys.has("ArrowUp")) camera.rotation.x = Math.max(-1.2, camera.rotation.x - turnSpeed);
+      if (keys.has("ArrowDown")) camera.rotation.x = Math.min(1.2, camera.rotation.x + turnSpeed);
+
       // move player
       const speed = keys.has("ShiftLeft") || keys.has("ShiftRight") ? PLAYER.runSpeed : PLAYER.walkSpeed;
       const forward = new THREE.Vector3();
@@ -388,8 +413,8 @@ export function BakeryWorld3D({
       let moveF = 0, moveR = 0;
       if (keys.has("KeyW") || keys.has("ArrowUp")) moveF += 1;
       if (keys.has("KeyS") || keys.has("ArrowDown")) moveF -= 1;
-      if (keys.has("KeyA") || keys.has("ArrowLeft")) moveR -= 1;
-      if (keys.has("KeyD") || keys.has("ArrowRight")) moveR += 1;
+      if (keys.has("KeyA")) moveR -= 1;
+      if (keys.has("KeyD")) moveR += 1;
       // touch joystick
       moveF += -touchState.moveVec.y;
       moveR += touchState.moveVec.x;

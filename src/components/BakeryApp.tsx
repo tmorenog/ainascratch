@@ -103,6 +103,16 @@ export function BakeryApp() {
 
       <main className="flex-1 relative overflow-hidden">
         <BakeryWorld3D
+          inputPaused={
+            !!dialogCustomer ||
+            prepStation !== null ||
+            openMarket ||
+            openPantry ||
+            openRecipes ||
+            openReviews ||
+            openSettings ||
+            openShop
+          }
           placingFurniture={placingKind}
           onPlaceFurniture={(kind, x, z) => {
             const entry = FURNITURE_CATALOG.find((f) => f.id === kind);
