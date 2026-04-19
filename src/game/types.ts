@@ -88,6 +88,12 @@ export interface Customer {
   served?: boolean;
   mood?: CustomerMood;
   look?: CustomerLookData;
+  /** If true, this "customer" is actually a robber — they grabbed a
+   *  ready item from the tray on arrival and will escape with it
+   *  unless the player rushes over and grabs it back. */
+  isRobber?: boolean;
+  /** Recipe id the robber swiped from the tray. Undefined if not a robber. */
+  stolenRecipeId?: string;
 }
 
 export interface ReadyItem {

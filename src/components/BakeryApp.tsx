@@ -27,6 +27,7 @@ export function BakeryApp() {
   const isOpen = useGame((s) => s.isOpen);
   const toggleStore = useGame((s) => s.toggleStore);
   const serveCustomer = useGame((s) => s.serveCustomer);
+  const catchRobber = useGame((s) => s.catchRobber);
   const buyFurniture = useGame((s) => s.buyFurniture);
 
   const [openRecipes, setOpenRecipes] = useState(false);
@@ -208,10 +209,13 @@ export function BakeryApp() {
         customer={dialogCustomer}
         canServe={canServe}
         onClose={() => setDialogCustomer(null)}
-        onServe={() => {
-          if (!dialogCustomer) return;
-          serveCustomer(dialogCustomer.id);
-          setDialogCustomer(null);
+        onServe={(upcharge) => {
+          if (!dialogCustomer) return "missing" as const;
+          return serveCustomer(dialogCustomer.id, upcharge);
+        }}
+        onCatch={() => {
+          if (!dialogCustomer) return "missing" as const;
+          return catchRobber(dialogCustomer.id);
         }}
       />
       <FurnitureShop

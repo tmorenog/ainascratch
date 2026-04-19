@@ -114,7 +114,11 @@ interface GameState {
   toggleStore: () => void;
   startPrep: (recipeId: string) => boolean;
   collectReady: (stationId: StationId) => void;
-  serveCustomer: (customerId: string) => "success" | "wrong" | "missing";
+  serveCustomer: (
+    customerId: string,
+    upcharge?: number,
+  ) => "success" | "wrong" | "missing" | "refused";
+  catchRobber: (customerId: string) => "caught" | "escaped" | "missing";
   dismissCustomer: (customerId: string, reason?: "leave" | "expire") => void;
   acknowledgeLevelUp: (id: string) => void;
   acknowledgeTip: (id: string) => void;
@@ -340,7 +344,7 @@ export const useGame = create<GameState>()(
         });
       },
 
-      serveCustomer: (customerId) => {
+      serveCustomer: (customerId, upcharge = 0) => {
         const s = get();
         const customer = s.customers.find((c) => c.id === customerId);
         if (!customer) return "missing";
@@ -363,17 +367,61 @@ export const useGame = create<GameState>()(
         const correct = multisetEqual(usedItemsRecipes, customer.order);
         const now = Date.now();
         const stars = computeStars(now, customer, correct);
-        // remove served ready items
-        const newReady = tray.filter((_, i) => !usedIndices.includes(i));
-        const newCustomers = s.customers.filter((c) => c.id !== customerId);
 
-        // earnings
+        // earnings (base)
         const basePay = customer.order.reduce(
           (sum, id) => sum + (RECIPE_BY_ID[id]?.price ?? 0),
           0,
         );
-        const tip = correct ? Math.round(basePay * (stars / 5) * 0.6) : 0;
-        const earnings = basePay + tip;
+
+        // If the player asked for more than the fair price, roll a dice:
+        // bigger the surcharge, less likely the customer accepts. A refused
+        // haggle walks the customer out WITHOUT consuming the tray items
+        // (so the bakes can still be served to someone else).
+        const safeUpcharge = Math.max(0, Math.round(upcharge));
+        if (safeUpcharge > 0) {
+          const ratio = safeUpcharge / Math.max(1, basePay);
+          const chance = Math.max(0.1, Math.min(0.95, 1 - ratio * 0.85));
+          const accepted = Math.random() < chance;
+          if (!accepted) {
+            const review: Review = {
+              id: uid("rev"),
+              customerName: customer.name,
+              customerEmoji: customer.emoji,
+              stars: 1,
+              tip: 0,
+              text: `Too expensive — ${customer.name} walked out.`,
+              at: now,
+            };
+            const reviewsCount = s.stats.reviewsCount + 1;
+            const averageStars =
+              (s.stats.averageStars * s.stats.reviewsCount + 1) / reviewsCount;
+            set({
+              customers: s.customers.filter((c) => c.id !== customerId),
+              reviews: [review, ...s.reviews].slice(0, 60),
+              stats: {
+                ...s.stats,
+                ordersFailed: s.stats.ordersFailed + 1,
+                streak: 0,
+                reviewsCount,
+                averageStars,
+              },
+            });
+            return "refused";
+          }
+        }
+
+        // remove served ready items
+        const newReady = tray.filter((_, i) => !usedIndices.includes(i));
+        const newCustomers = s.customers.filter((c) => c.id !== customerId);
+
+        // Fair service still earns a tip; haggled-and-accepted service
+        // replaces the tip with the upcharge (fair trade for the risk).
+        const tip =
+          correct && safeUpcharge === 0
+            ? Math.round(basePay * (stars / 5) * 0.6)
+            : 0;
+        const earnings = basePay + tip + safeUpcharge;
 
         // review
         const review: Review = {
@@ -486,6 +534,79 @@ export const useGame = create<GameState>()(
         });
       },
 
+      catchRobber: (customerId) => {
+        const s = get();
+        const customer = s.customers.find((c) => c.id === customerId);
+        if (!customer || !customer.isRobber) return "missing";
+        // 70% chance of catching — a kind but jittery villain, basically.
+        const caught = Math.random() < 0.7;
+        const now = Date.now();
+        const stolenId = customer.stolenRecipeId;
+        const recipe = stolenId ? RECIPE_BY_ID[stolenId] : undefined;
+        if (caught) {
+          const bounty = 4 + Math.floor(Math.random() * 5); // $4-$8 bravery bonus
+          const restored: ReadyItem | null = stolenId
+            ? { id: uid("rdy"), recipeId: stolenId, finishedAt: now }
+            : null;
+          const review: Review = {
+            id: uid("rev"),
+            customerName: customer.name,
+            customerEmoji: "🦸",
+            stars: 5,
+            tip: bounty,
+            text: recipe
+              ? `You caught a robber and saved the ${recipe.name}!`
+              : "You caught a robber! Bravo, baker!",
+            at: now,
+          };
+          const reviewsCount = s.stats.reviewsCount + 1;
+          const averageStars =
+            (s.stats.averageStars * s.stats.reviewsCount + 5) / reviewsCount;
+          set({
+            customers: s.customers.filter((c) => c.id !== customerId),
+            ready: restored ? [...s.ready, restored] : s.ready,
+            coins: s.coins + bounty,
+            tipJar: s.tipJar + bounty,
+            reviews: [review, ...s.reviews].slice(0, 60),
+            stats: {
+              ...s.stats,
+              totalEarnings: s.stats.totalEarnings + bounty,
+              totalTips: s.stats.totalTips + bounty,
+              reviewsCount,
+              averageStars,
+            },
+          });
+          return "caught";
+        }
+        // Escaped with the goods
+        const review: Review = {
+          id: uid("rev"),
+          customerName: customer.name,
+          customerEmoji: "🏃‍♂️",
+          stars: 1,
+          tip: 0,
+          text: recipe
+            ? `A robber got away with a ${recipe.name}!`
+            : "A robber escaped!",
+          at: now,
+        };
+        const reviewsCount = s.stats.reviewsCount + 1;
+        const averageStars =
+          (s.stats.averageStars * s.stats.reviewsCount + 1) / reviewsCount;
+        set({
+          customers: s.customers.filter((c) => c.id !== customerId),
+          reviews: [review, ...s.reviews].slice(0, 60),
+          stats: {
+            ...s.stats,
+            ordersFailed: s.stats.ordersFailed + 1,
+            streak: 0,
+            reviewsCount,
+            averageStars,
+          },
+        });
+        return "escaped";
+      },
+
       orderSupplies: (items) => {
         const s = get();
         const cost = (Object.entries(items) as [IngredientId, number][]).reduce(
@@ -530,10 +651,12 @@ export const useGame = create<GameState>()(
             leftReviews.push({
               id: uid("rev"),
               customerName: c.name,
-              customerEmoji: c.emoji,
+              customerEmoji: c.isRobber ? "🏃‍♂️" : c.emoji,
               stars: 1,
               tip: 0,
-              text: "I waited too long and had to go!",
+              text: c.isRobber
+                ? "A robber got away with a treat!"
+                : "I waited too long and had to go!",
               at: now,
             });
           } else {
@@ -557,10 +680,43 @@ export const useGame = create<GameState>()(
 
         // Spawn new customers if open
         const customersAfter = updates.customers ?? s.customers;
+        const readyAfter: ReadyItem[] = updates.ready ?? s.ready;
         const queueLimit = DIFFICULTY_PROFILES[s.difficulty].maxQueue;
         if (s.isOpen && now >= s.nextSpawnAt && customersAfter.length < queueLimit) {
-          const c = spawnCustomer(s.unlockedRecipeIds, s.difficulty);
-          updates.customers = [...customersAfter, c];
+          let c = spawnCustomer(s.unlockedRecipeIds, s.difficulty);
+          // Once in a while (25/65 ≈ 38%) a "customer" is actually a robber
+          // who grabs one ready item off the tray and bolts. We only swap
+          // them in if there's something to steal, otherwise they'd be a
+          // very confused robber. Robbers also have a shorter patience.
+          if (readyAfter.length > 0 && Math.random() < 25 / 65) {
+            const stealIdx = Math.floor(Math.random() * readyAfter.length);
+            const stolen = readyAfter[stealIdx];
+            updates.ready = readyAfter.filter((_, i) => i !== stealIdx);
+            c = {
+              ...c,
+              isRobber: true,
+              stolenRecipeId: stolen.recipeId,
+              order: [],
+              emoji: "🎭",
+              name: "Sneaky Stranger",
+              greeting: "Oh nothing, just browsing… *grabs treat and bolts*",
+              patienceMs: 9000,
+              look: {
+                ...(c.look ?? {
+                  hair: "short",
+                  hairColor: "#1a1008",
+                  skin: "#f3c8a4",
+                  shirt: "#202020",
+                }),
+                hair: "short",
+                hairColor: "#1a1008",
+                shirt: "#1a1a1a",
+              },
+            };
+          }
+          // Robbers barge to the front of the queue so the player can
+          // actually catch them before they time out (~9s).
+          updates.customers = c.isRobber ? [c, ...customersAfter] : [...customersAfter, c];
           updates.nextSpawnAt = now + nextSpawnDelay(s.difficulty);
         } else if (s.isOpen && customersAfter.length >= queueLimit) {
           // Push spawn out a bit while queue is full
