@@ -1,9 +1,10 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DIALOG_OPTIONS, DIALOG_RESPONSES } from "@/game/world3d";
 import { RECIPES } from "@/game/recipes";
+import { customerReply } from "@/game/chat";
 import type { Customer, Recipe } from "@/game/types";
 
 const CATEGORY_EMOJI: Record<Recipe["category"], string> = {
@@ -39,15 +40,42 @@ export function DialogPanel({
   onServe: () => void;
   canServe: boolean;
 }) {
-  const [reply, setReply] = useState<string | null>(null);
+  type ChatMessage = { from: "you" | "them"; text: string };
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [draft, setDraft] = useState("");
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [messages]);
 
   if (!customer) return null;
 
   const pick = (id: (typeof DIALOG_OPTIONS)[number]["id"]) => {
     const lines = DIALOG_RESPONSES[id];
     const line = lines[Math.floor(Math.random() * lines.length)];
-    setReply(line);
+    const prompt = DIALOG_OPTIONS.find((o) => o.id === id)?.label ?? "";
+    setMessages((m) => [
+      ...m,
+      { from: "you", text: prompt },
+      { from: "them", text: line },
+    ]);
   };
+
+  function sendDraft() {
+    const text = draft.trim();
+    if (!text) return;
+    const reply = customerReply(text, customer!, orderEntries);
+    setMessages((m) => [
+      ...m,
+      { from: "you", text },
+      { from: "them", text: reply },
+    ]);
+    setDraft("");
+  }
 
   // Group the customer's order by recipe id so "2x Lemonade" reads nicely.
   const orderCounts = new Map<string, number>();
@@ -117,24 +145,79 @@ export function DialogPanel({
             </ul>
           </div>
 
-          {reply ? (
-            <div className="bg-mint-100 text-cocoa-800 rounded-2xl p-3 mb-3 text-sm">
-              <span className="font-bold">{customer.name}:</span> {reply}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-2 mb-3">
-              {DIALOG_OPTIONS.map((opt) => (
-                <button
-                  key={opt.id}
-                  onClick={() => pick(opt.id)}
-                  className="text-left px-3 py-2 rounded-xl bg-white hover:bg-cream-100 border border-cocoa-200 text-sm text-cocoa-800"
+          {/* Chat transcript */}
+          <div
+            ref={scrollRef}
+            className="rounded-2xl bg-cream-100/70 border border-cocoa-200 p-3 mb-3 max-h-52 overflow-y-auto flex flex-col gap-2"
+          >
+            {messages.length === 0 ? (
+              <div className="text-xs text-cocoa-500 italic text-center py-2">
+                Say hi to {customer.name}!
+              </div>
+            ) : (
+              messages.map((m, i) => (
+                <div
+                  key={i}
+                  className={`flex ${m.from === "you" ? "justify-end" : "justify-start"}`}
                 >
-                  <span className="mr-2">{opt.emoji}</span>
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
+                  <div
+                    className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
+                      m.from === "you"
+                        ? "bg-berry-500 text-white"
+                        : "bg-white text-cocoa-800 border border-cocoa-200"
+                    }`}
+                  >
+                    {m.from === "them" && (
+                      <span className="font-bold mr-1">{customer.name}:</span>
+                    )}
+                    {m.text}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Quick replies */}
+          <div className="flex flex-wrap gap-2 mb-3">
+            {DIALOG_OPTIONS.map((opt) => (
+              <button
+                key={opt.id}
+                onClick={() => pick(opt.id)}
+                className="px-2.5 py-1.5 rounded-full bg-white hover:bg-cream-100 border border-cocoa-200 text-xs text-cocoa-800"
+              >
+                <span className="mr-1">{opt.emoji}</span>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Free-text input */}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              sendDraft();
+            }}
+            className="flex gap-2 mb-3"
+          >
+            <input
+              type="text"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder={`Type to ${customer.name}…`}
+              className="flex-1 px-3 py-2 rounded-xl bg-white border border-cocoa-200 text-sm text-cocoa-800 focus:outline-none focus:border-berry-400"
+            />
+            <button
+              type="submit"
+              disabled={!draft.trim()}
+              className={`px-4 py-2 rounded-xl font-bold text-sm ${
+                draft.trim()
+                  ? "bg-berry-500 text-white"
+                  : "bg-cream-100 text-cocoa-400"
+              }`}
+            >
+              Send
+            </button>
+          </form>
 
           <div className="flex gap-2">
             <button
