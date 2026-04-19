@@ -958,12 +958,20 @@ export const useGame = create<GameState>()(
       storage: createJSONStorage(() => localStorage),
       // Bump whenever we add recipes or ingredients so returning players
       // automatically get the new menu + a full inventory slot list.
-      version: 6,
+      version: 7,
       migrate: (persisted, _version) => {
         const p = (persisted ?? {}) as Partial<GameState>;
         // Merge in any newly-unlocked recipes that weren't in the save.
         const savedUnlocked = new Set(p.unlockedRecipeIds ?? []);
         for (const id of initialUnlocked) savedUnlocked.add(id);
+        // Back-fill level-gated recipes the player has already earned
+        // (e.g. plushies at lv5 for someone who's already lv7).
+        const savedLevel = p.level ?? 1;
+        for (const r of RECIPES) {
+          if (r.unlockLevel != null && r.unlockLevel <= savedLevel) {
+            savedUnlocked.add(r.id);
+          }
+        }
         // Make sure every ingredient key exists on the inventory.
         const mergedInventory = {
           ...emptyInventory(),
