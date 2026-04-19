@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useGame } from "@/game/store";
 import { Stars } from "./ui/Stars";
+import { useT } from "@/game/i18n";
 
 interface TopbarProps {
   onOpenRecipes: () => void;
@@ -24,6 +25,7 @@ export function Topbar({
   const stats = useGame((s) => s.stats);
   const isOpen = useGame((s) => s.isOpen);
   const toggleStore = useGame((s) => s.toggleStore);
+  const t = useT();
 
   const xpToNext = 30 + level * 25;
 
@@ -45,7 +47,7 @@ export function Topbar({
             </div>
             <div className="min-w-0">
               <div className="text-[10px] uppercase tracking-wider text-cocoa-300 font-bold">
-                Welcome to
+                {t("welcomeTo")}
               </div>
               <div className="font-display font-black text-cocoa-600 text-lg md:text-2xl leading-tight truncate">
                 {bakeryName || "Your Bakery"}
@@ -70,7 +72,7 @@ export function Topbar({
             🪙 <span className="tabular-nums">{coins}</span>
           </div>
           <div className="chip hidden sm:inline-flex" title="Level">
-            <span>Lv {level}</span>
+            <span>{t("level")} {level}</span>
             <span className="w-12 h-1.5 bg-cocoa-100 rounded-full overflow-hidden ml-1">
               <span
                 className="block h-full bg-cocoa-400"
@@ -80,10 +82,10 @@ export function Topbar({
           </div>
 
           <div className="flex items-center gap-1.5 md:gap-2">
-            <button className="btn-icon" title="Recipe book" onClick={onOpenRecipes}>📖</button>
-            <button className="btn-icon" title="Supermarket" onClick={onOpenSupermarket}>🛒</button>
-            <button className="btn-icon" title="Reviews" onClick={onOpenReviews}>⭐</button>
-            <button className="btn-icon" title="Settings" onClick={onOpenSettings}>⚙️</button>
+            <button className="btn-icon" title={t("recipeBook")} onClick={onOpenRecipes}>📖</button>
+            <button className="btn-icon" title={t("supermarket")} onClick={onOpenSupermarket}>🛒</button>
+            <button className="btn-icon" title={t("reviews")} onClick={onOpenReviews}>⭐</button>
+            <button className="btn-icon" title={t("settings")} onClick={onOpenSettings}>⚙️</button>
             <button
               className={`hidden md:inline-flex rounded-full px-4 py-2 font-bold shadow-soft transition ml-1 ${
                 isOpen
@@ -92,7 +94,7 @@ export function Topbar({
               }`}
               onClick={toggleStore}
             >
-              {isOpen ? "Close Shop" : "Open Shop"}
+              {isOpen ? t("closeShop") : t("openShop")}
             </button>
           </div>
         </div>

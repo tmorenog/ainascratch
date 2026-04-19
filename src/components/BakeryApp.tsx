@@ -16,6 +16,7 @@ import { FurnitureShop } from "./three/FurnitureShop";
 import { FURNITURE_CATALOG } from "@/game/world3d";
 import { useGame } from "@/game/store";
 import { CozyMusic } from "@/game/music";
+import { useT } from "@/game/i18n";
 import type { Customer, StationId } from "@/game/types";
 
 export function BakeryApp() {
@@ -29,6 +30,7 @@ export function BakeryApp() {
   const serveCustomer = useGame((s) => s.serveCustomer);
   const catchRobber = useGame((s) => s.catchRobber);
   const buyFurniture = useGame((s) => s.buyFurniture);
+  const t = useT();
 
   const [openRecipes, setOpenRecipes] = useState(false);
   const [openMarket, setOpenMarket] = useState(false);
@@ -98,7 +100,7 @@ export function BakeryApp() {
     return (
       <div className="min-h-[100svh] flex items-center justify-center">
         <div className="text-cocoa-400 font-bold animate-pulse">
-          Warming the ovens…
+          {t("warmingOvens")}
         </div>
       </div>
     );
@@ -173,20 +175,20 @@ export function BakeryApp() {
               isOpen ? "bg-berry-500 text-white" : "bg-mint-500 text-white"
             }`}
           >
-            {isOpen ? "Close Shop" : "Open Shop"}
+            {isOpen ? t("closeShop") : t("openShop")}
           </button>
           <button
             onClick={() => setOpenShop(true)}
             className="rounded-full px-4 py-2 bg-cream-50 text-cocoa-700 font-bold shadow-bakery"
           >
-            🛋️ Furniture
+            🛋️ {t("furniture")}
           </button>
           <button
             onClick={toggleMute}
             className="rounded-full px-4 py-2 bg-cream-50 text-cocoa-700 font-bold shadow-bakery"
-            title={muted ? "Unmute music" : "Mute music"}
+            title={muted ? t("unmuteMusic") : t("muteMusic")}
           >
-            {muted ? "🔇 Music" : "🎵 Music"}
+            {muted ? "🔇" : "🎵"} {t("music")}
           </button>
         </div>
       </main>

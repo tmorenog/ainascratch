@@ -6,27 +6,13 @@ import { useGame } from "@/game/store";
 import { pickFunnyName } from "@/game/reviews";
 import type { Difficulty } from "@/game/types";
 import { FoodArt } from "./foods/FoodArt";
+import { useT } from "@/game/i18n";
 
-const DIFFICULTIES: { id: Difficulty; title: string; desc: string; emoji: string }[] = [
-  {
-    id: "cozy",
-    title: "Cozy Mode",
-    desc: "Slow and sweet. Customers are very patient.",
-    emoji: "🫖",
-  },
-  {
-    id: "normal",
-    title: "Just Right",
-    desc: "A lovely flow of friendly customers.",
-    emoji: "🧁",
-  },
-  {
-    id: "rush",
-    title: "Morning Rush",
-    desc: "Lots of customers, less patience, more tips!",
-    emoji: "⏰",
-  },
-];
+const DIFFICULTY_EMOJI: Record<Difficulty, string> = {
+  cozy: "🫖",
+  normal: "🧁",
+  rush: "⏰",
+};
 
 export function Welcome() {
   const bakeryName = useGame((s) => s.bakeryName);
@@ -37,6 +23,13 @@ export function Welcome() {
 
   const [name, setName] = useState(bakeryName || "");
   const [picked, setPicked] = useState<Difficulty>(difficulty);
+  const t = useT();
+
+  const difficulties: { id: Difficulty; title: string; desc: string }[] = [
+    { id: "cozy", title: t("cozy"), desc: t("cozyBlurb") },
+    { id: "normal", title: t("justRight"), desc: t("justRightBlurb") },
+    { id: "rush", title: t("rush"), desc: t("rushBlurb") },
+  ];
 
   const floaters = ["glazed_donut", "chocolate_cupcake", "croissant", "hot_chocolate", "milkshake", "scratch_cookies"];
 
@@ -87,35 +80,35 @@ export function Welcome() {
             Aina&apos;s Bakery
           </h1>
           <p className="mt-1 text-cocoa-400 font-semibold">
-            A cozy baking &amp; drink shop simulator
+            {t("tagline")}
           </p>
         </div>
 
         <label className="block text-sm font-bold text-cocoa-500 mb-1">
-          Name your bakery
+          {t("nameBakery")}
         </label>
         <div className="flex gap-2">
           <input
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value.slice(0, 36))}
-            placeholder="Bunkin Bonuts"
+            placeholder={t("bakeryPlaceholder")}
             className="flex-1 rounded-2xl border border-cream-300 bg-white/80 px-4 py-3 text-lg font-bold text-cocoa-600 placeholder-cocoa-200 shadow-innerwarm focus:outline-none focus:ring-2 focus:ring-cocoa-300"
           />
           <button
             type="button"
             className="btn-secondary whitespace-nowrap"
             onClick={() => setName(pickFunnyName())}
-            title="Roll a funny name"
+            title={t("funnyName")}
           >
-            🎲 Funny name
+            {t("funnyName")}
           </button>
         </div>
 
         <div className="mt-6">
-          <div className="text-sm font-bold text-cocoa-500 mb-2">Choose your pace</div>
+          <div className="text-sm font-bold text-cocoa-500 mb-2">{t("choosePace")}</div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            {DIFFICULTIES.map((d) => {
+            {difficulties.map((d) => {
               const active = picked === d.id;
               return (
                 <button
@@ -128,7 +121,7 @@ export function Welcome() {
                   }`}
                 >
                   <div className="flex items-center gap-2 font-bold text-cocoa-600">
-                    <span className="text-xl">{d.emoji}</span> {d.title}
+                    <span className="text-xl">{DIFFICULTY_EMOJI[d.id]}</span> {d.title}
                   </div>
                   <div className="text-xs text-cocoa-400 mt-1">{d.desc}</div>
                 </button>
@@ -139,14 +132,14 @@ export function Welcome() {
 
         <div className="mt-6 flex items-center justify-between">
           <p className="text-xs text-cocoa-400 max-w-[60%]">
-            Progress saves automatically in your browser. No sign-in, no ads, just cozy baking.
+            {t("savesBlurb")}
           </p>
           <button
             className="btn-primary text-lg px-6 py-3 disabled:opacity-50"
             disabled={!canStart}
             onClick={handleStart}
           >
-            Open the bakery →
+            {t("openBakeryCta")}
           </button>
         </div>
       </motion.div>

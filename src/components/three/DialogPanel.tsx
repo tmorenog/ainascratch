@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { DIALOG_OPTIONS, DIALOG_RESPONSES } from "@/game/world3d";
 import { RECIPES } from "@/game/recipes";
 import { customerReply } from "@/game/chat";
+import { useT } from "@/game/i18n";
 import type { Customer, Recipe } from "@/game/types";
 
 const CATEGORY_EMOJI: Record<Recipe["category"], string> = {
@@ -44,6 +45,7 @@ export function DialogPanel({
   onCatch: () => "caught" | "escaped" | "missing";
   canServe: boolean;
 }) {
+  const t = useT();
   type ChatMessage = { from: "you" | "them"; text: string };
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
@@ -109,23 +111,26 @@ export function DialogPanel({
     (sum, id) => sum + (recipeById(id)?.price ?? 0),
     0,
   );
+  const smallBump = Math.max(1, Math.round(basePrice * 0.25));
+  const mediumBump = Math.max(2, Math.round(basePrice * 0.6));
+  const daringBump = Math.max(4, basePrice);
   const serveOptions: { extra: number; label: string; chance: string; tone: string }[] = [
-    { extra: 0, label: `Serve for $${basePrice}`, chance: "100%", tone: "mint" },
+    { extra: 0, label: t("serveFor", { price: basePrice }), chance: "100%", tone: "mint" },
     {
-      extra: Math.max(1, Math.round(basePrice * 0.25)),
-      label: `Try +$${Math.max(1, Math.round(basePrice * 0.25))}`,
+      extra: smallBump,
+      label: t("tryExtra", { extra: smallBump }),
       chance: "~80%",
       tone: "sun",
     },
     {
-      extra: Math.max(2, Math.round(basePrice * 0.6)),
-      label: `Try +$${Math.max(2, Math.round(basePrice * 0.6))}`,
+      extra: mediumBump,
+      label: t("tryExtra", { extra: mediumBump }),
       chance: "~50%",
       tone: "berry",
     },
     {
-      extra: Math.max(4, basePrice),
-      label: `Dare +$${Math.max(4, basePrice)}`,
+      extra: daringBump,
+      label: t("dareExtra", { extra: daringBump }),
       chance: "~15%",
       tone: "cocoa",
     },
@@ -199,24 +204,24 @@ export function DialogPanel({
             <div className="rounded-2xl bg-berry-100 border-2 border-berry-500 p-4 mb-3 text-center">
               <div className="text-4xl mb-1">🏃‍♂️💨</div>
               <div className="font-black text-berry-700 mb-1">
-                They swiped {stolenRecipe ? `a ${stolenRecipe.name}` : "a treat"}!
+                {t("robberSwiped", {
+                  item: stolenRecipe ? stolenRecipe.name : "a treat",
+                })}
               </div>
-              <div className="text-xs text-cocoa-600 mb-3">
-                Grab it back before they escape. Quick!
-              </div>
+              <div className="text-xs text-cocoa-600 mb-3">{t("robberQuick")}</div>
               <button
                 onClick={handleCatch}
                 disabled={!!outcome}
                 className="w-full py-3 rounded-xl bg-berry-500 text-white font-black shadow-bakery disabled:opacity-50"
               >
-                ✋ Grab them! <span className="text-xs opacity-80">(70%)</span>
+                {t("grabThemBtn")} <span className="text-xs opacity-80">(70%)</span>
               </button>
               <button
                 onClick={onClose}
                 disabled={!!outcome}
                 className="w-full mt-2 py-2 rounded-xl bg-cream-100 text-cocoa-600 font-bold"
               >
-                Let them go
+                {t("letThemGo")}
               </button>
               {/* Outcome overlay handled at the bottom of the panel */}
             </div>
@@ -225,7 +230,7 @@ export function DialogPanel({
           {/* Specific order — clearly list what the customer wants. */}
           <div className="rounded-2xl bg-berry-100/60 border border-berry-200 p-3 mb-3">
             <div className="text-xs font-bold text-berry-700 uppercase tracking-wide mb-1">
-              Their order
+              {t("theirOrder")}
             </div>
             <div className="text-sm text-cocoa-800 mb-2">
               &ldquo;Could I please get {orderPhrase}?&rdquo;
@@ -253,7 +258,7 @@ export function DialogPanel({
           >
             {messages.length === 0 ? (
               <div className="text-xs text-cocoa-500 italic text-center py-2">
-                Say hi to {customer.name}!
+                {t("sayHi", { name: customer.name })}
               </div>
             ) : (
               messages.map((m, i) => (
@@ -325,7 +330,7 @@ export function DialogPanel({
           {canServe ? (
             <div className="space-y-2">
               <div className="text-[11px] font-bold uppercase tracking-wide text-cocoa-500">
-                Charge them
+                {t("chargeThem")}
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {serveOptions.map((opt) => {
@@ -357,7 +362,7 @@ export function DialogPanel({
                 disabled={!!outcome}
                 className="w-full py-2 rounded-xl bg-cream-100 text-cocoa-600 font-bold"
               >
-                Close
+                {t("close")}
               </button>
             </div>
           ) : (
@@ -366,13 +371,13 @@ export function DialogPanel({
                 onClick={onClose}
                 className="flex-1 py-2 rounded-xl bg-cream-100 text-cocoa-600 font-bold"
               >
-                Close
+                {t("close")}
               </button>
               <button
                 disabled
                 className="flex-1 py-2 rounded-xl font-bold bg-cream-100 text-cocoa-400"
               >
-                Keep prepping
+                {t("keepPrepping")}
               </button>
             </div>
           )}
@@ -413,15 +418,15 @@ export function DialogPanel({
                   <div className="font-black text-lg">
                     {outcome.kind === "accepted"
                       ? outcome.extra > 0
-                        ? `Paid! (+$${outcome.extra} extra)`
-                        : "Paid!"
+                        ? t("paidExtra", { extra: outcome.extra })
+                        : t("paid")
                       : outcome.kind === "caught"
-                        ? "Got 'em! Item saved!"
+                        ? t("gotEm")
                         : outcome.kind === "escaped"
-                          ? "They got away!"
+                          ? t("theyGotAway")
                           : outcome.kind === "gift"
-                            ? `They loved it! Left their ${outcome.petKind} with you!`
-                            : "Too expensive — walked out!"}
+                            ? t("leftPet", { pet: outcome.petKind ?? "pet" })
+                            : t("tooExpensive")}
                   </div>
                 </div>
               </motion.div>

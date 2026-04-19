@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import type { Lang } from "./i18n";
 import type {
   Customer,
   Difficulty,
@@ -79,6 +80,7 @@ interface GameState {
   bakeryName: string;
   hasOnboarded: boolean;
   difficulty: Difficulty;
+  language: Lang;
 
   // economy
   coins: number;
@@ -118,6 +120,7 @@ interface GameState {
   // actions
   setBakeryName: (n: string) => void;
   setDifficulty: (d: Difficulty) => void;
+  setLanguage: (l: Lang) => void;
   finishOnboarding: () => void;
   resetGame: () => void;
 
@@ -230,6 +233,7 @@ export const useGame = create<GameState>()(
       bakeryName: "",
       hasOnboarded: false,
       difficulty: "cozy",
+      language: "en" as Lang,
 
       coins: 30,
       level: 1,
@@ -257,6 +261,7 @@ export const useGame = create<GameState>()(
 
       setBakeryName: (n) => set({ bakeryName: n.trim().slice(0, 36) || "Sweet Spot" }),
       setDifficulty: (d) => set({ difficulty: d }),
+      setLanguage: (l) => set({ language: l }),
       finishOnboarding: () => set({ hasOnboarded: true }),
 
       resetGame: () =>
@@ -264,6 +269,7 @@ export const useGame = create<GameState>()(
           bakeryName: "",
           hasOnboarded: false,
           difficulty: "cozy",
+          language: get().language,
           coins: 30,
           level: 1,
           xp: 0,
@@ -774,7 +780,7 @@ export const useGame = create<GameState>()(
       storage: createJSONStorage(() => localStorage),
       // Bump whenever we add recipes or ingredients so returning players
       // automatically get the new menu + a full inventory slot list.
-      version: 4,
+      version: 5,
       migrate: (persisted, _version) => {
         const p = (persisted ?? {}) as Partial<GameState>;
         // Merge in any newly-unlocked recipes that weren't in the save.
@@ -790,12 +796,14 @@ export const useGame = create<GameState>()(
           unlockedRecipeIds: Array.from(savedUnlocked),
           inventory: mergedInventory,
           giftedPets: p.giftedPets ?? [],
+          language: p.language ?? ("en" as Lang),
         } as GameState;
       },
       partialize: (s) => ({
         bakeryName: s.bakeryName,
         hasOnboarded: s.hasOnboarded,
         difficulty: s.difficulty,
+        language: s.language,
         coins: s.coins,
         level: s.level,
         xp: s.xp,
