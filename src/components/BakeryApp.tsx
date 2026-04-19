@@ -9,6 +9,7 @@ import { Supermarket } from "./Supermarket";
 import { ReviewsPanel } from "./ReviewsPanel";
 import { SettingsPanel } from "./SettingsPanel";
 import { PantryPanel } from "./PantryPanel";
+import { CatCafe } from "./CatCafe";
 import { PrepScene } from "./scene/PrepScene";
 import { LevelUpToast } from "./scene/LevelUpToast";
 import { BakeryWorld3D } from "./three/BakeryWorld3D";
@@ -40,6 +41,7 @@ export function BakeryApp() {
   const [openPantry, setOpenPantry] = useState(false);
   const [openShop, setOpenShop] = useState(false);
   const [openCreator, setOpenCreator] = useState(false);
+  const [openCatCafe, setOpenCatCafe] = useState(false);
   const [prepStation, setPrepStation] = useState<StationId | null>(null);
   const [dialogCustomer, setDialogCustomer] = useState<Customer | null>(null);
   const [placingKind, setPlacingKind] = useState<string | null>(null);
@@ -145,7 +147,8 @@ export function BakeryApp() {
             openReviews ||
             openSettings ||
             openShop ||
-            openCreator
+            openCreator ||
+            openCatCafe
           }
           placingFurniture={placingKind}
           onPlaceFurniture={(kind, x, z) => {
@@ -167,6 +170,8 @@ export function BakeryApp() {
             } else if (hs.kind === "counter-customer") {
               if (customer) setDialogCustomer(customer);
               else if (!isOpen && customers.length === 0) toggleStore();
+            } else if (hs.kind === "cat-cafe") {
+              setOpenCatCafe(true);
             }
           }}
         />
@@ -218,6 +223,7 @@ export function BakeryApp() {
         onClose={() => setOpenCreator(false)}
       />
       <Supermarket open={openMarket} onClose={() => setOpenMarket(false)} />
+      <CatCafe open={openCatCafe} onClose={() => setOpenCatCafe(false)} />
       <ReviewsPanel open={openReviews} onClose={() => setOpenReviews(false)} />
       <SettingsPanel open={openSettings} onClose={() => setOpenSettings(false)} />
       <PantryPanel

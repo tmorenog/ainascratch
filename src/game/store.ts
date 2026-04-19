@@ -175,6 +175,10 @@ interface GameState {
   setSpecial: (id: string | null) => void;
   toggleRecommended: (id: string) => void;
 
+  // Ambient earnings used by mini-games like the Cat Cafe bar
+  addCoins: (amount: number) => void;
+  grantXp: (amount: number) => void;
+
   tick: (now: number) => void;
 }
 
@@ -867,6 +871,39 @@ export const useGame = create<GameState>()(
           r.id === id ? { ...r, isRecommended: !r.isRecommended } : r,
         );
         set({ customRecipes });
+      },
+
+      addCoins: (amount) => {
+        if (!amount) return;
+        set((s) => ({ coins: Math.max(0, s.coins + amount) }));
+      },
+
+      grantXp: (amount) => {
+        if (!amount) return;
+        const s = get();
+        const now = Date.now();
+        let xp = s.xp + amount;
+        let level = s.level;
+        const unlockedRecipeIds = [...s.unlockedRecipeIds];
+        const levelUps = [...s.levelUps];
+        while (xp >= xpForLevel(level)) {
+          xp -= xpForLevel(level);
+          level += 1;
+          const newlyUnlocked: string[] = [];
+          for (const r of RECIPES) {
+            if (r.unlockLevel === level && !unlockedRecipeIds.includes(r.id)) {
+              unlockedRecipeIds.push(r.id);
+              newlyUnlocked.push(r.id);
+            }
+          }
+          levelUps.push({
+            id: uid("lvl"),
+            level,
+            unlockedRecipeIds: newlyUnlocked,
+            at: now,
+          });
+        }
+        set({ xp, level, unlockedRecipeIds, levelUps });
       },
 
       tick: (now) => {

@@ -38,7 +38,13 @@ export const FOV_DEG = 70;
 
 export interface Hotspot {
   id: string;
-  kind: "station" | "pantry" | "supermarket" | "counter-customer" | "door";
+  kind:
+    | "station"
+    | "pantry"
+    | "supermarket"
+    | "counter-customer"
+    | "door"
+    | "cat-cafe";
   position: [number, number, number];
   facing: number; // yaw in radians the player should face to interact
   label: string;
@@ -123,7 +129,21 @@ export const HOTSPOTS: Hotspot[] = [
     label: "Service Counter",
     prompt: "Greet the customer",
   },
+  {
+    // Spiral-ish staircase tucked into the back-right corner of the bakery.
+    // Unlocked at level 20 — leads down to the cozy Cat Cafe.
+    id: "cat-cafe",
+    kind: "cat-cafe",
+    position: [5.5, 0, -5.2],
+    facing: Math.PI, // face -Z toward the staircase opening
+    label: "Cat Cafe ↓",
+    prompt: "Head downstairs to the Cat Cafe",
+  },
 ];
+
+/** Recipes unlocked only while downstairs at the Cat Cafe. Kept here so
+ *  the 3D scene and the cafe modal agree on what shows up. */
+export const CAT_CAFE_UNLOCK_LEVEL = 20;
 
 export type FurnitureId =
   | "round_table"

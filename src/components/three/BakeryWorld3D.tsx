@@ -18,7 +18,12 @@ import {
   buildStationProps,
   buildPantry,
   buildPlushieShelf,
+  buildCatCafeStairs,
   buildSeatingArea,
+  makeCustomPlushie,
+  makeCustomChewToy,
+  CUSTOM_PLUSHIE_SLOTS,
+  CUSTOM_CHEW_SLOTS,
   buildOutdoors,
   makeOpenSign,
   disposeAllSceneryMaterials,
@@ -52,6 +57,7 @@ export function BakeryWorld3D({
   const customers = useGame((s) => s.customers);
   const furniture = useGame((s) => s.furniture);
   const giftedPets = useGame((s) => s.giftedPets);
+  const customRecipes = useGame((s) => s.customRecipes);
   const isOpen = useGame((s) => s.isOpen);
   const toggleStore = useGame((s) => s.toggleStore);
 
@@ -63,6 +69,7 @@ export function BakeryWorld3D({
   const customersRef = useRef<Customer[]>(customers);
   const furnitureRef = useRef(furniture);
   const giftedPetsRef = useRef(giftedPets);
+  const customRecipesRef = useRef(customRecipes);
   const placingRef = useRef(placingFurniture);
   const pausedRef = useRef(inputPaused);
   const toggleStoreRef = useRef(toggleStore);
@@ -114,6 +121,9 @@ export function BakeryWorld3D({
   useEffect(() => {
     giftedPetsRef.current = giftedPets;
   }, [giftedPets]);
+  useEffect(() => {
+    customRecipesRef.current = customRecipes;
+  }, [customRecipes]);
   useEffect(() => {
     placingRef.current = placingFurniture;
   }, [placingFurniture]);
@@ -205,6 +215,7 @@ export function BakeryWorld3D({
     scene.add(buildStationProps());
     scene.add(buildPantry());
     scene.add(buildPlushieShelf());
+    scene.add(buildCatCafeStairs());
     scene.add(buildSeatingArea());
     const outdoors = buildOutdoors();
     scene.add(outdoors);
@@ -305,6 +316,58 @@ export function BakeryWorld3D({
         if (!seen.has(id)) {
           scene.remove(g);
           giftedPetGroups.delete(id);
+        }
+      }
+    }
+
+    // ---- Custom merch (chef-invented plushies + chew toys) ----
+    // Whenever the chef invents a plush recipe, it shows up on the display
+    // shelf. Chew toys go on a small rack near the pet station. Extras
+    // beyond the visible slots are added to a random slot with a slight
+    // vertical jitter so the shelf keeps filling up instead of capping out.
+    const customMerchGroups = new Map<string, THREE.Group>();
+    function syncCustomMerch() {
+      const list = customRecipesRef.current;
+      const seen = new Set<string>();
+      let plushIdx = 0;
+      let chewIdx = 0;
+      for (const r of list) {
+        const isPlush = r.category === "plush";
+        const isChewToy =
+          r.category === "pet" &&
+          Object.keys(r.ingredients ?? {}).length === 0;
+        if (!isPlush && !isChewToy) continue;
+        seen.add(r.id);
+        if (customMerchGroups.has(r.id)) {
+          if (isPlush) plushIdx++;
+          else chewIdx++;
+          continue;
+        }
+        let g: THREE.Group;
+        if (isPlush) {
+          g = makeCustomPlushie(r.id);
+          const slots = CUSTOM_PLUSHIE_SLOTS;
+          const slot = slots[plushIdx % slots.length];
+          const yJitter = Math.floor(plushIdx / slots.length) * 0.35;
+          g.position.set(slot[0], slot[1] + yJitter, slot[2]);
+          g.rotation.y = Math.PI + (Math.random() - 0.5) * 0.3;
+          plushIdx++;
+        } else {
+          g = makeCustomChewToy(r.id);
+          const slots = CUSTOM_CHEW_SLOTS;
+          const slot = slots[chewIdx % slots.length];
+          const yJitter = Math.floor(chewIdx / slots.length) * 0.2;
+          g.position.set(slot[0], slot[1] + yJitter, slot[2]);
+          g.rotation.y = (Math.random() - 0.5) * Math.PI;
+          chewIdx++;
+        }
+        scene.add(g);
+        customMerchGroups.set(r.id, g);
+      }
+      for (const [id, g] of customMerchGroups) {
+        if (!seen.has(id)) {
+          scene.remove(g);
+          customMerchGroups.delete(id);
         }
       }
     }
@@ -667,6 +730,7 @@ export function BakeryWorld3D({
       ensureCustomerFigs(customersRef.current);
       syncFurniture();
       syncGiftedPets();
+      syncCustomMerch();
       updateGhost();
 
       // Supermarket sliding doors — animated even when paused so they can
@@ -878,6 +942,8 @@ export function BakeryWorld3D({
       customerFigs.forEach((cf) => cf.fig.dispose());
       giftedPetGroups.forEach((g) => scene.remove(g));
       giftedPetGroups.clear();
+      customMerchGroups.forEach((g) => scene.remove(g));
+      customMerchGroups.clear();
       disposeAllCachedTextures();
       disposeAllSharedMaterials();
       disposeAllFurnitureMaterials();

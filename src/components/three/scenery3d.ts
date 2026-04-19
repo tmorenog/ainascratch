@@ -918,6 +918,167 @@ function makePlushie(
   return g;
 }
 
+/** Pastel palette cycled through for custom plushies / chew toys so each
+ *  chef-made merch item has its own cheerful color. */
+const CUSTOM_MERCH_PALETTE = [
+  "#f7b8c8",
+  "#a6d8f0",
+  "#ffe66a",
+  "#a6f0a1",
+  "#d0a7ff",
+  "#ffc380",
+  "#ff8cb3",
+  "#7fd6ff",
+];
+
+/** Build a tiny chef-made plushie figure (generic rounded blob with ears and
+ *  a bow). Different hashId values produce different colors / accents so
+ *  every custom creation has a distinct look on the display shelf. */
+export function makeCustomPlushie(hashId: string): THREE.Group {
+  const g = new THREE.Group();
+  g.name = "custom_plushie";
+  let h = 0;
+  for (let i = 0; i < hashId.length; i++) h = (h * 31 + hashId.charCodeAt(i)) >>> 0;
+  const bodyColor = CUSTOM_MERCH_PALETTE[h % CUSTOM_MERCH_PALETTE.length];
+  const accent = CUSTOM_MERCH_PALETTE[(h >>> 3) % CUSTOM_MERCH_PALETTE.length];
+  const bow = CUSTOM_MERCH_PALETTE[(h >>> 6) % CUSTOM_MERCH_PALETTE.length];
+  const soft = (c: string) =>
+    mat({ color: c, roughness: 0.95, metalness: 0 });
+
+  // body
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.1, 14, 12), soft(bodyColor));
+  body.position.y = 0.1;
+  body.scale.set(1, 0.85, 0.95);
+  g.add(body);
+  // head
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.08, 14, 12), soft(bodyColor));
+  head.position.y = 0.24;
+  g.add(head);
+  // belly patch
+  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 10), soft(accent));
+  belly.position.set(0, 0.08, 0.05);
+  belly.scale.set(1, 0.9, 0.4);
+  g.add(belly);
+  // rounded ears (shape varies with hash)
+  const earGeo =
+    h % 3 === 0
+      ? new THREE.CapsuleGeometry(0.018, 0.06, 4, 8)
+      : h % 3 === 1
+        ? new THREE.ConeGeometry(0.028, 0.055, 8)
+        : new THREE.SphereGeometry(0.035, 10, 8);
+  const earL = new THREE.Mesh(earGeo, soft(bodyColor));
+  earL.position.set(-0.055, 0.32, 0);
+  const earR = new THREE.Mesh(earGeo, soft(bodyColor));
+  earR.position.set(0.055, 0.32, 0);
+  g.add(earL, earR);
+  // eyes
+  const eyeM = soft("#1a1a1a");
+  const eyeGeo = new THREE.SphereGeometry(0.008, 8, 6);
+  const eL = new THREE.Mesh(eyeGeo, eyeM);
+  eL.position.set(-0.022, 0.25, 0.075);
+  const eR = new THREE.Mesh(eyeGeo, eyeM);
+  eR.position.set(0.022, 0.25, 0.075);
+  g.add(eL, eR);
+  // bow on the head
+  const bowLeft = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), soft(bow));
+  bowLeft.position.set(-0.03, 0.33, 0.02);
+  bowLeft.scale.set(1, 0.5, 0.4);
+  const bowRight = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), soft(bow));
+  bowRight.position.set(0.03, 0.33, 0.02);
+  bowRight.scale.set(1, 0.5, 0.4);
+  const bowKnot = new THREE.Mesh(new THREE.SphereGeometry(0.016, 10, 8), soft(bow));
+  bowKnot.position.set(0, 0.33, 0.03);
+  g.add(bowLeft, bowRight, bowKnot);
+  // little shadow
+  const blob = new THREE.Mesh(
+    new THREE.CircleGeometry(0.09, 18),
+    mat({ color: "#000", transparent: true, opacity: 0.15, roughness: 1 }),
+  );
+  blob.rotation.x = -Math.PI / 2;
+  blob.position.y = 0.002;
+  g.add(blob);
+  return g;
+}
+
+/** Build a small chef-made chew toy — chunky rubber shape with a pastel
+ *  accent, sitting on the toy rack. Shape varies per hash for variety. */
+export function makeCustomChewToy(hashId: string): THREE.Group {
+  const g = new THREE.Group();
+  g.name = "custom_chew_toy";
+  let h = 0;
+  for (let i = 0; i < hashId.length; i++) h = (h * 31 + hashId.charCodeAt(i)) >>> 0;
+  const main = CUSTOM_MERCH_PALETTE[h % CUSTOM_MERCH_PALETTE.length];
+  const accent = CUSTOM_MERCH_PALETTE[(h >>> 4) % CUSTOM_MERCH_PALETTE.length];
+  const soft = (c: string) =>
+    mat({ color: c, roughness: 0.55, metalness: 0 });
+
+  const shape = h % 3;
+  if (shape === 0) {
+    // mini rubber bone
+    const lobeL = new THREE.Mesh(new THREE.SphereGeometry(0.04, 10, 8), soft(main));
+    lobeL.position.set(-0.08, 0.06, 0);
+    const lobeR = new THREE.Mesh(new THREE.SphereGeometry(0.04, 10, 8), soft(main));
+    lobeR.position.set(0.08, 0.06, 0);
+    const bar = new THREE.Mesh(
+      new THREE.BoxGeometry(0.16, 0.04, 0.04),
+      soft(main),
+    );
+    bar.position.set(0, 0.06, 0);
+    g.add(lobeL, lobeR, bar);
+  } else if (shape === 1) {
+    // ball
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(0.06, 14, 10), soft(main));
+    ball.position.y = 0.06;
+    g.add(ball);
+    // stripe
+    const stripe = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.008, 8, 14), soft(accent));
+    stripe.rotation.x = Math.PI / 2;
+    stripe.position.y = 0.06;
+    g.add(stripe);
+  } else {
+    // rope knot
+    const knotL = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), soft(main));
+    knotL.position.set(-0.05, 0.04, 0);
+    const knotR = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), soft(accent));
+    knotR.position.set(0.05, 0.04, 0);
+    const rope = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.018, 0.018, 0.08, 10),
+      soft("#e8d7a8"),
+    );
+    rope.rotation.z = Math.PI / 2;
+    rope.position.y = 0.04;
+    g.add(knotL, knotR, rope);
+  }
+  // tiny shadow
+  const blob = new THREE.Mesh(
+    new THREE.CircleGeometry(0.06, 14),
+    mat({ color: "#000", transparent: true, opacity: 0.15, roughness: 1 }),
+  );
+  blob.rotation.x = -Math.PI / 2;
+  blob.position.y = 0.001;
+  g.add(blob);
+  return g;
+}
+
+/** Positions on the plushie shelf's top deck where custom plushies get
+ *  stacked once invented. Relative to shelf anchor (-4, 0, -6.15). */
+export const CUSTOM_PLUSHIE_SLOTS: Array<[number, number, number]> = [
+  [-4.9, 1.5, -6.15],
+  [-4.4, 1.5, -6.15],
+  [-3.9, 1.5, -6.15],
+  [-3.4, 1.5, -6.15],
+  [-2.9, 1.5, -6.15],
+];
+
+/** Positions near the pet station where custom chew toys pile up. */
+export const CUSTOM_CHEW_SLOTS: Array<[number, number, number]> = [
+  [-5.9, 0.95, -0.8],
+  [-5.9, 0.95, -1.3],
+  [-5.9, 0.95, -1.8],
+  [-5.6, 0.95, -0.8],
+  [-5.6, 0.95, -1.3],
+];
+
 export function buildPlushieShelf(): THREE.Group {
   const g = new THREE.Group();
   g.name = "plushie_shelf";
@@ -1058,6 +1219,132 @@ export function buildPlushieShelf(): THREE.Group {
   placardFrame.position.set(shelfX + 0.95, topShelfY + 0.17, shelfZ - 0.006);
   placardFrame.rotation.y = -0.1;
   g.add(placardFrame);
+
+  return g;
+}
+
+/* ---------------- CAT CAFE STAIRS ---------------- */
+/**
+ * A visible staircase in the back-right corner of the bakery hinting at a
+ * downstairs space. When unlocked (lv20), clicking on it takes the player
+ * to the Cat Cafe. Built from stacked wooden steps descending into a dark
+ * floor opening with a pastel handrail + "Cat Cafe" signboard.
+ */
+export function buildCatCafeStairs(): THREE.Group {
+  const g = new THREE.Group();
+  g.name = "cat_cafe_stairs";
+  const x = 5.5;
+  const z = -5.0;
+  const wood = mat({ color: "#8c5a36", roughness: 0.8 });
+  const step = mat({ color: "#d7a975", roughness: 0.7 });
+  const rail = mat({ color: "#f5a3c7", roughness: 0.5 });
+  const darkHole = mat({ color: "#2a1a14", roughness: 1 });
+  const signWhite = mat({ color: "#fff2da", roughness: 0.5 });
+
+  // Dark "hole" in the floor where the stairs go down — gives the illusion
+  // of a basement without actually punching through the floor mesh.
+  const hole = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.02, 1.6), darkHole);
+  hole.position.set(x, 0.005, z - 0.4);
+  g.add(hole);
+
+  // Wooden trim around the hole
+  const trimGeo = new THREE.BoxGeometry(1.7, 0.06, 0.08);
+  const trimN = new THREE.Mesh(trimGeo, wood);
+  trimN.position.set(x, 0.03, z - 1.2);
+  const trimS = new THREE.Mesh(trimGeo, wood);
+  trimS.position.set(x, 0.03, z + 0.4);
+  g.add(trimN, trimS);
+  const trimGeoWZ = new THREE.BoxGeometry(0.08, 0.06, 1.68);
+  const trimW = new THREE.Mesh(trimGeoWZ, wood);
+  trimW.position.set(x - 0.79, 0.03, z - 0.4);
+  const trimE = new THREE.Mesh(trimGeoWZ, wood);
+  trimE.position.set(x + 0.79, 0.03, z - 0.4);
+  g.add(trimW, trimE);
+
+  // Visible steps descending into the hole. Each step drops a bit and
+  // recedes — only the top few are visible, which is exactly what you'd
+  // see looking into a stairwell from above.
+  const stepGeo = new THREE.BoxGeometry(1.3, 0.04, 0.28);
+  for (let i = 0; i < 5; i++) {
+    const s = new THREE.Mesh(stepGeo, step);
+    s.position.set(x, -i * 0.08, z + 0.3 - i * 0.22);
+    g.add(s);
+  }
+
+  // Handrails — two sloping banisters.
+  const railGeo = new THREE.CylinderGeometry(0.03, 0.03, 1.5, 10);
+  const railL = new THREE.Mesh(railGeo, rail);
+  railL.position.set(x - 0.7, 0.45, z - 0.1);
+  railL.rotation.x = 0.55;
+  const railR = new THREE.Mesh(railGeo, rail);
+  railR.position.set(x + 0.7, 0.45, z - 0.1);
+  railR.rotation.x = 0.55;
+  g.add(railL, railR);
+  // Tiny newel posts at the top
+  const postGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.85, 10);
+  const postL = new THREE.Mesh(postGeo, rail);
+  postL.position.set(x - 0.7, 0.5, z + 0.45);
+  const postR = new THREE.Mesh(postGeo, rail);
+  postR.position.set(x + 0.7, 0.5, z + 0.45);
+  g.add(postL, postR);
+  // Ball tops on the newels (cute)
+  const ballGeo = new THREE.SphereGeometry(0.07, 10, 8);
+  const ballM = mat({ color: "#f7b8c8", roughness: 0.4 });
+  const ballL = new THREE.Mesh(ballGeo, ballM);
+  ballL.position.set(-0.7 + x, 0.95, z + 0.45);
+  const ballR = new THREE.Mesh(ballGeo, ballM);
+  ballR.position.set(0.7 + x, 0.95, z + 0.45);
+  g.add(ballL, ballR);
+
+  // Signboard above pointing down — "Cat Cafe ↓"
+  const signPost = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.025, 0.025, 1.8, 8),
+    wood,
+  );
+  signPost.position.set(x + 0.85, 1.4, z + 0.5);
+  g.add(signPost);
+  const sign = new THREE.Mesh(
+    new THREE.BoxGeometry(0.65, 0.35, 0.03),
+    signWhite,
+  );
+  sign.position.set(x + 1.15, 2.1, z + 0.5);
+  sign.rotation.y = -0.2;
+  g.add(sign);
+  const signFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(0.7, 0.4, 0.015),
+    rail,
+  );
+  signFrame.position.set(x + 1.15, 2.1, z + 0.49);
+  signFrame.rotation.y = -0.2;
+  g.add(signFrame);
+  // tiny paw print on the sign (circle + 4 dots)
+  const paw = mat({ color: "#8c5a36" });
+  const pawPad = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), paw);
+  pawPad.position.set(x + 0.95, 2.08, z + 0.47);
+  pawPad.scale.set(1, 0.4, 1);
+  g.add(pawPad);
+  for (let i = 0; i < 4; i++) {
+    const toe = new THREE.Mesh(
+      new THREE.SphereGeometry(0.022, 8, 6),
+      paw,
+    );
+    const ang = -Math.PI / 2 + (i - 1.5) * 0.4;
+    toe.position.set(
+      x + 0.95 + Math.cos(ang) * 0.085,
+      2.17,
+      z + 0.47 + Math.sin(ang) * 0.04,
+    );
+    toe.scale.set(1, 0.4, 1);
+    g.add(toe);
+  }
+  // arrow accent
+  const arrow = new THREE.Mesh(
+    new THREE.ConeGeometry(0.04, 0.12, 8),
+    paw,
+  );
+  arrow.position.set(x + 1.32, 1.95, z + 0.49);
+  arrow.rotation.z = Math.PI;
+  g.add(arrow);
 
   return g;
 }
