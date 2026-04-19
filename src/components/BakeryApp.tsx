@@ -15,6 +15,7 @@ import { DialogPanel } from "./three/DialogPanel";
 import { FurnitureShop } from "./three/FurnitureShop";
 import { FURNITURE_CATALOG } from "@/game/world3d";
 import { useGame } from "@/game/store";
+import { CozyMusic } from "@/game/music";
 import type { Customer, StationId } from "@/game/types";
 
 export function BakeryApp() {
@@ -37,6 +38,32 @@ export function BakeryApp() {
   const [prepStation, setPrepStation] = useState<StationId | null>(null);
   const [dialogCustomer, setDialogCustomer] = useState<Customer | null>(null);
   const [placingKind, setPlacingKind] = useState<string | null>(null);
+
+  // Cozy background music — starts on first user gesture
+  const musicRef = useRef<CozyMusic | null>(null);
+  const [muted, setMuted] = useState(false);
+  useEffect(() => {
+    const m = new CozyMusic();
+    m.restoreMutedFromStorage();
+    setMuted(m.muted);
+    musicRef.current = m;
+    const boot = () => {
+      m.start();
+      window.removeEventListener("pointerdown", boot);
+      window.removeEventListener("keydown", boot);
+    };
+    window.addEventListener("pointerdown", boot);
+    window.addEventListener("keydown", boot);
+    return () => {
+      m.stop();
+      window.removeEventListener("pointerdown", boot);
+      window.removeEventListener("keydown", boot);
+    };
+  }, []);
+  const toggleMute = () => {
+    musicRef.current?.toggleMute();
+    setMuted(musicRef.current?.muted ?? false);
+  };
 
   useEffect(() => {
     const unsub = useGame.persist.onFinishHydration(() => setHydrated(true));
@@ -152,6 +179,13 @@ export function BakeryApp() {
             className="rounded-full px-4 py-2 bg-cream-50 text-cocoa-700 font-bold shadow-bakery"
           >
             🛋️ Furniture
+          </button>
+          <button
+            onClick={toggleMute}
+            className="rounded-full px-4 py-2 bg-cream-50 text-cocoa-700 font-bold shadow-bakery"
+            title={muted ? "Unmute music" : "Mute music"}
+          >
+            {muted ? "🔇 Music" : "🎵 Music"}
           </button>
         </div>
       </main>
