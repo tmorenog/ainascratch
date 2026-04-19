@@ -53,6 +53,7 @@ export function PrepScene({
   const unlocked = useGame((s) => s.unlockedRecipeIds);
   const customRecipes = useGame((s) => s.customRecipes);
   const specialRecipeId = useGame((s) => s.specialRecipeId);
+  const playerLevel = useGame((s) => s.level);
   const slot = useGame((s) => (stationId ? s.prep[stationId] : undefined));
 
   const [now, setNow] = useState(() => Date.now());
@@ -72,10 +73,17 @@ export function PrepScene({
 
   if (!stationId) return null;
 
-  // Show base recipes (unlocked) + all the chef's own inventions that match
-  // this station. Specials float to the top so they're easy to re-make.
+  // Show base recipes (unlocked OR earned via current level) + all the
+  // chef's own inventions that match this station. Specials float to the
+  // top so they're easy to re-make. Checking the live level avoids stale
+  // unlock lists for returning players who jumped past an unlock gate.
   const recipes = [
-    ...RECIPES.filter((r) => r.station === stationId && unlocked.includes(r.id)),
+    ...RECIPES.filter(
+      (r) =>
+        r.station === stationId &&
+        (unlocked.includes(r.id) ||
+          (r.unlockLevel != null && playerLevel >= r.unlockLevel)),
+    ),
     ...customRecipes.filter((r) => r.station === stationId),
   ].sort((a, b) => {
     const aw = (a.id === specialRecipeId ? 2 : 0) + (a.isRecommended ? 1 : 0);

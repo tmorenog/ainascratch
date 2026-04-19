@@ -35,6 +35,7 @@ export function RecipeBook({
   const unlocked = useGame((s) => s.unlockedRecipeIds);
   const customRecipes = useGame((s) => s.customRecipes);
   const specialRecipeId = useGame((s) => s.specialRecipeId);
+  const playerLevel = useGame((s) => s.level);
   const removeCustomRecipe = useGame((s) => s.removeCustomRecipe);
   const setSpecial = useGame((s) => s.setSpecial);
   const toggleRecommended = useGame((s) => s.toggleRecommended);
@@ -83,7 +84,10 @@ export function RecipeBook({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {list.map((r) => {
-          const isUnlocked = r.isCustom || unlocked.includes(r.id);
+          const isUnlocked =
+            r.isCustom ||
+            unlocked.includes(r.id) ||
+            (r.unlockLevel != null && playerLevel >= r.unlockLevel);
           const isTheSpecial = r.id === specialRecipeId;
           return (
             <div

@@ -204,12 +204,19 @@ function pickOrder(
   unlocked: Set<string>,
   customRecipes: Recipe[],
   specialRecipeId: string | null,
+  playerLevel: number,
   hasPet?: "dog" | "cat",
 ): string[] {
+  // A base recipe is orderable if it's in the unlocked set OR the player
+  // has already reached its unlockLevel. Checking both keeps returning
+  // players from being blocked on a stale unlocked list.
+  const baseEligible = (r: Recipe): boolean =>
+    unlocked.has(r.id) ||
+    (r.unlockLevel != null && playerLevel >= r.unlockLevel);
   // Build a weighted candidate list. Special = 3x weight, recommended =
   // 1.8x. Custom recipes are always "unlocked" the moment they're invented.
   const pool: Recipe[] = [
-    ...RECIPES.filter((r) => unlocked.has(r.id)),
+    ...RECIPES.filter(baseEligible),
     ...customRecipes,
   ].filter((r) => r.category !== "pet");
   const weighted: Recipe[] = [];
@@ -231,9 +238,7 @@ function pickOrder(
   // so they get mixed into the pool when any are available.
   if (hasPet) {
     const safePool = [
-      ...RECIPES.filter(
-        (r) => r.category === "safe" && unlocked.has(r.id),
-      ),
+      ...RECIPES.filter((r) => r.category === "safe" && baseEligible(r)),
       ...customRecipes.filter((r) => r.category === "safe"),
     ];
     const defaultId = hasPet === "dog" ? "dog_bone" : "cat_fish";
@@ -256,6 +261,7 @@ function spawnCustomer(
   unlockedRecipeIds: string[],
   customRecipes: Recipe[],
   specialRecipeId: string | null,
+  playerLevel: number,
   difficulty: Difficulty,
 ): Customer {
   const archetype = randomChoice(CUSTOMER_ARCHETYPES);
@@ -264,6 +270,7 @@ function spawnCustomer(
     new Set(unlockedRecipeIds),
     customRecipes,
     specialRecipeId,
+    playerLevel,
     archetype.hasPet,
   );
   return {
@@ -909,6 +916,7 @@ export const useGame = create<GameState>()(
             s.unlockedRecipeIds,
             s.customRecipes,
             s.specialRecipeId,
+            s.level,
             s.difficulty,
           );
           // Once in a while (25/65 ≈ 38%) a "customer" is actually a robber
