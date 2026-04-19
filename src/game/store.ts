@@ -237,12 +237,26 @@ function pickOrder(
   // "Everyone-Safe" recipes are allergy-friendly and fine for pets too,
   // so they get mixed into the pool when any are available.
   if (hasPet) {
+    // Pet treat slot pool: the standard cookie/bone, plus any eligible
+    // pet-category items (chew toys at lv5+), plus Everyone-Safe recipes
+    // (allergy-friendly, OK for pets too).
     const safePool = [
       ...RECIPES.filter((r) => r.category === "safe" && baseEligible(r)),
       ...customRecipes.filter((r) => r.category === "safe"),
     ];
+    const petExtras = RECIPES.filter(
+      (r) =>
+        r.category === "pet" &&
+        baseEligible(r) &&
+        r.id !== "dog_bone" &&
+        r.id !== "cat_fish",
+    );
     const defaultId = hasPet === "dog" ? "dog_bone" : "cat_fish";
-    const petPool: string[] = [defaultId, ...safePool.map((r) => r.id)];
+    const petPool: string[] = [
+      defaultId,
+      ...safePool.map((r) => r.id),
+      ...petExtras.map((r) => r.id),
+    ];
     order.push(randomChoice(petPool));
   }
   return order;

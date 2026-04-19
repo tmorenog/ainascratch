@@ -812,6 +812,268 @@ const CatFishArt = () => (
   </g>
 );
 
+/* ---------- Plushies ---------- */
+
+const DonutBearPlushArt: React.FC = () => (
+  <g>
+    {/* body */}
+    <ellipse cx="50" cy="70" rx="22" ry="20" fill="#a9784e" />
+    <ellipse cx="50" cy="73" rx="14" ry="12" fill="#e6c79a" />
+    {/* feet */}
+    <ellipse cx="40" cy="86" rx="7" ry="4" fill="#a9784e" />
+    <ellipse cx="60" cy="86" rx="7" ry="4" fill="#a9784e" />
+    <ellipse cx="40" cy="86" rx="3.5" ry="2" fill="#e6c79a" />
+    <ellipse cx="60" cy="86" rx="3.5" ry="2" fill="#e6c79a" />
+    {/* arms */}
+    <ellipse cx="27" cy="68" rx="7" ry="6" fill="#a9784e" />
+    <ellipse cx="73" cy="68" rx="7" ry="6" fill="#a9784e" />
+    {/* head */}
+    <circle cx="50" cy="43" r="17" fill="#a9784e" />
+    {/* ears */}
+    <circle cx="37" cy="30" r="6" fill="#a9784e" />
+    <circle cx="63" cy="30" r="6" fill="#a9784e" />
+    <circle cx="37" cy="30" r="3" fill="#e6c79a" />
+    <circle cx="63" cy="30" r="3" fill="#e6c79a" />
+    {/* snout */}
+    <ellipse cx="50" cy="49" rx="7" ry="5" fill="#e6c79a" />
+    {/* nose + smile */}
+    <ellipse cx="50" cy="46" rx="2.5" ry="1.8" fill="#3d1d0c" />
+    <path d="M46 51 q4 3 8 0" fill="none" stroke="#3d1d0c" strokeWidth="1.2" strokeLinecap="round" />
+    {/* eyes */}
+    <circle cx="43" cy="40" r="2" fill="#1a1a1a" />
+    <circle cx="57" cy="40" r="2" fill="#1a1a1a" />
+    <circle cx="43.6" cy="39.4" r="0.7" fill="#fff" />
+    <circle cx="57.6" cy="39.4" r="0.7" fill="#fff" />
+    {/* donut hat */}
+    <ellipse cx="50" cy="22" rx="18" ry="6" fill="#f5a3c7" />
+    <ellipse cx="50" cy="22" rx="6" ry="2.5" fill="#a9784e" />
+    {/* sprinkles */}
+    <rect x="37" y="20" width="2.5" height="1" rx="0.5" fill="#ffe66a" transform="rotate(20 38 21)" />
+    <rect x="55" y="20" width="2.5" height="1" rx="0.5" fill="#7fd6ff" transform="rotate(-30 56 21)" />
+    <rect x="44" y="17" width="2.5" height="1" rx="0.5" fill="#a6f0a1" transform="rotate(50 45 18)" />
+    <rect x="60" y="24" width="2.5" height="1" rx="0.5" fill="#ff8cb3" transform="rotate(15 61 25)" />
+    <rect x="40" y="25" width="2.5" height="1" rx="0.5" fill="#d0a7ff" transform="rotate(-40 41 26)" />
+    <ellipse cx="50" cy="20" rx="10" ry="1.6" fill="url(#shine)" />
+  </g>
+);
+
+const CroissantCatPlushArt: React.FC = () => (
+  <g>
+    {/* croissant base (tan crescent) */}
+    <ellipse cx="50" cy="78" rx="32" ry="11" fill="#d4a56a" />
+    <ellipse cx="50" cy="76" rx="32" ry="9" fill="#c08a4a" />
+    {/* croissant ridges */}
+    <ellipse cx="30" cy="74" rx="5" ry="4" fill="#d4a56a" />
+    <ellipse cx="40" cy="72" rx="5" ry="4" fill="#d4a56a" />
+    <ellipse cx="50" cy="71" rx="5" ry="4" fill="#d4a56a" />
+    <ellipse cx="60" cy="72" rx="5" ry="4" fill="#d4a56a" />
+    <ellipse cx="70" cy="74" rx="5" ry="4" fill="#d4a56a" />
+    {/* chocolate drizzle */}
+    <path d="M28 72 q6 -4 10 0 t10 0 t10 0 t10 0 t8 0" fill="none" stroke="#5b3321" strokeWidth="3" strokeLinecap="round" />
+    {/* cat body peeking out */}
+    <ellipse cx="50" cy="58" rx="14" ry="12" fill="#f0e1c0" />
+    {/* head */}
+    <circle cx="50" cy="42" r="14" fill="#f0e1c0" />
+    {/* triangle ears */}
+    <path d="M38 32 L36 20 L46 28 Z" fill="#f0e1c0" />
+    <path d="M62 32 L64 20 L54 28 Z" fill="#f0e1c0" />
+    <path d="M40 30 L39 24 L44 28 Z" fill="#f7b8c8" />
+    <path d="M60 30 L61 24 L56 28 Z" fill="#f7b8c8" />
+    {/* nose */}
+    <path d="M48 45 q2 2 4 0 z" fill="#f7b8c8" />
+    {/* mouth */}
+    <path d="M48 47 q2 1.5 4 0" fill="none" stroke="#7a3f20" strokeWidth="1" strokeLinecap="round" />
+    <path d="M52 47 q2 1.5 4 0" fill="none" stroke="#7a3f20" strokeWidth="1" strokeLinecap="round" />
+    {/* whiskers */}
+    <line x1="38" y1="46" x2="30" y2="45" stroke="#7a3f20" strokeWidth="0.6" />
+    <line x1="38" y1="48" x2="30" y2="49" stroke="#7a3f20" strokeWidth="0.6" />
+    <line x1="62" y1="46" x2="70" y2="45" stroke="#7a3f20" strokeWidth="0.6" />
+    <line x1="62" y1="48" x2="70" y2="49" stroke="#7a3f20" strokeWidth="0.6" />
+    {/* eyes (closed, smiling) */}
+    <path d="M42 40 q2 -2 4 0" fill="none" stroke="#1a1a1a" strokeWidth="1.6" strokeLinecap="round" />
+    <path d="M54 40 q2 -2 4 0" fill="none" stroke="#1a1a1a" strokeWidth="1.6" strokeLinecap="round" />
+    {/* curled tail */}
+    <path d="M78 66 q6 -4 4 -12 q-2 -6 -8 -4" fill="none" stroke="#f0e1c0" strokeWidth="5" strokeLinecap="round" />
+  </g>
+);
+
+const CupcakeBunnyPlushArt: React.FC = () => (
+  <g>
+    {/* cupcake wrapper (ridged trapezoid) */}
+    <path d="M28 88 L32 68 L68 68 L72 88 Z" fill="#eb74a5" />
+    <path d="M33 88 L35 68 M40 88 L41 68 M47 88 L47 68 M53 88 L53 68 M60 88 L59 68 M67 88 L65 68"
+      stroke="#c05584" strokeWidth="1" />
+    {/* frosting cushion */}
+    <path d="M26 68 q12 -14 24 -14 q12 0 24 14 Z" fill="#ffd6e4" />
+    <path d="M28 66 q10 -8 22 -8 q12 0 22 8" fill="none" stroke="#f5a3c7" strokeWidth="1" />
+    {/* sprinkles */}
+    <rect x="38" y="60" width="3" height="1" rx="0.5" fill="#ffe66a" transform="rotate(30 39 60)" />
+    <rect x="56" y="61" width="3" height="1" rx="0.5" fill="#7fd6ff" transform="rotate(-20 57 61)" />
+    <rect x="48" y="57" width="3" height="1" rx="0.5" fill="#a6f0a1" />
+    {/* bunny body */}
+    <ellipse cx="50" cy="50" rx="14" ry="11" fill="#fff4ec" />
+    {/* head */}
+    <circle cx="50" cy="35" r="12" fill="#fff4ec" />
+    {/* ears */}
+    <ellipse cx="43" cy="16" rx="4" ry="11" fill="#fff4ec" />
+    <ellipse cx="57" cy="16" rx="4" ry="11" fill="#fff4ec" />
+    <ellipse cx="43" cy="17" rx="2" ry="8" fill="#f7b8c8" />
+    <ellipse cx="57" cy="17" rx="2" ry="8" fill="#f7b8c8" />
+    {/* cheeks */}
+    <circle cx="40" cy="38" r="2.5" fill="#f7b8c8" opacity="0.6" />
+    <circle cx="60" cy="38" r="2.5" fill="#f7b8c8" opacity="0.6" />
+    {/* nose */}
+    <path d="M48 37 q2 1.5 4 0 q-2 2 -4 0 z" fill="#f7b8c8" />
+    {/* mouth */}
+    <path d="M50 38 v1.5 M48 40 q2 1.2 4 0" fill="none" stroke="#7a3f20" strokeWidth="0.8" strokeLinecap="round" />
+    {/* eyes */}
+    <ellipse cx="44" cy="33" rx="1.8" ry="2.2" fill="#1a1a1a" />
+    <ellipse cx="56" cy="33" rx="1.8" ry="2.2" fill="#1a1a1a" />
+    <circle cx="44.5" cy="32.3" r="0.7" fill="#fff" />
+    <circle cx="56.5" cy="32.3" r="0.7" fill="#fff" />
+  </g>
+);
+
+const CoffeeCupPuppyPlushArt: React.FC = () => (
+  <g>
+    {/* paper sleeve */}
+    <rect x="26" y="70" width="48" height="10" rx="1" fill="#c88f5a" />
+    {/* cup */}
+    <path d="M28 52 L30 90 L70 90 L72 52 Z" fill="#fbfbfb" />
+    <path d="M28 52 L30 90 L70 90 L72 52 Z" fill="none" stroke="#e0e0e0" strokeWidth="0.8" />
+    {/* sleeve text line */}
+    <rect x="30" y="74" width="40" height="2" rx="1" fill="#8c5a36" opacity="0.5" />
+    {/* handle */}
+    <path d="M72 60 q10 4 10 14 q0 10 -10 14" fill="none" stroke="#fbfbfb" strokeWidth="3" />
+    {/* coffee inside */}
+    <ellipse cx="50" cy="52" rx="22" ry="3" fill="#5b3321" />
+    <ellipse cx="50" cy="51" rx="22" ry="2" fill="#7a4a2f" opacity="0.7" />
+    {/* steam */}
+    <path d="M40 42 q-3 -4 0 -8 q3 -4 0 -8" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" opacity="0.7" />
+    <path d="M60 42 q3 -4 0 -8 q-3 -4 0 -8" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" opacity="0.7" />
+    {/* puppy head peeking */}
+    <circle cx="50" cy="35" r="15" fill="#b3845a" />
+    {/* floppy ears */}
+    <ellipse cx="35" cy="36" rx="5" ry="9" fill="#8c5a36" />
+    <ellipse cx="65" cy="36" rx="5" ry="9" fill="#8c5a36" />
+    {/* snout */}
+    <ellipse cx="50" cy="40" rx="7" ry="5" fill="#eccfa2" />
+    {/* nose */}
+    <ellipse cx="50" cy="37" rx="2.5" ry="1.8" fill="#1a1a1a" />
+    {/* mouth */}
+    <path d="M50 39 v2 M46 43 q4 2 8 0" fill="none" stroke="#1a1a1a" strokeWidth="0.9" strokeLinecap="round" />
+    {/* tongue */}
+    <ellipse cx="50" cy="44" rx="1.5" ry="1" fill="#f7b8c8" />
+    {/* eyes */}
+    <circle cx="43" cy="31" r="2" fill="#1a1a1a" />
+    <circle cx="57" cy="31" r="2" fill="#1a1a1a" />
+    <circle cx="43.6" cy="30.3" r="0.7" fill="#fff" />
+    <circle cx="57.6" cy="30.3" r="0.7" fill="#fff" />
+  </g>
+);
+
+/* ---------- Chew toys ---------- */
+
+const RubberBoneToyArt: React.FC = () => (
+  <g>
+    {/* squishy rubber bone — bright red */}
+    <ellipse cx="22" cy="34" rx="12" ry="10" fill="#e74a4a" />
+    <ellipse cx="22" cy="56" rx="12" ry="10" fill="#e74a4a" />
+    <rect x="22" y="36" width="56" height="18" rx="6" fill="#e74a4a" />
+    <ellipse cx="78" cy="34" rx="12" ry="10" fill="#e74a4a" />
+    <ellipse cx="78" cy="56" rx="12" ry="10" fill="#e74a4a" />
+    {/* highlights */}
+    <ellipse cx="22" cy="32" rx="6" ry="3" fill="#ff8a8a" opacity="0.7" />
+    <ellipse cx="78" cy="32" rx="6" ry="3" fill="#ff8a8a" opacity="0.7" />
+    <rect x="30" y="40" width="40" height="3" rx="1.5" fill="#ff8a8a" opacity="0.6" />
+    {/* little squeaker hole in the middle */}
+    <circle cx="50" cy="48" r="3" fill="#7a1a1a" />
+    <circle cx="50" cy="48" r="1.4" fill="#3a0808" />
+    {/* tag */}
+    <rect x="60" y="68" width="14" height="10" rx="2" fill="#fff8ec" />
+    <line x1="62" y1="73" x2="72" y2="73" stroke="#a07a4a" strokeWidth="0.8" />
+    <circle cx="60" cy="70" r="1.2" fill="#a07a4a" />
+  </g>
+);
+
+const RopeTugToyArt: React.FC = () => (
+  <g>
+    {/* rope tug with rainbow segments */}
+    {/* knots on each end */}
+    <ellipse cx="18" cy="50" rx="9" ry="11" fill="#e74a4a" />
+    <ellipse cx="18" cy="50" rx="9" ry="11" fill="none" stroke="#a02828" strokeWidth="1" />
+    <ellipse cx="82" cy="50" rx="9" ry="11" fill="#7fd6ff" />
+    <ellipse cx="82" cy="50" rx="9" ry="11" fill="none" stroke="#3aa8d4" strokeWidth="1" />
+    {/* rope segments — twisted appearance */}
+    <rect x="26" y="42" width="12" height="16" rx="3" fill="#ffe66a" />
+    <rect x="38" y="42" width="12" height="16" rx="3" fill="#a6f0a1" />
+    <rect x="50" y="42" width="12" height="16" rx="3" fill="#f5a3c7" />
+    <rect x="62" y="42" width="12" height="16" rx="3" fill="#d0a7ff" />
+    {/* twist lines */}
+    <path d="M26 50 q3 -4 6 0 t6 0 t6 0 t6 0 t6 0 t6 0 t6 0 t6 0" fill="none" stroke="#0008" strokeWidth="0.6" opacity="0.4" />
+    <path d="M26 50 q3 4 6 0 t6 0 t6 0 t6 0 t6 0 t6 0 t6 0 t6 0" fill="none" stroke="#fff" strokeWidth="0.6" opacity="0.5" />
+    {/* knot frizz */}
+    <line x1="10" y1="42" x2="6" y2="38" stroke="#a02828" strokeWidth="1.2" strokeLinecap="round" />
+    <line x1="10" y1="50" x2="4" y2="50" stroke="#a02828" strokeWidth="1.2" strokeLinecap="round" />
+    <line x1="10" y1="58" x2="6" y2="62" stroke="#a02828" strokeWidth="1.2" strokeLinecap="round" />
+    <line x1="90" y1="42" x2="94" y2="38" stroke="#3aa8d4" strokeWidth="1.2" strokeLinecap="round" />
+    <line x1="90" y1="50" x2="96" y2="50" stroke="#3aa8d4" strokeWidth="1.2" strokeLinecap="round" />
+    <line x1="90" y1="58" x2="94" y2="62" stroke="#3aa8d4" strokeWidth="1.2" strokeLinecap="round" />
+  </g>
+);
+
+const FeatherWandToyArt: React.FC = () => (
+  <g>
+    {/* wand handle (diagonal) */}
+    <line x1="20" y1="86" x2="62" y2="44" stroke="#a07a4a" strokeWidth="3.5" strokeLinecap="round" />
+    {/* handle wrap */}
+    <line x1="20" y1="86" x2="32" y2="74" stroke="#7c5236" strokeWidth="4.5" strokeLinecap="round" />
+    {/* dangling string */}
+    <line x1="62" y1="44" x2="60" y2="36" stroke="#5c3a22" strokeWidth="0.8" />
+    {/* feathers (cluster) */}
+    <ellipse cx="56" cy="28" rx="4" ry="14" fill="#7fd6ff" transform="rotate(-30 56 28)" />
+    <ellipse cx="62" cy="22" rx="4" ry="16" fill="#f5a3c7" transform="rotate(-10 62 22)" />
+    <ellipse cx="68" cy="26" rx="4" ry="14" fill="#a6f0a1" transform="rotate(15 68 26)" />
+    <ellipse cx="72" cy="34" rx="4" ry="12" fill="#ffe66a" transform="rotate(35 72 34)" />
+    {/* feather quills */}
+    <line x1="56" y1="28" x2="60" y2="38" stroke="#0006" strokeWidth="0.5" />
+    <line x1="62" y1="22" x2="62" y2="38" stroke="#0006" strokeWidth="0.5" />
+    <line x1="68" y1="26" x2="64" y2="38" stroke="#0006" strokeWidth="0.5" />
+    <line x1="72" y1="34" x2="64" y2="42" stroke="#0006" strokeWidth="0.5" />
+    {/* sparkle bell */}
+    <circle cx="58" cy="42" r="3" fill="#f5b93b" />
+    <circle cx="58" cy="42" r="3" fill="none" stroke="#a07a1a" strokeWidth="0.6" />
+    <circle cx="57" cy="41" r="0.8" fill="#fff" opacity="0.8" />
+  </g>
+);
+
+const TennisBallToyArt: React.FC = () => (
+  <g>
+    {/* shadow */}
+    <ellipse cx="50" cy="84" rx="22" ry="3" fill="#000" opacity="0.15" />
+    {/* ball */}
+    <circle cx="50" cy="50" r="28" fill="#d2e85a" />
+    <circle cx="50" cy="50" r="28" fill="url(#shine)" />
+    {/* fuzzy texture (tiny dots) */}
+    <circle cx="38" cy="34" r="0.8" fill="#a8c44a" />
+    <circle cx="46" cy="30" r="0.8" fill="#a8c44a" />
+    <circle cx="56" cy="32" r="0.8" fill="#a8c44a" />
+    <circle cx="64" cy="38" r="0.8" fill="#a8c44a" />
+    <circle cx="32" cy="46" r="0.8" fill="#a8c44a" />
+    <circle cx="68" cy="48" r="0.8" fill="#a8c44a" />
+    <circle cx="36" cy="60" r="0.8" fill="#a8c44a" />
+    <circle cx="64" cy="62" r="0.8" fill="#a8c44a" />
+    <circle cx="48" cy="68" r="0.8" fill="#a8c44a" />
+    {/* iconic tennis-ball curves */}
+    <path d="M22 50 q14 -22 28 -8 q14 14 28 -8" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+    <path d="M22 56 q14 22 28 8 q14 -14 28 8" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+    {/* bounce dashes */}
+    <line x1="14" y1="40" x2="10" y2="36" stroke="#7c8c2c" strokeWidth="1.5" strokeLinecap="round" />
+    <line x1="86" y1="40" x2="90" y2="36" stroke="#7c8c2c" strokeWidth="1.5" strokeLinecap="round" />
+    <line x1="50" y1="14" x2="50" y2="10" stroke="#7c8c2c" strokeWidth="1.5" strokeLinecap="round" />
+  </g>
+);
+
 /* ---------- Registry ---------- */
 
 const FOOD_ART_BY_ID: Record<string, React.FC> = {
@@ -843,6 +1105,14 @@ const FOOD_ART_BY_ID: Record<string, React.FC> = {
   olive_oil_cake: OliveOilCakeArt,
   dog_bone: DogBoneArt,
   cat_fish: CatFishArt,
+  donut_bear_plush: DonutBearPlushArt,
+  croissant_cat_plush: CroissantCatPlushArt,
+  cupcake_bunny_plush: CupcakeBunnyPlushArt,
+  coffee_cup_puppy_plush: CoffeeCupPuppyPlushArt,
+  rubber_bone_toy: RubberBoneToyArt,
+  rope_tug_toy: RopeTugToyArt,
+  feather_wand_toy: FeatherWandToyArt,
+  tennis_ball_toy: TennisBallToyArt,
 };
 
 export function FoodArt({

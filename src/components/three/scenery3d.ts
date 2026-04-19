@@ -582,6 +582,486 @@ export function buildPantry(): THREE.Group {
   return g;
 }
 
+/* ---------------- PLUSHIE DISPLAY SHELF ----------------
+ * A dedicated wooden shelf against the back wall (opposite side from the
+ * pantry) holding the four themed bakery plushies: Donut Bear, Croissant
+ * Cat, Cupcake Bunny, and Coffee Cup Puppy. They're built from simple
+ * primitives so they read clearly from across the room.
+ */
+
+/** Build a single plushie figure from primitives, centered on the origin.
+ *  Returns a group you can `position.set(x, shelfY, z)` directly. Each
+ *  plushie is roughly 0.3m tall so four fit comfortably side by side. */
+function makePlushie(
+  kind: "donut_bear" | "croissant_cat" | "cupcake_bunny" | "coffee_puppy",
+): THREE.Group {
+  const g = new THREE.Group();
+  g.name = `plushie_${kind}`;
+  const soft = (color: string) => mat({ color, roughness: 0.95, metalness: 0 });
+
+  if (kind === "donut_bear") {
+    const fur = soft("#a9784e");
+    const belly = soft("#e6c79a");
+    // body
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.11, 14, 12), fur);
+    body.position.y = 0.11;
+    body.scale.set(1, 0.85, 0.95);
+    g.add(body);
+    // belly patch
+    const bellyM = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 10), belly);
+    bellyM.position.set(0, 0.09, 0.06);
+    bellyM.scale.set(1, 0.9, 0.4);
+    g.add(bellyM);
+    // head
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.09, 14, 12), fur);
+    head.position.y = 0.27;
+    g.add(head);
+    // ears
+    const earGeo = new THREE.SphereGeometry(0.035, 10, 8);
+    const earL = new THREE.Mesh(earGeo, fur);
+    earL.position.set(-0.065, 0.34, 0);
+    const earR = new THREE.Mesh(earGeo, fur);
+    earR.position.set(0.065, 0.34, 0);
+    g.add(earL, earR);
+    // snout
+    const snout = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), belly);
+    snout.position.set(0, 0.255, 0.075);
+    g.add(snout);
+    // nose
+    const nose = new THREE.Mesh(
+      new THREE.SphereGeometry(0.01, 8, 6),
+      soft("#3d1d0c"),
+    );
+    nose.position.set(0, 0.27, 0.1);
+    g.add(nose);
+    // eyes
+    const eyeM = soft("#1a1a1a");
+    const eyeGeo = new THREE.SphereGeometry(0.008, 8, 6);
+    const eL = new THREE.Mesh(eyeGeo, eyeM);
+    eL.position.set(-0.025, 0.285, 0.085);
+    const eR = new THREE.Mesh(eyeGeo, eyeM);
+    eR.position.set(0.025, 0.285, 0.085);
+    g.add(eL, eR);
+    // arms & legs (little nubs)
+    const nubGeo = new THREE.SphereGeometry(0.035, 10, 8);
+    const armL = new THREE.Mesh(nubGeo, fur);
+    armL.position.set(-0.11, 0.12, 0);
+    const armR = new THREE.Mesh(nubGeo, fur);
+    armR.position.set(0.11, 0.12, 0);
+    g.add(armL, armR);
+    // donut hat on head (torus with pink glaze)
+    const donut = new THREE.Mesh(
+      new THREE.TorusGeometry(0.055, 0.022, 10, 20),
+      soft("#f5a3c7"),
+    );
+    donut.position.set(0, 0.36, 0);
+    donut.rotation.x = Math.PI / 2;
+    g.add(donut);
+    // rainbow sprinkles
+    const sprinkleColors = ["#ffe66a", "#7fd6ff", "#ff8cb3", "#a6f0a1"];
+    for (let i = 0; i < 8; i++) {
+      const s = new THREE.Mesh(
+        new THREE.BoxGeometry(0.006, 0.003, 0.003),
+        soft(sprinkleColors[i % sprinkleColors.length]),
+      );
+      const ang = (i / 8) * Math.PI * 2;
+      s.position.set(Math.cos(ang) * 0.055, 0.375, Math.sin(ang) * 0.055);
+      s.rotation.y = ang + Math.random() * 0.5;
+      g.add(s);
+    }
+  } else if (kind === "croissant_cat") {
+    const fur = soft("#f0e1c0");
+    const pink = soft("#f7b8c8");
+    const choc = soft("#6b3a1e");
+    // croissant base (tan crescent) — two flattened spheres + top
+    const croissBase = new THREE.Mesh(
+      new THREE.SphereGeometry(0.12, 14, 10),
+      soft("#d4a56a"),
+    );
+    croissBase.position.y = 0.08;
+    croissBase.scale.set(1.1, 0.55, 0.8);
+    g.add(croissBase);
+    // ridged top of croissant
+    for (let i = 0; i < 4; i++) {
+      const ridge = new THREE.Mesh(
+        new THREE.SphereGeometry(0.03, 8, 6),
+        soft("#c08a4a"),
+      );
+      ridge.position.set(-0.06 + i * 0.04, 0.13, -0.02);
+      ridge.scale.set(1, 0.6, 1);
+      g.add(ridge);
+    }
+    // chocolate drizzle puddle
+    const choco = new THREE.Mesh(
+      new THREE.SphereGeometry(0.07, 12, 8),
+      choc,
+    );
+    choco.position.set(0, 0.13, 0.03);
+    choco.scale.set(1, 0.15, 0.7);
+    g.add(choco);
+    // kitty body (sitting in croissant)
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.08, 14, 12), fur);
+    body.position.y = 0.195;
+    body.scale.set(1, 0.9, 0.9);
+    g.add(body);
+    // head
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.075, 14, 12), fur);
+    head.position.y = 0.3;
+    g.add(head);
+    // triangle ears
+    const earGeo = new THREE.ConeGeometry(0.025, 0.05, 8);
+    const earL = new THREE.Mesh(earGeo, fur);
+    earL.position.set(-0.045, 0.365, 0);
+    const earR = new THREE.Mesh(earGeo, fur);
+    earR.position.set(0.045, 0.365, 0);
+    g.add(earL, earR);
+    // inner ears
+    const innerEarL = new THREE.Mesh(
+      new THREE.ConeGeometry(0.012, 0.025, 8),
+      pink,
+    );
+    innerEarL.position.set(-0.045, 0.37, 0.006);
+    const innerEarR = new THREE.Mesh(
+      new THREE.ConeGeometry(0.012, 0.025, 8),
+      pink,
+    );
+    innerEarR.position.set(0.045, 0.37, 0.006);
+    g.add(innerEarL, innerEarR);
+    // pink nose
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.008, 8, 6), pink);
+    nose.position.set(0, 0.295, 0.072);
+    g.add(nose);
+    // eyes
+    const eyeM = soft("#1a1a1a");
+    const eL = new THREE.Mesh(new THREE.SphereGeometry(0.007, 8, 6), eyeM);
+    eL.position.set(-0.022, 0.315, 0.068);
+    const eR = new THREE.Mesh(new THREE.SphereGeometry(0.007, 8, 6), eyeM);
+    eR.position.set(0.022, 0.315, 0.068);
+    g.add(eL, eR);
+    // tail (curled, sticking out of croissant)
+    const tail = new THREE.Mesh(
+      new THREE.TorusGeometry(0.03, 0.012, 8, 16, Math.PI),
+      fur,
+    );
+    tail.position.set(0.11, 0.13, 0);
+    tail.rotation.y = Math.PI / 2;
+    g.add(tail);
+  } else if (kind === "cupcake_bunny") {
+    const fur = soft("#fff4ec");
+    const pink = soft("#f7b8c8");
+    const wrapper = soft("#eb74a5");
+    const frosting = soft("#ffd6e4");
+    // cupcake wrapper (ridged cone)
+    const wrap = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.09, 0.07, 0.1, 12),
+      wrapper,
+    );
+    wrap.position.y = 0.055;
+    g.add(wrap);
+    // frosting "cushion" on top of wrapper
+    const fluff = new THREE.Mesh(
+      new THREE.SphereGeometry(0.1, 14, 10),
+      frosting,
+    );
+    fluff.position.y = 0.11;
+    fluff.scale.set(1, 0.5, 1);
+    g.add(fluff);
+    // body
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.085, 14, 12), fur);
+    body.position.y = 0.2;
+    body.scale.set(1, 0.9, 0.9);
+    g.add(body);
+    // head
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.078, 14, 12), fur);
+    head.position.y = 0.3;
+    g.add(head);
+    // long bunny ears
+    const earGeo = new THREE.CapsuleGeometry(0.018, 0.08, 4, 8);
+    const earL = new THREE.Mesh(earGeo, fur);
+    earL.position.set(-0.035, 0.4, 0);
+    earL.rotation.z = -0.1;
+    const earR = new THREE.Mesh(earGeo, fur);
+    earR.position.set(0.035, 0.4, 0);
+    earR.rotation.z = 0.1;
+    g.add(earL, earR);
+    // inner ears
+    const innerEarGeo = new THREE.CapsuleGeometry(0.009, 0.055, 4, 8);
+    const iEarL = new THREE.Mesh(innerEarGeo, pink);
+    iEarL.position.set(-0.035, 0.4, 0.01);
+    iEarL.rotation.z = -0.1;
+    const iEarR = new THREE.Mesh(innerEarGeo, pink);
+    iEarR.position.set(0.035, 0.4, 0.01);
+    iEarR.rotation.z = 0.1;
+    g.add(iEarL, iEarR);
+    // pink nose
+    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.008, 8, 6), pink);
+    nose.position.set(0, 0.29, 0.075);
+    g.add(nose);
+    // eyes
+    const eyeM = soft("#1a1a1a");
+    const eL = new THREE.Mesh(new THREE.SphereGeometry(0.008, 8, 6), eyeM);
+    eL.position.set(-0.023, 0.31, 0.07);
+    const eR = new THREE.Mesh(new THREE.SphereGeometry(0.008, 8, 6), eyeM);
+    eR.position.set(0.023, 0.31, 0.07);
+    g.add(eL, eR);
+    // sprinkles on frosting
+    const sprinkleColors = ["#ffe66a", "#7fd6ff", "#d0a7ff", "#a6f0a1"];
+    for (let i = 0; i < 6; i++) {
+      const s = new THREE.Mesh(
+        new THREE.BoxGeometry(0.008, 0.003, 0.003),
+        soft(sprinkleColors[i % sprinkleColors.length]),
+      );
+      const ang = (i / 6) * Math.PI * 2;
+      s.position.set(Math.cos(ang) * 0.08, 0.125, Math.sin(ang) * 0.08);
+      s.rotation.y = ang + Math.random() * 0.6;
+      g.add(s);
+    }
+  } else {
+    // coffee_puppy
+    const fur = soft("#b3845a");
+    const belly = soft("#eccfa2");
+    const cupWhite = soft("#fbfbfb");
+    const coffee = soft("#5b3321");
+    // coffee cup (cylinder, opens up toward the top)
+    const cup = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.085, 0.065, 0.14, 14, 1, true),
+      cupWhite,
+    );
+    cup.position.y = 0.075;
+    g.add(cup);
+    // base disk
+    const base = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.065, 0.065, 0.015, 14),
+      cupWhite,
+    );
+    base.position.y = 0.005;
+    g.add(base);
+    // coffee inside (brown disk near top)
+    const java = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.078, 0.078, 0.01, 14),
+      coffee,
+    );
+    java.position.y = 0.145;
+    g.add(java);
+    // cup handle (torus)
+    const handle = new THREE.Mesh(
+      new THREE.TorusGeometry(0.025, 0.008, 8, 14),
+      cupWhite,
+    );
+    handle.position.set(0.085, 0.08, 0);
+    handle.rotation.y = Math.PI / 2;
+    g.add(handle);
+    // paper sleeve around cup (little band)
+    const sleeve = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.088, 0.085, 0.04, 14),
+      soft("#c88f5a"),
+    );
+    sleeve.position.y = 0.075;
+    g.add(sleeve);
+    // puppy peeking out: body (inside cup, hidden), head popping up
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.075, 14, 12), fur);
+    head.position.y = 0.22;
+    g.add(head);
+    // floppy ears
+    const earGeo = new THREE.SphereGeometry(0.03, 10, 8);
+    const earL = new THREE.Mesh(earGeo, fur);
+    earL.position.set(-0.062, 0.225, 0);
+    earL.scale.set(0.7, 1.2, 0.8);
+    const earR = new THREE.Mesh(earGeo, fur);
+    earR.position.set(0.062, 0.225, 0);
+    earR.scale.set(0.7, 1.2, 0.8);
+    g.add(earL, earR);
+    // snout
+    const snout = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), belly);
+    snout.position.set(0, 0.205, 0.065);
+    g.add(snout);
+    // nose
+    const nose = new THREE.Mesh(
+      new THREE.SphereGeometry(0.01, 8, 6),
+      soft("#1a1a1a"),
+    );
+    nose.position.set(0, 0.215, 0.09);
+    g.add(nose);
+    // eyes
+    const eyeM = soft("#1a1a1a");
+    const eL = new THREE.Mesh(new THREE.SphereGeometry(0.008, 8, 6), eyeM);
+    eL.position.set(-0.022, 0.235, 0.072);
+    const eR = new THREE.Mesh(new THREE.SphereGeometry(0.008, 8, 6), eyeM);
+    eR.position.set(0.022, 0.235, 0.072);
+    g.add(eL, eR);
+    // steam wisps above the cup
+    const steamM = soft("#ffffff");
+    for (let i = 0; i < 3; i++) {
+      const puff = new THREE.Mesh(
+        new THREE.SphereGeometry(0.012, 8, 6),
+        steamM,
+      );
+      puff.position.set(-0.02 + i * 0.02, 0.3 + i * 0.025, 0);
+      g.add(puff);
+    }
+  }
+
+  // soft shadow under every plushie
+  const blob = new THREE.Mesh(
+    new THREE.CircleGeometry(0.1, 18),
+    mat({
+      color: "#000",
+      transparent: true,
+      opacity: 0.15,
+      roughness: 1,
+    }),
+  );
+  blob.rotation.x = -Math.PI / 2;
+  blob.position.y = 0.002;
+  g.add(blob);
+
+  return g;
+}
+
+export function buildPlushieShelf(): THREE.Group {
+  const g = new THREE.Group();
+  g.name = "plushie_shelf";
+  // Back-left area of the bakery, against the back wall (z ≈ -6.5).
+  // Offset from the wall so the kids can see the plushies from any angle.
+  const shelfX = -4.0;
+  const shelfZ = -6.15;
+  const shelfW = 2.4;
+
+  const woodM = mat({ color: "#8c5a36", roughness: 0.75 });
+  const woodLight = mat({ color: "#d7a975", roughness: 0.7 });
+  const accentM = mat({ color: "#f7b8c8", roughness: 0.5 });
+
+  // Back panel + side supports
+  const back = new THREE.Mesh(
+    new THREE.BoxGeometry(shelfW, 1.9, 0.04),
+    woodM,
+  );
+  back.position.set(shelfX, 1.1, shelfZ - 0.22);
+  g.add(back);
+
+  const sideGeo = new THREE.BoxGeometry(0.05, 1.9, 0.45);
+  const left = new THREE.Mesh(sideGeo, woodM);
+  left.position.set(shelfX - shelfW / 2, 1.1, shelfZ);
+  const right = new THREE.Mesh(sideGeo, woodM);
+  right.position.set(shelfX + shelfW / 2, 1.1, shelfZ);
+  g.add(left, right);
+
+  // Horizontal shelves — two levels so plushies have room overhead.
+  const shelfGeo = new THREE.BoxGeometry(shelfW, 0.05, 0.45);
+  const topShelfY = 1.45;
+  const bottomShelfY = 0.85;
+  const shelfBottom = new THREE.Mesh(shelfGeo, woodLight);
+  shelfBottom.position.set(shelfX, bottomShelfY, shelfZ);
+  g.add(shelfBottom);
+  const shelfTop = new THREE.Mesh(shelfGeo, woodLight);
+  shelfTop.position.set(shelfX, topShelfY, shelfZ);
+  g.add(shelfTop);
+  // Floor plinth (so the whole thing sits evenly)
+  const plinth = new THREE.Mesh(
+    new THREE.BoxGeometry(shelfW, 0.15, 0.45),
+    woodM,
+  );
+  plinth.position.set(shelfX, 0.075, shelfZ);
+  g.add(plinth);
+
+  // Little pastel sign banner along the top — no text, just a cheerful pop of
+  // color so kids see "that's the plushie corner" at a glance.
+  const banner = new THREE.Mesh(
+    new THREE.BoxGeometry(shelfW * 0.85, 0.12, 0.02),
+    accentM,
+  );
+  banner.position.set(shelfX, 1.95, shelfZ - 0.18);
+  g.add(banner);
+  // Bunting dots along the banner
+  const dotColors = ["#ffe66a", "#a6f0a1", "#7fd6ff", "#d0a7ff", "#ff8cb3"];
+  for (let i = 0; i < 5; i++) {
+    const d = new THREE.Mesh(
+      new THREE.SphereGeometry(0.028, 10, 8),
+      mat({ color: dotColors[i], roughness: 0.5 }),
+    );
+    d.position.set(shelfX - 0.6 + i * 0.3, 2.05, shelfZ - 0.17);
+    g.add(d);
+  }
+
+  // Place the four plushies on the lower shelf, spaced evenly across.
+  const plushies: Array<
+    Parameters<typeof makePlushie>[0]
+  > = ["donut_bear", "croissant_cat", "cupcake_bunny", "coffee_puppy"];
+  for (let i = 0; i < plushies.length; i++) {
+    const p = makePlushie(plushies[i]);
+    // spread them across the shelf width
+    const x = shelfX - shelfW / 2 + (i + 0.5) * (shelfW / plushies.length);
+    p.position.set(x, bottomShelfY + 0.025, shelfZ);
+    // tiny rotation variety so they don't look stamped
+    p.rotation.y = -Math.PI + (i - 1.5) * 0.1;
+    g.add(p);
+  }
+
+  // A couple of decorative extras on the top shelf to fill it out — a jar
+  // of ribbons and a small stack of gift boxes. No emojis; just shapes.
+  const ribbonJar = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.075, 0.2, 14),
+    mat({ color: "#fff8ec", roughness: 0.4, transparent: true, opacity: 0.85 }),
+  );
+  ribbonJar.position.set(shelfX - 0.9, topShelfY + 0.13, shelfZ);
+  g.add(ribbonJar);
+  // ribbon inside (coiled)
+  const ribbon = new THREE.Mesh(
+    new THREE.TorusGeometry(0.05, 0.015, 8, 16),
+    mat({ color: "#f7b8c8" }),
+  );
+  ribbon.rotation.x = Math.PI / 2;
+  ribbon.position.set(shelfX - 0.9, topShelfY + 0.06, shelfZ);
+  g.add(ribbon);
+
+  // gift boxes stacked
+  const box1 = new THREE.Mesh(
+    new THREE.BoxGeometry(0.2, 0.16, 0.2),
+    mat({ color: "#a6d8f0" }),
+  );
+  box1.position.set(shelfX + 0.25, topShelfY + 0.11, shelfZ);
+  g.add(box1);
+  // ribbon cross on box1
+  const ribA = mat({ color: "#f5a3c7" });
+  const bandX = new THREE.Mesh(new THREE.BoxGeometry(0.21, 0.02, 0.21), ribA);
+  bandX.position.set(shelfX + 0.25, topShelfY + 0.11, shelfZ);
+  g.add(bandX);
+  const bandY = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.17, 0.21), ribA);
+  bandY.position.set(shelfX + 0.25, topShelfY + 0.11, shelfZ);
+  g.add(bandY);
+  const bow = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 8), ribA);
+  bow.position.set(shelfX + 0.25, topShelfY + 0.21, shelfZ);
+  g.add(bow);
+  // smaller box on top
+  const box2 = new THREE.Mesh(
+    new THREE.BoxGeometry(0.13, 0.1, 0.13),
+    mat({ color: "#f7dfa5" }),
+  );
+  box2.position.set(shelfX + 0.6, topShelfY + 0.08, shelfZ);
+  g.add(box2);
+  const band2 = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.02, 0.14), ribA);
+  band2.position.set(shelfX + 0.6, topShelfY + 0.08, shelfZ);
+  g.add(band2);
+
+  // A little sign placard leaning on the top shelf
+  const placard = new THREE.Mesh(
+    new THREE.BoxGeometry(0.6, 0.28, 0.02),
+    mat({ color: "#fff2da", roughness: 0.5 }),
+  );
+  placard.position.set(shelfX + 0.95, topShelfY + 0.17, shelfZ);
+  placard.rotation.y = -0.1;
+  g.add(placard);
+  const placardFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(0.64, 0.32, 0.012),
+    mat({ color: "#f5a3c7" }),
+  );
+  placardFrame.position.set(shelfX + 0.95, topShelfY + 0.17, shelfZ - 0.006);
+  placardFrame.rotation.y = -0.1;
+  g.add(placardFrame);
+
+  return g;
+}
+
 /* ---------------- CAFE SEATING ---------------- */
 /**
  * A few little cafe tables with chairs so customers have somewhere to sit

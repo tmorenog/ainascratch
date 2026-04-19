@@ -17,6 +17,7 @@ import {
   buildStationSignboards,
   buildStationProps,
   buildPantry,
+  buildPlushieShelf,
   buildSeatingArea,
   buildOutdoors,
   makeOpenSign,
@@ -203,6 +204,7 @@ export function BakeryWorld3D({
     scene.add(buildStationSignboards(HOTSPOTS));
     scene.add(buildStationProps());
     scene.add(buildPantry());
+    scene.add(buildPlushieShelf());
     scene.add(buildSeatingArea());
     const outdoors = buildOutdoors();
     scene.add(outdoors);
