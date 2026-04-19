@@ -17,6 +17,18 @@ const STATION_TITLE: Record<StationId, { title: string; emoji: string }> = {
 };
 
 /**
+ * Per-station "go time" button label — what the player actually does to
+ * kick off the prep timer after combining the ingredients.
+ */
+const STATION_ACTION: Record<StationId, string> = {
+  drink: "Squeeze & pour 🍋",
+  pastry: "Decorate 🎀",
+  scratch: "Roll & bake 🔥",
+  pet: "Shape & bake 🐾",
+  oven: "Bake 🔥",
+};
+
+/**
  * Immersive first-person prep scene. The player sees their own hands
  * pouring/icing/mixing a recipe, with a step-by-step caption and a big
  * progress bar. When done, they tap "Plate it" to send the treat to the
@@ -38,11 +50,19 @@ export function PrepScene({
   const slot = useGame((s) => (stationId ? s.prep[stationId] : undefined));
 
   const [now, setNow] = useState(() => Date.now());
+  const [combining, setCombining] = useState<{
+    recipeId: string;
+    added: Partial<Record<IngredientId, number>>;
+  } | null>(null);
   useEffect(() => {
     if (!stationId) return;
     const id = window.setInterval(() => setNow(Date.now()), 100);
     return () => window.clearInterval(id);
   }, [stationId]);
+  // Reset combining when station changes or a real prep starts
+  useEffect(() => {
+    if (!stationId || slot) setCombining(null);
+  }, [stationId, slot]);
 
   if (!stationId) return null;
 
@@ -132,6 +152,29 @@ export function PrepScene({
                   )}
                 </div>
               </div>
+            ) : combining ? (
+              <CombiningPanel
+                recipe={RECIPE_BY_ID[combining.recipeId]}
+                added={combining.added}
+                station={stationId}
+                onAdd={(ing) =>
+                  setCombining((c) =>
+                    c
+                      ? {
+                          ...c,
+                          added: {
+                            ...c.added,
+                            [ing]: (c.added[ing] ?? 0) + 1,
+                          },
+                        }
+                      : c,
+                  )
+                }
+                onCancel={() => setCombining(null)}
+                onGo={() => {
+                  if (startPrep(combining.recipeId)) setCombining(null);
+                }}
+              />
             ) : (
               <div className="panel max-w-3xl mx-auto">
                 <div className="font-display text-lg text-cocoa-600 mb-2">
@@ -148,9 +191,7 @@ export function PrepScene({
                         key={r.id}
                         recipe={r}
                         inventory={inventory}
-                        onStart={() => {
-                          startPrep(r.id);
-                        }}
+                        onStart={() => setCombining({ recipeId: r.id, added: {} })}
                       />
                     ))}
                   </div>
@@ -618,6 +659,126 @@ function Effects({ station, progress }: { station: StationId; progress: number }
     default:
       return null;
   }
+}
+
+/**
+ * The combining workbench — player adds each required ingredient to the
+ * prep bowl by clicking it, then triggers the station action to start the
+ * actual timer. Makes recipes feel like a craft, not a single button.
+ */
+function CombiningPanel({
+  recipe,
+  added,
+  station,
+  onAdd,
+  onCancel,
+  onGo,
+}: {
+  recipe: Recipe;
+  added: Partial<Record<IngredientId, number>>;
+  station: StationId;
+  onAdd: (id: IngredientId) => void;
+  onCancel: () => void;
+  onGo: () => void;
+}) {
+  const required = Object.entries(recipe.ingredients) as [IngredientId, number][];
+  const done = required.every(([k, n]) => (added[k] ?? 0) >= n);
+  const totalAdded = required.reduce((s, [k]) => s + (added[k] ?? 0), 0);
+
+  return (
+    <div className="panel max-w-3xl mx-auto">
+      <div className="flex items-center gap-3 mb-2">
+        <FoodArt id={recipe.id} size={48} withShadow={false} />
+        <div className="flex-1 min-w-0">
+          <div className="font-display text-lg text-cocoa-600 truncate">
+            Combining: {recipe.name}
+          </div>
+          <div className="text-[11px] text-cocoa-400">
+            Tap each ingredient to add it to the bowl.
+          </div>
+        </div>
+        <button className="btn-icon" onClick={onCancel}>
+          ✕
+        </button>
+      </div>
+
+      {/* Bowl preview */}
+      <div className="flex items-center justify-center py-2">
+        <div className="relative w-40 h-24 rounded-b-[48px] rounded-t-lg bg-gradient-to-b from-[#e8c88a] to-[#a9773d] border border-[#7a4f20] shadow-inner overflow-hidden">
+          <div className="absolute inset-0 flex flex-wrap gap-1 items-end justify-center p-1">
+            {required.flatMap(([k, n]) =>
+              Array.from({ length: Math.min(n, added[k] ?? 0) }).map((_, i) => (
+                <motion.span
+                  key={`${k}-${i}`}
+                  initial={{ y: -20, opacity: 0, scale: 0.6 }}
+                  animate={{ y: 0, opacity: 1, scale: 1 }}
+                  className="text-2xl leading-none"
+                >
+                  {INGREDIENTS[k].emoji}
+                </motion.span>
+              )),
+            )}
+            {totalAdded === 0 && (
+              <span className="text-[11px] text-cocoa-50/80 self-center">
+                empty bowl
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Ingredient list with add buttons */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+        {required.map(([k, n]) => {
+          const have = added[k] ?? 0;
+          const full = have >= n;
+          return (
+            <button
+              key={k}
+              disabled={full}
+              onClick={() => onAdd(k)}
+              className={`flex items-center gap-2 rounded-xl border px-2 py-1.5 text-left ${
+                full
+                  ? "bg-mint-100 border-mint-300 text-cocoa-500"
+                  : "bg-white border-cream-200 hover:bg-cream-100"
+              }`}
+            >
+              <span className="text-2xl">{INGREDIENTS[k].emoji}</span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-xs font-bold text-cocoa-700 truncate">
+                  {INGREDIENTS[k].name}
+                </span>
+                <span className="block text-[11px] text-cocoa-400">
+                  {have}/{n} {full ? "✓" : "tap to add"}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Action */}
+      <div className="flex gap-2 mt-3">
+        <button
+          onClick={onCancel}
+          className="flex-1 py-2 rounded-xl bg-cream-100 text-cocoa-600 font-bold"
+        >
+          Back
+        </button>
+        <button
+          disabled={!done}
+          onClick={onGo}
+          className={`flex-[2] py-2 rounded-xl font-bold ${
+            done
+              ? "bg-mint-500 text-white"
+              : "bg-cream-100 text-cocoa-400"
+          }`}
+        >
+          {done ? STATION_ACTION[station] : "Add all ingredients first"}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 function Sparkles() {
