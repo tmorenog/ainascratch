@@ -77,9 +77,24 @@ export function BakeryWorld3D({
     onInteractRef.current = onInteract;
   }, [onInteract]);
   useEffect(() => {
-    const turnOn = () => setIsTouch(true);
-    window.addEventListener("touchstart", turnOn, { once: true, passive: true });
-    return () => window.removeEventListener("touchstart", turnOn);
+    // Only show the mobile joystick + interact button on actual touch
+    // devices. Detect via the "coarse pointer" media query (true on
+    // phones/tablets; false on desktops even if they have a touchscreen)
+    // and flip off as soon as any real mouse/keyboard input happens so
+    // touch-laptop users aren't stuck with mobile UI.
+    const mq =
+      typeof window !== "undefined" &&
+      window.matchMedia &&
+      window.matchMedia("(pointer: coarse)");
+    const initial = !!mq && mq.matches;
+    setIsTouch(initial);
+    const turnOff = () => setIsTouch(false);
+    window.addEventListener("mousemove", turnOff, { once: true });
+    window.addEventListener("keydown", turnOff, { once: true });
+    return () => {
+      window.removeEventListener("mousemove", turnOff);
+      window.removeEventListener("keydown", turnOff);
+    };
   }, []);
 
   useEffect(() => {
