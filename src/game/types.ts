@@ -64,6 +64,14 @@ export interface CustomerArchetype {
 
 export type CustomerMood = "happy" | "okay" | "grumpy";
 
+export interface CustomerLookData {
+  hair: "short" | "long" | "bun" | "curly" | "buzz" | "ponytail" | "puff";
+  hairColor: string;
+  skin: string;
+  shirt: string;
+  cheek?: string;
+}
+
 export interface Customer {
   id: string;
   archetypeId: string;
@@ -77,6 +85,7 @@ export interface Customer {
   order: string[]; // recipe ids requested
   served?: boolean;
   mood?: CustomerMood;
+  look?: CustomerLookData;
 }
 
 export interface ReadyItem {

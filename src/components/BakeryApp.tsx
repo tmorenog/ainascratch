@@ -7,28 +7,41 @@ import { RecipeBook } from "./RecipeBook";
 import { Supermarket } from "./Supermarket";
 import { ReviewsPanel } from "./ReviewsPanel";
 import { SettingsPanel } from "./SettingsPanel";
-import { StationPicker } from "./StationPicker";
-import { CounterPanel } from "./CounterPanel";
 import { PantryPanel } from "./PantryPanel";
-import { Bakery3D } from "./world/Bakery3D";
+import { Bakery2D } from "./scene/Bakery2D";
+import { OrderTicket } from "./scene/OrderTicket";
+import { PrepScene } from "./scene/PrepScene";
+import { LevelUpToast } from "./scene/LevelUpToast";
 import { useGame } from "@/game/store";
-import type { Hotspot } from "@/game/world";
 import type { StationId } from "@/game/types";
-import { FoodArt } from "./foods/FoodArt";
-import { RECIPE_BY_ID } from "@/game/recipes";
 
 export function BakeryApp() {
   const [hydrated, setHydrated] = useState(false);
   const hasOnboarded = useGame((s) => s.hasOnboarded);
   const tick = useGame((s) => s.tick);
+  const customers = useGame((s) => s.customers);
+  const ready = useGame((s) => s.ready);
+  const isOpen = useGame((s) => s.isOpen);
+  const toggleStore = useGame((s) => s.toggleStore);
+  const serveCustomer = useGame((s) => s.serveCustomer);
+  const dismissCustomer = useGame((s) => s.dismissCustomer);
 
   const [openRecipes, setOpenRecipes] = useState(false);
   const [openMarket, setOpenMarket] = useState(false);
   const [openReviews, setOpenReviews] = useState(false);
   const [openSettings, setOpenSettings] = useState(false);
-  const [openCounter, setOpenCounter] = useState(false);
   const [openPantry, setOpenPantry] = useState(false);
-  const [pickerStation, setPickerStation] = useState<StationId | null>(null);
+  const [prepStation, setPrepStation] = useState<StationId | null>(null);
+
+  // The customer the player is currently focused on (the one whose order
+  // shows in the bottom black ticket bar). Defaults to the first in queue.
+  const [focusedCustomerId, setFocusedCustomerId] = useState<string | null>(null);
+  const focusedCustomer =
+    customers.find((c) => c.id === focusedCustomerId) ??
+    customers[0] ??
+    null;
+  // Live patience for the order ticket clock
+  const [now, setNow] = useState<number>(() => Date.now());
 
   useEffect(() => {
     const unsub = useGame.persist.onFinishHydration(() => setHydrated(true));
@@ -36,26 +49,30 @@ export function BakeryApp() {
     return unsub;
   }, []);
 
-  // Run the main game tick (customers, patience, deliveries) on a simple interval
-  // so it keeps running even while modals are open. The 3D canvas has its own RAF.
+  // Keep focused customer valid; if they leave, jump to the next one.
+  useEffect(() => {
+    if (focusedCustomerId && !customers.find((c) => c.id === focusedCustomerId)) {
+      setFocusedCustomerId(customers[0]?.id ?? null);
+    }
+    if (!focusedCustomerId && customers[0]) {
+      setFocusedCustomerId(customers[0].id);
+    }
+  }, [customers, focusedCustomerId]);
+
+  // Game tick — patience, deliveries, spawns.
   const tickRef = useRef<number | null>(null);
   useEffect(() => {
     if (!hydrated || !hasOnboarded) return;
-    const run = () => tick(Date.now());
+    const run = () => {
+      tick(Date.now());
+      setNow(Date.now());
+    };
     run();
     tickRef.current = window.setInterval(run, 120);
     return () => {
       if (tickRef.current != null) window.clearInterval(tickRef.current);
     };
   }, [hydrated, hasOnboarded, tick]);
-
-  function handleInteract(h: Hotspot) {
-    if (h.kind === "station" && h.stationId) setPickerStation(h.stationId);
-    else if (h.kind === "pantry") setOpenPantry(true);
-    else if (h.kind === "supermarket") setOpenMarket(true);
-    else if (h.kind === "counter") setOpenCounter(true);
-    else if (h.kind === "bulletin") setOpenRecipes(true);
-  }
 
   if (!hydrated) {
     return (
@@ -67,6 +84,24 @@ export function BakeryApp() {
 
   if (!hasOnboarded) return <Welcome />;
 
+  // Compute "can serve" for the focused customer
+  let canServe = false;
+  if (focusedCustomer) {
+    const wanted = [...focusedCustomer.order];
+    const tray = [...ready];
+    const used: number[] = [];
+    canServe = wanted.every((id) => {
+      const i = tray.findIndex((r, idx) => r.recipeId === id && !used.includes(idx));
+      if (i === -1) return false;
+      used.push(i);
+      return true;
+    });
+  }
+
+  const patienceRatio = focusedCustomer
+    ? Math.max(0, 1 - (now - focusedCustomer.arrivedAt) / focusedCustomer.patienceMs)
+    : undefined;
+
   return (
     <div className="min-h-[100svh] flex flex-col">
       <Topbar
@@ -76,22 +111,63 @@ export function BakeryApp() {
         onOpenSettings={() => setOpenSettings(true)}
       />
 
-      {/* 3D world takes the rest of the viewport */}
+      {/* Scene takes the rest of the viewport */}
       <main className="flex-1 relative overflow-hidden">
-        <div className="absolute inset-0">
-          <Bakery3D onInteract={handleInteract} />
-        </div>
+        <Bakery2D
+          focusedCustomerId={focusedCustomerId}
+          setFocusedCustomerId={setFocusedCustomerId}
+          onInteract={(i) => {
+            if (i.kind === "station" && i.stationId) setPrepStation(i.stationId);
+            else if (i.kind === "pantry") setOpenPantry(true);
+            else if (i.kind === "supermarket") setOpenMarket(true);
+            else if (i.kind === "counter") {
+              // Toggle shop if no customers yet — otherwise focus the first
+              if (!isOpen && customers.length === 0) toggleStore();
+              else if (customers[0]) setFocusedCustomerId(customers[0].id);
+            }
+          }}
+        />
 
-        {/* Left: active prep status */}
-        <PrepHud />
+        {/* Persistent order ticket at the bottom */}
+        <OrderTicket
+          customer={focusedCustomer}
+          patienceRatio={patienceRatio}
+          canServe={canServe}
+          onServe={() => {
+            if (!focusedCustomer) return;
+            const result = serveCustomer(focusedCustomer.id);
+            if (result === "success" || result === "wrong") {
+              setFocusedCustomerId(customers.find((c) => c.id !== focusedCustomer.id)?.id ?? null);
+            }
+          }}
+        />
 
-        {/* Bottom ribbon: ready tray + control hints */}
-        <GameHud onOpenCounter={() => setOpenCounter(true)} />
+        {/* Send-away button beside ticket (small, only when focused) */}
+        {focusedCustomer && (
+          <button
+            className="absolute bottom-3 right-3 md:right-6 z-30 text-xs text-cream-50 bg-cocoa-600/70 px-2 py-1 rounded-full"
+            onClick={() => dismissCustomer(focusedCustomer.id)}
+          >
+            send away
+          </button>
+        )}
 
-        {/* Desktop keyboard hint */}
-        <div className="hidden md:block absolute top-2 right-3 text-xs text-cream-50 bg-cocoa-600/70 rounded-full px-3 py-1.5 shadow-soft">
-          WASD to walk · Arrows / mouse-less turn · <b>E</b> or <b>Space</b> to interact
-        </div>
+        {/* Open/close shop hint when there are no customers yet */}
+        {customers.length === 0 && (
+          <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-30 text-center">
+            <button
+              onClick={() => toggleStore()}
+              className={`rounded-full px-4 py-2 font-bold shadow-bakery ${
+                isOpen ? "bg-berry-500 text-white" : "bg-mint-500 text-white"
+              }`}
+            >
+              {isOpen ? "Close Shop" : "Open Shop"}
+            </button>
+            <div className="text-cocoa-400 text-xs mt-1">
+              {isOpen ? "🌼 next customer coming soon" : "tap to welcome customers"}
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Modals */}
@@ -99,111 +175,13 @@ export function BakeryApp() {
       <Supermarket open={openMarket} onClose={() => setOpenMarket(false)} />
       <ReviewsPanel open={openReviews} onClose={() => setOpenReviews(false)} />
       <SettingsPanel open={openSettings} onClose={() => setOpenSettings(false)} />
-      <StationPicker stationId={pickerStation} onClose={() => setPickerStation(null)} />
-      <CounterPanel open={openCounter} onClose={() => setOpenCounter(false)} />
       <PantryPanel
         open={openPantry}
         onClose={() => setOpenPantry(false)}
         onOpenSupermarket={() => setOpenMarket(true)}
       />
-    </div>
-  );
-}
-
-/** Shows the 4 stations as mini tiles with live progress rings + READY flags. */
-function PrepHud() {
-  const prep = useGame((s) => s.prep);
-  const [now, setNow] = useState<number>(() => Date.now());
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 150);
-    return () => window.clearInterval(id);
-  }, []);
-
-  const stations: { id: StationId; emoji: string }[] = [
-    { id: "drink", emoji: "🥤" },
-    { id: "pastry", emoji: "🧁" },
-    { id: "scratch", emoji: "🥣" },
-    { id: "pet", emoji: "🐾" },
-  ];
-  const active = stations.filter((s) => prep[s.id]);
-  if (active.length === 0) return null;
-
-  return (
-    <div className="absolute top-2 left-28 md:top-3 md:left-44 flex gap-2 flex-wrap max-w-[60%]">
-      {active.map((s) => {
-        const slot = prep[s.id]!;
-        const recipe = RECIPE_BY_ID[slot.recipeId];
-        const p = Math.min(1, (now - slot.startedAt) / (slot.endsAt - slot.startedAt));
-        const done = now >= slot.endsAt;
-        return (
-          <div
-            key={s.id}
-            className={`rounded-full px-2.5 py-1 text-xs font-bold shadow-soft flex items-center gap-1.5 border ${
-              done
-                ? "bg-mint-500 text-white border-white animate-wiggle"
-                : "bg-cream-50/95 text-cocoa-500 border-cream-200"
-            }`}
-          >
-            <span>{s.emoji}</span>
-            <span className="truncate max-w-[120px]">
-              {done ? "READY!" : recipe?.name}
-            </span>
-            {!done && (
-              <span
-                className="w-1.5 h-1.5 rounded-full"
-                style={{ background: `conic-gradient(#7c5236 ${p * 360}deg, #e8d0a8 ${p * 360}deg)` }}
-              />
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function GameHud({ onOpenCounter }: { onOpenCounter: () => void }) {
-  const ready = useGame((s) => s.ready);
-  const customers = useGame((s) => s.customers);
-  const isOpen = useGame((s) => s.isOpen);
-
-  return (
-    <div className="absolute bottom-0 inset-x-0 pointer-events-none">
-      <div className="mx-auto max-w-6xl px-3 pb-3 md:pb-4 flex items-end justify-between gap-2">
-        {/* Ready tray strip */}
-        <div className="glass-case rounded-2xl p-2 pointer-events-auto min-w-[160px] max-w-[70%]">
-          <div className="text-[10px] uppercase tracking-wider font-bold text-cocoa-500 mb-1">
-            Ready tray · {ready.length}
-          </div>
-          {ready.length === 0 ? (
-            <div className="text-xs text-cocoa-400">No treats yet — go prep something!</div>
-          ) : (
-            <div className="flex gap-1.5 overflow-x-auto cozy-scroll">
-              {ready.slice(0, 10).map((r) => (
-                <div key={r.id} className="shrink-0">
-                  <FoodArt id={r.recipeId} size={44} withShadow={false} />
-                </div>
-              ))}
-              {ready.length > 10 && (
-                <span className="text-xs text-cocoa-400 self-center">+{ready.length - 10}</span>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Customer bell button */}
-        <button
-          className={`pointer-events-auto rounded-full px-4 py-2 font-bold shadow-bakery border-2 transition ${
-            customers.length > 0
-              ? "bg-berry-500 text-white border-white animate-wiggle"
-              : isOpen
-                ? "bg-cream-50/90 text-cocoa-500 border-cream-200"
-                : "bg-cream-50/70 text-cocoa-300 border-cream-200"
-          }`}
-          onClick={onOpenCounter}
-        >
-          🔔 {customers.length ? `${customers.length} waiting` : "Counter"}
-        </button>
-      </div>
+      <PrepScene stationId={prepStation} onClose={() => setPrepStation(null)} />
+      <LevelUpToast />
     </div>
   );
 }

@@ -45,6 +45,20 @@ interface SupplyOrder {
   totalCost: number;
 }
 
+export interface LevelUpEvent {
+  id: string;
+  level: number;
+  unlockedRecipeIds: string[];
+  at: number;
+}
+
+export interface TipEvent {
+  id: string;
+  amount: number;
+  customerName: string;
+  at: number;
+}
+
 interface GameState {
   // setup
   bakeryName: string;
@@ -56,6 +70,7 @@ interface GameState {
   level: number;
   xp: number;
   unlockedRecipeIds: string[];
+  tipJar: number; // running total visible in the cute tip jar
 
   // inventory
   inventory: Record<IngredientId, number>;
@@ -70,6 +85,10 @@ interface GameState {
   // history
   reviews: Review[];
   stats: Stats;
+
+  // ephemeral events for celebrations / animations
+  levelUps: LevelUpEvent[]; // pending toasts
+  tipEvents: TipEvent[]; // pending coin tosses
 
   // session timing
   lastTickAt: number;
@@ -86,6 +105,8 @@ interface GameState {
   collectReady: (stationId: StationId) => void;
   serveCustomer: (customerId: string) => "success" | "wrong" | "missing";
   dismissCustomer: (customerId: string, reason?: "leave" | "expire") => void;
+  acknowledgeLevelUp: (id: string) => void;
+  acknowledgeTip: (id: string) => void;
 
   orderSupplies: (items: Partial<Record<IngredientId, number>>) => void;
 
@@ -145,6 +166,7 @@ function spawnCustomer(unlockedRecipeIds: string[], difficulty: Difficulty): Cus
       // longer orders get a little more patience
       (order.length - 1) * 18000,
     order,
+    look: archetype.look,
   };
 }
 
@@ -180,6 +202,7 @@ export const useGame = create<GameState>()(
       level: 1,
       xp: 0,
       unlockedRecipeIds: initialUnlocked,
+      tipJar: 0,
 
       inventory: emptyInventory(),
       pendingSupply: [],
@@ -191,6 +214,8 @@ export const useGame = create<GameState>()(
 
       reviews: [],
       stats: emptyStats(),
+      levelUps: [],
+      tipEvents: [],
 
       lastTickAt: Date.now(),
       nextSpawnAt: Date.now() + 4000,
@@ -208,6 +233,7 @@ export const useGame = create<GameState>()(
           level: 1,
           xp: 0,
           unlockedRecipeIds: initialUnlocked,
+          tipJar: 0,
           inventory: emptyInventory(),
           pendingSupply: [],
           isOpen: false,
@@ -216,9 +242,16 @@ export const useGame = create<GameState>()(
           ready: [],
           reviews: [],
           stats: emptyStats(),
+          levelUps: [],
+          tipEvents: [],
           lastTickAt: Date.now(),
           nextSpawnAt: Date.now() + 4000,
         }),
+
+      acknowledgeLevelUp: (id) =>
+        set((s) => ({ levelUps: s.levelUps.filter((e) => e.id !== id) })),
+      acknowledgeTip: (id) =>
+        set((s) => ({ tipEvents: s.tipEvents.filter((e) => e.id !== id) })),
 
       toggleStore: () => {
         const s = get();
@@ -339,30 +372,52 @@ export const useGame = create<GameState>()(
           reviewsCount,
         };
 
-        // xp / level up
+        // xp / level up — also queue a celebration toast if level changes
         let xp = s.xp + (correct ? 8 + customer.order.length * 3 : 2);
         let level = s.level;
         let unlockedRecipeIds = [...s.unlockedRecipeIds];
+        const levelUps = [...s.levelUps];
         while (xp >= xpForLevel(level)) {
           xp -= xpForLevel(level);
           level += 1;
-          // unlock anything tied to new level
+          const newlyUnlocked: string[] = [];
           for (const r of RECIPES) {
             if (r.unlockLevel === level && !unlockedRecipeIds.includes(r.id)) {
               unlockedRecipeIds.push(r.id);
+              newlyUnlocked.push(r.id);
             }
           }
+          levelUps.push({
+            id: uid("lvl"),
+            level,
+            unlockedRecipeIds: newlyUnlocked,
+            at: now,
+          });
+        }
+
+        // queue a tip event so the tip jar can animate a coin toss
+        const tipEvents = [...s.tipEvents];
+        if (tip > 0) {
+          tipEvents.push({
+            id: uid("tip"),
+            amount: tip,
+            customerName: customer.name,
+            at: now,
+          });
         }
 
         set({
           customers: newCustomers,
           ready: newReady,
           coins: s.coins + earnings,
+          tipJar: s.tipJar + tip,
           reviews: [review, ...s.reviews].slice(0, 60),
           stats,
           xp,
           level,
           unlockedRecipeIds,
+          levelUps,
+          tipEvents,
         });
         return correct ? "success" : "wrong";
       },
@@ -495,6 +550,7 @@ export const useGame = create<GameState>()(
         level: s.level,
         xp: s.xp,
         unlockedRecipeIds: s.unlockedRecipeIds,
+        tipJar: s.tipJar,
         inventory: s.inventory,
         reviews: s.reviews.slice(0, 30),
         stats: s.stats,
