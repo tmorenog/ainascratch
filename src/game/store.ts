@@ -34,7 +34,7 @@ const STATION_LABEL: Record<StationId, string> = {
   drink: "Drink Bar",
   pastry: "Pastry Counter",
   oven: "Oven",
-  scratch: "Scratch Workshop",
+  scratch: "Bakery Oven",
   pet: "Pet Treat Nook",
 };
 

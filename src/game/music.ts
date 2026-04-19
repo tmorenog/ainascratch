@@ -1,20 +1,30 @@
 /**
  * Tiny procedural "elevator music" generator. Uses the Web Audio API to
- * play a gentle looping chord progression with sine-wave arpeggios — no
- * audio files, no downloads. Starts on first user gesture (browsers
- * require that) and can be muted from the UI.
+ * play a gentle looping chord progression with sine-wave arpeggios, a soft
+ * sawtooth lead melody, and a warm triangle bass — no audio files, no
+ * downloads. Starts on first user gesture (browsers require that) and can
+ * be muted from the UI.
  */
 
-// Simple I-vi-IV-V progression in C major, each chord as a 4-note arpeggio.
-// Notes are MIDI numbers; we convert to Hz.
+// Classic "Muzak" I-vi-ii-V loop in C major. Each chord is a 4-note
+// arpeggio played as gentle running eighths.
 const PROGRESSION: number[][] = [
   [60, 64, 67, 72], // C  major
   [57, 60, 64, 69], // Am
-  [65, 69, 72, 77], // F  major
+  [62, 65, 69, 72], // Dm
   [67, 71, 74, 79], // G  major
 ];
 
-const NOTE_MS = 350;
+// Simple 16-note melody (one note per arpeggio step) that floats above the
+// chords. MIDI notes; repeats every loop for that cozy, predictable feel.
+const MELODY: number[] = [
+  72, 74, 76, 79, // over C
+  76, 72, 69, 72, // over Am
+  74, 72, 69, 74, // over Dm
+  74, 71, 74, 79, // over G
+];
+
+const NOTE_MS = 400;
 const CHORD_NOTES = 4;
 const CHORD_MS = NOTE_MS * CHORD_NOTES;
 
@@ -42,13 +52,16 @@ export class CozyMusic {
         .webkitAudioContext;
     if (!AC) return;
     this.ctx = new AC();
+    // Some browsers start the context suspended; resume so we actually hear it.
+    if (this.ctx.state === "suspended") this.ctx.resume().catch(() => {});
+
     this.master = this.ctx.createGain();
-    this.master.gain.value = this._muted ? 0 : 0.08;
-    // A tiny delay gives a bit of "room" without needing a convolver.
+    this.master.gain.value = this._muted ? 0 : 0.09;
+    // A gentle delay gives a "hallway" shimmer without a convolver.
     const delay = this.ctx.createDelay();
-    delay.delayTime.value = 0.22;
+    delay.delayTime.value = 0.28;
     const feedback = this.ctx.createGain();
-    feedback.gain.value = 0.25;
+    feedback.gain.value = 0.28;
     delay.connect(feedback);
     feedback.connect(delay);
     this.master.connect(delay);
@@ -71,31 +84,17 @@ export class CozyMusic {
     const note = chord[this.step % CHORD_NOTES];
 
     // Arpeggio voice — soft sine
-    const osc = this.ctx.createOscillator();
-    osc.type = "sine";
-    osc.frequency.value = midiToHz(note);
-    const g = this.ctx.createGain();
-    g.gain.setValueAtTime(0, now);
-    g.gain.linearRampToValueAtTime(0.6, now + 0.04);
-    g.gain.exponentialRampToValueAtTime(0.0001, now + NOTE_MS / 1000);
-    osc.connect(g);
-    g.connect(this.master);
-    osc.start(now);
-    osc.stop(now + NOTE_MS / 1000 + 0.05);
+    this.playVoice("sine", midiToHz(note), now, NOTE_MS / 1000, 0.5);
+
+    // Lead melody — slightly louder, softer timbre, one note per step
+    const melodyNote = MELODY[
+      (this.chordIdx % PROGRESSION.length) * CHORD_NOTES + (this.step % CHORD_NOTES)
+    ];
+    this.playVoice("triangle", midiToHz(melodyNote), now, (NOTE_MS * 1.2) / 1000, 0.35);
 
     // Pad — hold the bass root under each chord for warmth
     if (this.step % CHORD_NOTES === 0) {
-      const bass = this.ctx.createOscillator();
-      bass.type = "triangle";
-      bass.frequency.value = midiToHz(chord[0] - 12);
-      const bg = this.ctx.createGain();
-      bg.gain.setValueAtTime(0, now);
-      bg.gain.linearRampToValueAtTime(0.3, now + 0.15);
-      bg.gain.exponentialRampToValueAtTime(0.0001, now + CHORD_MS / 1000);
-      bass.connect(bg);
-      bg.connect(this.master);
-      bass.start(now);
-      bass.stop(now + CHORD_MS / 1000 + 0.05);
+      this.playVoice("triangle", midiToHz(chord[0] - 12), now, CHORD_MS / 1000, 0.35, 0.18);
     }
 
     this.step += 1;
@@ -104,9 +103,31 @@ export class CozyMusic {
     }
   }
 
+  private playVoice(
+    type: OscillatorType,
+    hz: number,
+    now: number,
+    durS: number,
+    peak: number,
+    attack = 0.04,
+  ) {
+    if (!this.ctx || !this.master) return;
+    const osc = this.ctx.createOscillator();
+    osc.type = type;
+    osc.frequency.value = hz;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(peak, now + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + durS);
+    osc.connect(g);
+    g.connect(this.master);
+    osc.start(now);
+    osc.stop(now + durS + 0.05);
+  }
+
   toggleMute() {
     this._muted = !this._muted;
-    if (this.master) this.master.gain.value = this._muted ? 0 : 0.08;
+    if (this.master) this.master.gain.value = this._muted ? 0 : 0.09;
     try {
       localStorage.setItem("ainas-bakery-muted", this._muted ? "1" : "0");
     } catch {

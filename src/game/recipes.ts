@@ -238,10 +238,10 @@ export const RECIPES: Recipe[] = [
     description: "Crumbly, golden, simple, perfect.",
   },
 
-  // ---------------- Scratch goods (oven required) ----------------
+  // ---------------- Oven-baked goods ----------------
   {
     id: "scratch_donut",
-    name: "Scratch Donut",
+    name: "Fresh Donut",
     category: "scratch",
     station: "scratch",
     ingredients: { flour: 2, yeast: 1, sugar: 1, butter: 1 },
@@ -255,11 +255,11 @@ export const RECIPES: Recipe[] = [
     price: 9,
     unlocked: true,
     description: "Made from real dough — pillowy and golden.",
-    funFact: "Scratch donuts pay more because they take real love.",
+    funFact: "Fresh-baked donuts pay more because they take real love.",
   },
   {
     id: "scratch_cookies",
-    name: "Choc-Chip Cookies (Scratch)",
+    name: "Choc-Chip Cookies",
     category: "scratch",
     station: "scratch",
     ingredients: { flour: 2, butter: 1, sugar: 1, chocolate: 1, eggs: 1 },

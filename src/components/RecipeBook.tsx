@@ -12,7 +12,7 @@ const TABS: { id: RecipeCategory | "all"; label: string; emoji: string }[] = [
   { id: "all", label: "All", emoji: "📖" },
   { id: "drink", label: "Drinks", emoji: "🥤" },
   { id: "pastry", label: "Pastries", emoji: "🧁" },
-  { id: "scratch", label: "Scratch", emoji: "🥣" },
+  { id: "scratch", label: "Baked", emoji: "🥣" },
   { id: "pet", label: "Pet Treats", emoji: "🐾" },
 ];
 

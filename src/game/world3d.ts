@@ -75,8 +75,8 @@ export const HOTSPOTS: Hotspot[] = [
     stationId: "scratch",
     position: [-2.5, 0, -3.2],
     facing: 0,
-    label: "Scratch Oven",
-    prompt: "Bake from scratch",
+    label: "Bakery Oven",
+    prompt: "Bake something fresh",
   },
   {
     id: "pet",

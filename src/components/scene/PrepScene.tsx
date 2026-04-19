@@ -12,7 +12,7 @@ const STATION_TITLE: Record<StationId, { title: string; emoji: string }> = {
   drink: { title: "Drink Bar", emoji: "🥤" },
   pastry: { title: "Pastry Counter", emoji: "🧁" },
   oven: { title: "Oven", emoji: "🔥" },
-  scratch: { title: "Scratch Workshop", emoji: "🥣" },
+  scratch: { title: "Bakery Oven", emoji: "🥣" },
   pet: { title: "Pet Treat Nook", emoji: "🐾" },
 };
 

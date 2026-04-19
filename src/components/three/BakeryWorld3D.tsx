@@ -268,30 +268,42 @@ export function BakeryWorld3D({
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
 
+    // Mouse look is drag-based so it works the moment the player moves the
+    // mouse — no pointer-lock required. If pointer lock happens to be
+    // engaged (from a double-click below), it also works. A short click
+    // (low movement, quick release) still counts as a click for the sign
+    // and furniture placement.
     const clickRay = new THREE.Raycaster();
-    const onCanvasClick = (e: MouseEvent) => {
-      if (pausedRef.current) return;
+    let isDragging = false;
+    let dragLastX = 0;
+    let dragLastY = 0;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragStartTime = 0;
+
+    function handleShortClick(e: MouseEvent) {
       const kind = placingRef.current;
       if (kind) {
-        // place at point 1.2m in front of camera on the floor
         const forward = new THREE.Vector3();
         camera.getWorldDirection(forward);
         forward.y = 0;
         forward.normalize();
         const x = camera.position.x + forward.x * 1.2;
         const z = camera.position.z + forward.z * 1.2;
-        onPlaceFurniture(kind, clamp(x, -ROOM.width / 2 + 0.4, ROOM.width / 2 - 0.4),
-          clamp(z, -ROOM.depth / 2 + 0.4, ROOM.depth / 2 - 0.4));
+        onPlaceFurniture(
+          kind,
+          clamp(x, -ROOM.width / 2 + 0.4, ROOM.width / 2 - 0.4),
+          clamp(z, -ROOM.depth / 2 + 0.4, ROOM.depth / 2 - 0.4),
+        );
         return;
       }
-      // Raycast against the OPEN/CLOSED sign. If hit, toggle the store and
-      // don't request pointer lock so the user can click it again.
       const face = signFaceRef.current;
       if (face) {
         const rect = renderer.domElement.getBoundingClientRect();
         let nx: number, ny: number;
         if (document.pointerLockElement === renderer.domElement) {
-          nx = 0; ny = 0; // crosshair is always at center when locked
+          nx = 0;
+          ny = 0;
         } else {
           nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
           ny = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -300,12 +312,37 @@ export function BakeryWorld3D({
         const hit = clickRay.intersectObject(face, false);
         if (hit.length > 0 && hit[0].distance < 20) {
           toggleStoreRef.current();
-          return;
         }
       }
+    }
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (pausedRef.current) return;
+      if (e.button !== 0) return;
+      isDragging = true;
+      dragLastX = e.clientX;
+      dragLastY = e.clientY;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      dragStartTime = performance.now();
+    };
+    const onMouseUp = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      const wasShort =
+        isDragging &&
+        performance.now() - dragStartTime < 300 &&
+        Math.hypot(e.clientX - dragStartX, e.clientY - dragStartY) < 6;
+      isDragging = false;
+      if (wasShort && !pausedRef.current) handleShortClick(e);
+    };
+    const onDblClick = () => {
+      if (pausedRef.current) return;
+      // Optional: engage pointer lock for continuous turning.
       renderer.domElement.requestPointerLock();
     };
-    renderer.domElement.addEventListener("click", onCanvasClick);
+    renderer.domElement.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mouseup", onMouseUp);
+    renderer.domElement.addEventListener("dblclick", onDblClick);
 
     const onLockChange = () => {
       setLocked(document.pointerLockElement === renderer.domElement);
@@ -314,9 +351,19 @@ export function BakeryWorld3D({
 
     const onMouseMove = (e: MouseEvent) => {
       if (pausedRef.current) return;
-      if (document.pointerLockElement !== renderer.domElement) return;
-      camera.rotation.y -= e.movementX * 0.0025;
-      camera.rotation.x -= e.movementY * 0.0025;
+      if (document.pointerLockElement === renderer.domElement) {
+        camera.rotation.y -= e.movementX * 0.0025;
+        camera.rotation.x -= e.movementY * 0.0025;
+      } else if (isDragging) {
+        const dx = e.clientX - dragLastX;
+        const dy = e.clientY - dragLastY;
+        dragLastX = e.clientX;
+        dragLastY = e.clientY;
+        camera.rotation.y -= dx * 0.005;
+        camera.rotation.x -= dy * 0.005;
+      } else {
+        return;
+      }
       camera.rotation.x = Math.max(-1.2, Math.min(1.2, camera.rotation.x));
     };
     document.addEventListener("mousemove", onMouseMove);
@@ -545,7 +592,9 @@ export function BakeryWorld3D({
       window.removeEventListener("resize", onResize);
       document.removeEventListener("pointerlockchange", onLockChange);
       document.removeEventListener("mousemove", onMouseMove);
-      renderer.domElement.removeEventListener("click", onCanvasClick);
+      renderer.domElement.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mouseup", onMouseUp);
+      renderer.domElement.removeEventListener("dblclick", onDblClick);
       renderer.domElement.removeEventListener("touchstart", onTouchStart);
       renderer.domElement.removeEventListener("touchmove", onTouchMove);
       renderer.domElement.removeEventListener("touchend", onTouchEnd);
@@ -577,10 +626,10 @@ export function BakeryWorld3D({
         </div>
       )}
 
-      {/* lock hint */}
+      {/* controls hint */}
       {!locked && !placingFurniture && (
         <div className="pointer-events-none absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-white/80 text-cocoa-700 text-xs px-3 py-1 rounded-full">
-          Click to look around • WASD to walk • ← ↑ ↓ → to turn • E to interact
+          Drag mouse to look around • WASD to walk • ← ↑ ↓ → to turn • E to interact
         </div>
       )}
       {placingFurniture && (
