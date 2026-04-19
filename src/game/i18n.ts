@@ -93,6 +93,9 @@ export type TKey =
   | "pastries"
   | "baked"
   | "petTreats"
+  | "everyoneSafe"
+  | "everyoneSafeBlurb"
+  | "safeFilterHint"
   | "recipeIcon"
   | "recipeIngredients"
   | "recipePrice"
@@ -189,6 +192,9 @@ const en: Dict = {
   pastries: "Pastries",
   baked: "Baked",
   petTreats: "Pet treats",
+  everyoneSafe: "Everyone-Safe",
+  everyoneSafeBlurb: "No nuts, no chocolate, no coffee — safe for people and pets alike.",
+  safeFilterHint: "Only allergy-friendly ingredients are shown.",
   recipeIcon: "Icon",
   recipeIngredients: "Ingredients",
   recipePrice: "Price",
@@ -276,6 +282,10 @@ const es: Dict = {
   pastries: "Pastelería",
   baked: "Horneado",
   petTreats: "Para mascotas",
+  everyoneSafe: "Apto para todos",
+  everyoneSafeBlurb:
+    "Sin frutos secos, chocolate ni café — seguro para personas y mascotas.",
+  safeFilterHint: "Solo se muestran ingredientes sin alérgenos.",
   recipeIcon: "Icono",
   recipeIngredients: "Ingredientes",
   recipePrice: "Precio",
@@ -364,6 +374,10 @@ const fr: Dict = {
   pastries: "Pâtisseries",
   baked: "Au four",
   petTreats: "Friandises animales",
+  everyoneSafe: "Pour tout le monde",
+  everyoneSafeBlurb:
+    "Sans noix, sans chocolat, sans café — sans risque pour petits et animaux.",
+  safeFilterHint: "Seuls les ingrédients sans allergènes sont affichés.",
   recipeIcon: "Icône",
   recipeIngredients: "Ingrédients",
   recipePrice: "Prix",
@@ -453,6 +467,10 @@ const it: Dict = {
   pastries: "Pasticceria",
   baked: "Al forno",
   petTreats: "Per animali",
+  everyoneSafe: "Per tutti",
+  everyoneSafeBlurb:
+    "Senza frutta secca, cioccolato o caffè — sicuro per persone e animali.",
+  safeFilterHint: "Vengono mostrati solo ingredienti senza allergeni.",
   recipeIcon: "Icona",
   recipeIngredients: "Ingredienti",
   recipePrice: "Prezzo",
@@ -542,6 +560,10 @@ const pt: Dict = {
   pastries: "Doces",
   baked: "Assados",
   petTreats: "Para pets",
+  everyoneSafe: "Para todos",
+  everyoneSafeBlurb:
+    "Sem castanhas, chocolate ou café — seguro para pessoas e bichinhos.",
+  safeFilterHint: "Só aparecem ingredientes sem alergênicos.",
   recipeIcon: "Ícone",
   recipeIngredients: "Ingredientes",
   recipePrice: "Preço",

@@ -753,6 +753,9 @@ export const useGame = create<GameState>()(
           pastry: "pastry",
           scratch: "scratch",
           pet: "pet",
+          // "Everyone-Safe" treats are assembled at the pastry counter — no
+          // extra 3D station needed, and the pastry vibe matches.
+          safe: "pastry",
         };
         // Step labels are auto-generated from ingredient list so the prep
         // scene still shows a step ticker. Durations split the total prepMs.
@@ -764,6 +767,7 @@ export const useGame = create<GameState>()(
           pastry: ["Shape it up", "Decorate with joy", "Plate with a wink"],
           scratch: ["Mix the batter", "Shape & rest", "Bake until golden", "Cool and finish"],
           pet: ["Mix pet-safe dough", "Shape into treats", "Bake gently"],
+          safe: ["Rinse everything fresh", "Mix the safe goodies", "Plate with a smile"],
         };
         const actions = actionByCategory[input.category];
         const steps = Array.from({ length: stepCount }, (_, i) => ({

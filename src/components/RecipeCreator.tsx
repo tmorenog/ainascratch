@@ -9,13 +9,32 @@ import { useT } from "@/game/i18n";
 
 const CATEGORIES: {
   id: RecipeCategory;
-  labelKey: "drinks" | "pastries" | "baked" | "petTreats";
+  labelKey: "drinks" | "pastries" | "baked" | "petTreats" | "everyoneSafe";
   emoji: string;
 }[] = [
   { id: "drink", labelKey: "drinks", emoji: "🥤" },
   { id: "pastry", labelKey: "pastries", emoji: "🧁" },
   { id: "scratch", labelKey: "baked", emoji: "🥣" },
   { id: "pet", labelKey: "petTreats", emoji: "🐾" },
+  { id: "safe", labelKey: "everyoneSafe", emoji: "🌱" },
+];
+
+/** Ingredients people and pets can all enjoy — no nuts, no chocolate,
+ *  no caffeine, no pet-only mix. When the chef picks the Everyone-Safe
+ *  category, the ingredient grid is filtered to just these. */
+const EVERYONE_SAFE_INGREDIENTS: IngredientId[] = [
+  "flour",
+  "sugar",
+  "butter",
+  "eggs",
+  "milk",
+  "yeast",
+  "fruit",
+  "tea_leaves",
+  "icing",
+  "lemon",
+  "cinnamon",
+  "pineapple",
 ];
 
 // A small emoji palette grouped by vibe. Chef can type their own too.
@@ -136,6 +155,11 @@ export function RecipeCreator({
               <span className="chip !py-0 !px-2">
                 ⏱ {Math.round(autoPrepMs / 1000)}s
               </span>
+              {category === "safe" && (
+                <span className="chip !py-0 !px-2 bg-mint-100 text-mint-700 border-mint-200">
+                  🌱 {t("everyoneSafe")}
+                </span>
+              )}
               {isSpecial && (
                 <span className="chip !py-0 !px-2 bg-amber-100 text-amber-700 border-amber-200">
                   ⭐ {t("special")}
@@ -174,7 +198,20 @@ export function RecipeCreator({
               return (
                 <button
                   key={c.id}
-                  onClick={() => setCategory(c.id)}
+                  onClick={() => {
+                    setCategory(c.id);
+                    // Switching to Everyone-Safe drops any already-picked
+                    // ingredients that aren't on the allergy-friendly list.
+                    if (c.id === "safe") {
+                      setAmounts((prev) => {
+                        const next: Partial<Record<IngredientId, number>> = {};
+                        for (const k of EVERYONE_SAFE_INGREDIENTS) {
+                          if (prev[k] != null) next[k] = prev[k];
+                        }
+                        return next;
+                      });
+                    }
+                  }}
                   className={`rounded-xl p-2 border-2 text-center transition ${
                     active
                       ? "border-cocoa-400 bg-cream-100 shadow-soft"
@@ -218,8 +255,17 @@ export function RecipeCreator({
           <label className="block text-xs font-bold uppercase tracking-wide text-cocoa-400 mb-1">
             {t("recipeIngredients")}
           </label>
+          {category === "safe" && (
+            <div className="mb-2 text-[11px] text-mint-700 bg-mint-50 border border-mint-200 rounded-lg px-2 py-1">
+              🌱 {t("safeFilterHint")}
+            </div>
+          )}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {INGREDIENT_LIST.map((ing) => {
+            {INGREDIENT_LIST.filter((ing) =>
+              category === "safe"
+                ? EVERYONE_SAFE_INGREDIENTS.includes(ing.id)
+                : true,
+            ).map((ing) => {
               const n = amounts[ing.id] ?? 0;
               return (
                 <div
