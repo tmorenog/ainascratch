@@ -67,6 +67,13 @@ export interface PlacedFurniture {
   rot: number;
 }
 
+export interface GiftedPet {
+  id: string;
+  kind: "dog" | "cat";
+  giverName: string;
+  at: number;
+}
+
 interface GameState {
   // setup
   bakeryName: string;
@@ -101,6 +108,9 @@ interface GameState {
   // furniture placed in the 3D bakery (persists)
   furniture: PlacedFurniture[];
 
+  // Pets gifted by 5-star customers who loved the food. Persisted.
+  giftedPets: GiftedPet[];
+
   // session timing
   lastTickAt: number;
   nextSpawnAt: number;
@@ -117,7 +127,12 @@ interface GameState {
   serveCustomer: (
     customerId: string,
     upcharge?: number,
-  ) => "success" | "wrong" | "missing" | "refused";
+  ) =>
+    | "success"
+    | "success-gift"
+    | "wrong"
+    | "missing"
+    | "refused";
   catchRobber: (customerId: string) => "caught" | "escaped" | "missing";
   dismissCustomer: (customerId: string, reason?: "leave" | "expire") => void;
   acknowledgeLevelUp: (id: string) => void;
@@ -235,6 +250,7 @@ export const useGame = create<GameState>()(
       levelUps: [],
       tipEvents: [],
       furniture: [],
+      giftedPets: [],
 
       lastTickAt: Date.now(),
       nextSpawnAt: Date.now() + 4000,
@@ -264,6 +280,7 @@ export const useGame = create<GameState>()(
           levelUps: [],
           tipEvents: [],
           furniture: [],
+          giftedPets: [],
           lastTickAt: Date.now(),
           nextSpawnAt: Date.now() + 4000,
         }),
@@ -485,6 +502,30 @@ export const useGame = create<GameState>()(
           });
         }
 
+        // Pet gift: if the customer brought a pet, got a perfect 5-star
+        // review, and the order was right, there's a small chance they're
+        // so smitten they leave the pet with you as a bakery friend. It
+        // persists and sits on the service counter.
+        let giftedPets = s.giftedPets;
+        let gifted = false;
+        if (
+          correct &&
+          stars >= 5 &&
+          customer.hasPet &&
+          Math.random() < 0.2
+        ) {
+          giftedPets = [
+            ...s.giftedPets,
+            {
+              id: uid("pet"),
+              kind: customer.hasPet,
+              giverName: customer.name,
+              at: now,
+            },
+          ];
+          gifted = true;
+        }
+
         set({
           customers: newCustomers,
           ready: newReady,
@@ -497,7 +538,9 @@ export const useGame = create<GameState>()(
           unlockedRecipeIds,
           levelUps,
           tipEvents,
+          giftedPets,
         });
+        if (gifted) return "success-gift";
         return correct ? "success" : "wrong";
       },
 
@@ -731,7 +774,7 @@ export const useGame = create<GameState>()(
       storage: createJSONStorage(() => localStorage),
       // Bump whenever we add recipes or ingredients so returning players
       // automatically get the new menu + a full inventory slot list.
-      version: 3,
+      version: 4,
       migrate: (persisted, _version) => {
         const p = (persisted ?? {}) as Partial<GameState>;
         // Merge in any newly-unlocked recipes that weren't in the save.
@@ -746,6 +789,7 @@ export const useGame = create<GameState>()(
           ...p,
           unlockedRecipeIds: Array.from(savedUnlocked),
           inventory: mergedInventory,
+          giftedPets: p.giftedPets ?? [],
         } as GameState;
       },
       partialize: (s) => ({
@@ -761,6 +805,7 @@ export const useGame = create<GameState>()(
         reviews: s.reviews.slice(0, 30),
         stats: s.stats,
         furniture: s.furniture,
+        giftedPets: s.giftedPets,
       }),
     },
   ),

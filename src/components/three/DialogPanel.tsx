@@ -38,7 +38,9 @@ export function DialogPanel({
 }: {
   customer: Customer | null;
   onClose: () => void;
-  onServe: (upcharge: number) => "success" | "wrong" | "missing" | "refused";
+  onServe: (
+    upcharge: number,
+  ) => "success" | "success-gift" | "wrong" | "missing" | "refused";
   onCatch: () => "caught" | "escaped" | "missing";
   canServe: boolean;
 }) {
@@ -47,7 +49,7 @@ export function DialogPanel({
   const [draft, setDraft] = useState("");
   const [outcome, setOutcome] = useState<
     | null
-    | { kind: "accepted" | "refused"; extra: number }
+    | { kind: "accepted" | "refused" | "gift"; extra: number; petKind?: "dog" | "cat" }
     | { kind: "caught" | "escaped"; extra: number }
   >(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -136,6 +138,15 @@ export function DialogPanel({
       // Fade the broken heart away first, then dismiss the panel.
       setTimeout(() => setOutcome(null), 1100);
       setTimeout(onClose, 1600);
+    } else if (result === "success-gift") {
+      setOutcome({
+        kind: "gift",
+        extra,
+        petKind: customer?.hasPet ?? "dog",
+      });
+      // Give this one a little longer — it's a special moment.
+      setTimeout(() => setOutcome(null), 2100);
+      setTimeout(onClose, 2400);
     } else if (result === "success" || result === "wrong") {
       setOutcome({ kind: "accepted", extra });
       setTimeout(() => setOutcome(null), 800);
@@ -379,7 +390,9 @@ export function DialogPanel({
               >
                 <div
                   className={`rounded-2xl px-6 py-4 text-center shadow-bakery ${
-                    outcome.kind === "accepted" || outcome.kind === "caught"
+                    outcome.kind === "accepted" ||
+                    outcome.kind === "caught" ||
+                    outcome.kind === "gift"
                       ? "bg-mint-500 text-white"
                       : "bg-berry-600 text-white"
                   }`}
@@ -391,7 +404,11 @@ export function DialogPanel({
                         ? "🦸"
                         : outcome.kind === "escaped"
                           ? "🏃‍♂️💨"
-                          : "💔"}
+                          : outcome.kind === "gift"
+                            ? outcome.petKind === "cat"
+                              ? "🐱💝"
+                              : "🐶💝"
+                            : "💔"}
                   </div>
                   <div className="font-black text-lg">
                     {outcome.kind === "accepted"
@@ -402,7 +419,9 @@ export function DialogPanel({
                         ? "Got 'em! Item saved!"
                         : outcome.kind === "escaped"
                           ? "They got away!"
-                          : "Too expensive — walked out!"}
+                          : outcome.kind === "gift"
+                            ? `They loved it! Left their ${outcome.petKind} with you!`
+                            : "Too expensive — walked out!"}
                   </div>
                 </div>
               </motion.div>

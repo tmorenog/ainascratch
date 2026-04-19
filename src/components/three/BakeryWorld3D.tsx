@@ -50,6 +50,7 @@ export function BakeryWorld3D({
   const mountRef = useRef<HTMLDivElement | null>(null);
   const customers = useGame((s) => s.customers);
   const furniture = useGame((s) => s.furniture);
+  const giftedPets = useGame((s) => s.giftedPets);
   const isOpen = useGame((s) => s.isOpen);
   const toggleStore = useGame((s) => s.toggleStore);
 
@@ -60,6 +61,7 @@ export function BakeryWorld3D({
   const activeCustomerRef = useRef<Customer | null>(null);
   const customersRef = useRef<Customer[]>(customers);
   const furnitureRef = useRef(furniture);
+  const giftedPetsRef = useRef(giftedPets);
   const placingRef = useRef(placingFurniture);
   const pausedRef = useRef(inputPaused);
   const toggleStoreRef = useRef(toggleStore);
@@ -93,6 +95,9 @@ export function BakeryWorld3D({
   useEffect(() => {
     furnitureRef.current = furniture;
   }, [furniture]);
+  useEffect(() => {
+    giftedPetsRef.current = giftedPets;
+  }, [giftedPets]);
   useEffect(() => {
     placingRef.current = placingFurniture;
   }, [placingFurniture]);
@@ -251,6 +256,40 @@ export function BakeryWorld3D({
         cf.fig.setSpeaking(idx === 0);
         if (cf.pet) cf.pet.position.set(0.45, 0, 2.7 + offset);
       });
+    }
+
+    // ---- Gifted-pet desk pets ----
+    // These are pets loving customers left behind. They sit on top of the
+    // service counter (z=1.2, top y≈1.025), scaled down, facing the player.
+    const giftedPetGroups = new Map<string, THREE.Group>();
+    // Spots on the counter: left-side row, right-side row; we cycle
+    // through them so a few pets fit without overlapping.
+    const GIFT_SLOTS: [number, number][] = [
+      [-1.1, 1.2],
+      [0.2, 1.2],
+      [1.15, 1.2],
+      [-0.45, 1.2],
+    ];
+    function syncGiftedPets() {
+      const list = giftedPetsRef.current;
+      const seen = new Set<string>();
+      list.forEach((p, idx) => {
+        seen.add(p.id);
+        if (giftedPetGroups.has(p.id)) return;
+        const g = makePet(p.kind);
+        g.scale.setScalar(0.48);
+        const [sx, sz] = GIFT_SLOTS[idx % GIFT_SLOTS.length];
+        g.position.set(sx, 1.025, sz);
+        g.rotation.y = 0; // face -Z (toward the baker side)
+        scene.add(g);
+        giftedPetGroups.set(p.id, g);
+      });
+      for (const [id, g] of giftedPetGroups) {
+        if (!seen.has(id)) {
+          scene.remove(g);
+          giftedPetGroups.delete(id);
+        }
+      }
     }
 
     // ---- Furniture instance map ----
@@ -610,6 +649,7 @@ export function BakeryWorld3D({
       // keep customers in sync
       ensureCustomerFigs(customersRef.current);
       syncFurniture();
+      syncGiftedPets();
       updateGhost();
 
       // Supermarket sliding doors — animated even when paused so they can
@@ -744,6 +784,17 @@ export function BakeryWorld3D({
         }
       }
 
+      // Gifted counter-pets: gentle idle breathing + occasional tail wag.
+      for (const [, g] of giftedPetGroups) {
+        const parts = g.userData.pet as
+          | { head: THREE.Group; tail: THREE.Group }
+          | undefined;
+        if (!parts) continue;
+        const breathe = Math.sin(now * 0.003 + g.position.x) * 0.008;
+        parts.head.position.y = 0.33 + breathe;
+        parts.tail.rotation.y = Math.sin(now * 0.0025 + g.position.x * 1.3) * 0.4;
+      }
+
       // Animate floating hearts — rise, drift sideways, fade, then remove.
       for (let i = hearts.length - 1; i >= 0; i--) {
         const h = hearts[i];
@@ -808,6 +859,8 @@ export function BakeryWorld3D({
       if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
       // dispose everything
       customerFigs.forEach((cf) => cf.fig.dispose());
+      giftedPetGroups.forEach((g) => scene.remove(g));
+      giftedPetGroups.clear();
       disposeAllCachedTextures();
       disposeAllSharedMaterials();
       disposeAllFurnitureMaterials();
