@@ -104,6 +104,14 @@ export const HOTSPOTS: Hotspot[] = [
     prompt: "Step out back",
   },
   {
+    id: "supermarket",
+    kind: "supermarket",
+    position: [DOOR_POS.x, 0, -ROOM.depth / 2 - 29],
+    facing: Math.PI,
+    label: "Supermarket",
+    prompt: "Shop for supplies",
+  },
+  {
     id: "counter-customer",
     kind: "counter-customer",
     position: [0, 0, 1.6],

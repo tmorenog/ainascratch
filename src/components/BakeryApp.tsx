@@ -115,8 +115,11 @@ export function BakeryApp() {
               setPrepStation(hs.stationId);
             } else if (hs.kind === "pantry") {
               setOpenPantry(true);
-            } else if (hs.kind === "door") {
+            } else if (hs.kind === "supermarket") {
               setOpenMarket(true);
+            } else if (hs.kind === "door") {
+              // Just a friendly "you're heading out back" — walking
+              // forward takes you into the outdoor area automatically.
             } else if (hs.kind === "counter-customer") {
               if (customer) setDialogCustomer(customer);
               else if (!isOpen && customers.length === 0) toggleStore();

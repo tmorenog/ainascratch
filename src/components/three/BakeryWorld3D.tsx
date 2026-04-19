@@ -339,6 +339,31 @@ export function BakeryWorld3D({
       return false;
     }
 
+    const doorLeft = -3.0 - 1.6 / 2 + 0.2;
+    const doorRight = -3.0 + 1.6 / 2 - 0.2;
+    function applyBounds(pos: THREE.Vector3) {
+      // Indoor zone: inside four walls, except allow crossing the back wall
+      // through the door cutout.
+      const insideX = pos.x > -ROOM.width / 2 + 0.3 && pos.x < ROOM.width / 2 - 0.3;
+      const insideZ = pos.z > -ROOM.depth / 2 + 0.3 && pos.z < ROOM.depth / 2 - 0.3;
+      const inDoorColumn = pos.x > doorLeft && pos.x < doorRight;
+      if (insideZ) {
+        // inside the room along Z — keep inside the side walls
+        pos.x = Math.max(-ROOM.width / 2 + 0.3, Math.min(ROOM.width / 2 - 0.3, pos.x));
+        // front wall
+        pos.z = Math.min(ROOM.depth / 2 - 0.3, pos.z);
+      } else if (inDoorColumn) {
+        // stepping out through the back door into the alley/outdoor zone
+        pos.z = Math.max(-ROOM.depth / 2 - 30, pos.z);
+        // constrain to the sidewalk-ish corridor (let them wander a bit)
+        pos.x = Math.max(doorLeft - 8, Math.min(doorRight + 8, pos.x));
+      } else if (insideX) {
+        // they were trying to cross the back wall away from the door — block.
+        pos.z = Math.max(-ROOM.depth / 2 + 0.3, pos.z);
+      }
+      pos.y = PLAYER.eyeHeight;
+    }
+
     // ---- Animation loop ----
     const raycaster = new THREE.Raycaster();
     let rafId = 0;
@@ -377,25 +402,9 @@ export function BakeryWorld3D({
         const vz = (forward.z * moveF + right.z * moveR) * invMag * speed * dt;
         const nextX = camera.position.x + vx;
         const nextZ = camera.position.z + vz;
-        // axis-separated collision resolution
         if (!collides(nextX, camera.position.z, PLAYER.radius)) camera.position.x = nextX;
         if (!collides(camera.position.x, nextZ, PLAYER.radius)) camera.position.z = nextZ;
-        // allow stepping out the back door (through the cutout)
-        camera.position.x = Math.max(-ROOM.width / 2 - 26, Math.min(ROOM.width / 2 - 0.3, camera.position.x));
-        if (camera.position.x > -ROOM.width / 2 + 0.3 && camera.position.x < ROOM.width / 2 - 0.3) {
-          // inside bakery column
-          camera.position.z = Math.max(-ROOM.depth / 2 + 0.3, Math.min(ROOM.depth / 2 - 0.3, camera.position.z));
-        }
-        // When near the door cutout, allow passing into the outdoor zone
-        if (
-          camera.position.x > -ROOM.width / 2 + 0.3 &&
-          camera.position.x < ROOM.width / 2 - 0.3 &&
-          Math.abs(camera.position.x - -3.0) < 0.9 &&
-          camera.position.z < -ROOM.depth / 2 + 0.4
-        ) {
-          // allow passing
-          camera.position.z = Math.max(-ROOM.depth / 2 - 30, nextZ);
-        }
+        applyBounds(camera.position);
       }
 
       // hotspot detection
