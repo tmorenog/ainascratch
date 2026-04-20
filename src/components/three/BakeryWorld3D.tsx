@@ -85,6 +85,7 @@ export function BakeryWorld3D({
   const petTriggerRef = useRef<() => void>(() => {});
   const treatTriggerRef = useRef<() => void>(() => {});
   const toyTriggerRef = useRef<() => void>(() => {});
+  const profileTriggerRef = useRef<() => void>(() => {});
   // Routes hotspot interactions — basement stairs teleport locally; everything
   // else forwards to the parent via onInteract.
   const interactHandlerRef = useRef<(hs: Hotspot) => void>(() => {});
@@ -732,6 +733,21 @@ export function BakeryWorld3D({
     toyTriggerRef.current = () => {
       if (activeCatRef) tryGiveCatToy();
     };
+    // Synthesize the coffee-bar hotspot event so the parent opens the
+    // existing CatCafe modal (which already shows per-cat profiles).
+    profileTriggerRef.current = () => {
+      onInteractRef.current(
+        {
+          id: "cat-cafe-profile",
+          kind: "cat-cafe-coffee",
+          position: [camera.position.x, 0, camera.position.z],
+          facing: 0,
+          label: "Cat Profiles",
+          prompt: "See cat profiles",
+        },
+        null,
+      );
+    };
 
     // ---- Controls (pointer lock + WASD + touch) ----
     function handleHotspot(hs: Hotspot) {
@@ -786,6 +802,10 @@ export function BakeryWorld3D({
       }
       if (e.code === "KeyG") {
         if (activeCatRef) tryGiveCatToy();
+      }
+      if (e.code === "KeyB") {
+        // Cat "bio book" — opens the CatCafe modal with profiles.
+        if (activeCatRef) profileTriggerRef.current();
       }
     };
     const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code);
@@ -1586,6 +1606,26 @@ export function BakeryWorld3D({
                 <div className="flex flex-col items-center justify-center leading-tight">
                   <span className="text-2xl">🧸</span>
                   <span className="text-[10px] font-bold">Toy</span>
+                </div>
+              </button>
+              <button
+                type="button"
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (pausedRef.current) return;
+                  profileTriggerRef.current();
+                }}
+                onClick={() => {
+                  if (pausedRef.current) return;
+                  profileTriggerRef.current();
+                }}
+                className="pointer-events-auto absolute right-80 bottom-8 z-30 w-20 h-20 rounded-full border-2 border-white text-white font-black shadow-bakery active:scale-95 transition-transform touch-none select-none bg-indigo-500"
+                aria-label="Cat profile"
+              >
+                <div className="flex flex-col items-center justify-center leading-tight">
+                  <span className="text-2xl">📖</span>
+                  <span className="text-[10px] font-bold">Profile</span>
                 </div>
               </button>
             </>
