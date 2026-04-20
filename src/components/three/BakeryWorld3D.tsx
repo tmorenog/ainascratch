@@ -134,6 +134,7 @@ export function BakeryWorld3D({
     placingRef.current = placingFurniture;
   }, [placingFurniture]);
   const wasLockedRef = useRef(false);
+  const basementIncomeAccumRef = useRef(0);
   useEffect(() => {
     pausedRef.current = inputPaused;
     if (inputPaused) {
@@ -226,6 +227,8 @@ export function BakeryWorld3D({
     const basement = buildCatCafeBasement();
     scene.add(basement);
     const basementCats = (basement.userData.cats as THREE.Group[]) ?? [];
+    const basementPatrons =
+      (basement.userData.patronFigs as CharacterFigure[]) ?? [];
     const basementCounterColliders =
       (basement.userData.counterColliders as {
         x: number;
@@ -974,6 +977,24 @@ export function BakeryWorld3D({
 
       // update animated entities
       customerFigs.forEach((cf) => cf.fig.update(now));
+      // Basement patrons: gentle breathing + sway while seated.
+      basementPatrons.forEach((p) => p.update(now));
+
+      // Passive cafe income: $5/min per seated customer, accrued only while
+      // the player is downstairs in the basement.
+      if (camera.position.z > BASEMENT.cz - BASEMENT.depth) {
+        const perMs = (5 * basementPatrons.length) / 60000;
+        basementIncomeAccumRef.current += dt * 1000 * perMs;
+        if (basementIncomeAccumRef.current >= 1) {
+          const whole = Math.floor(basementIncomeAccumRef.current);
+          basementIncomeAccumRef.current -= whole;
+          useGame.getState().addCoins(whole);
+        }
+      } else {
+        // Reset accumulator when leaving the basement so earnings don't
+        // spike on re-entry.
+        basementIncomeAccumRef.current = 0;
+      }
 
       // animate birds (sine-wave drift)
       outdoors.traverse((o) => {
@@ -1019,6 +1040,7 @@ export function BakeryWorld3D({
       if (renderer.domElement.parentNode) renderer.domElement.parentNode.removeChild(renderer.domElement);
       // dispose everything
       customerFigs.forEach((cf) => cf.fig.dispose());
+      basementPatrons.forEach((p) => p.dispose());
       giftedPetGroups.forEach((g) => scene.remove(g));
       giftedPetGroups.clear();
       customMerchGroups.forEach((g) => scene.remove(g));

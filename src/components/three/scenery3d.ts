@@ -23,6 +23,7 @@ import {
   BASEMENT,
   type Hotspot,
 } from "@/game/world3d";
+import { makeCharacter, type CharacterFigure } from "./characters";
 
 const sceneryMaterials: THREE.Material[] = [];
 function mat(opts: THREE.MeshStandardMaterialParameters): THREE.MeshStandardMaterial {
@@ -2011,6 +2012,8 @@ export interface CatSpec {
   yaw: number;
 }
 
+// Positions are in BASEMENT-local coords. Counter top y ≈ 1.00, cushion
+// top y ≈ 0.22. Cats with feet at y=0 are placed on the floor.
 export const CAT_CAFE_CATS: CatSpec[] = [
   {
     name: "Mochi",
@@ -2018,8 +2021,8 @@ export const CAT_CAFE_CATS: CatSpec[] = [
     color: "#f0e1c0",
     accent: "#c8a674",
     pose: "loaf",
-    pos: [-2.4, 1.02, 2.2], // on top of the L-counter long arm
-    yaw: Math.PI,
+    pos: [-2.4, 1.0, 4.3], // loafing on the L-counter long arm
+    yaw: Math.PI * 0.9,
   },
   {
     name: "Espresso",
@@ -2027,8 +2030,8 @@ export const CAT_CAFE_CATS: CatSpec[] = [
     color: "#6b4a33",
     accent: "#3d2a1e",
     pose: "sit",
-    pos: [-4.2, 0, -0.8], // on the rug, near window
-    yaw: -0.3,
+    pos: [-1.2, 0, 0.2], // on the braided rug
+    yaw: -0.5,
   },
   {
     name: "Latte",
@@ -2036,7 +2039,7 @@ export const CAT_CAFE_CATS: CatSpec[] = [
     color: "#fff4ec",
     accent: "#f7dfc4",
     pose: "sleep",
-    pos: [0, 0.32, -1.2], // on the big pink cushion
+    pos: [0, 0.22, -1.2], // on top of the big pink cushion
     yaw: 0.4,
   },
   {
@@ -2045,8 +2048,8 @@ export const CAT_CAFE_CATS: CatSpec[] = [
     color: "#caa980",
     accent: "#a07a4a",
     pose: "sit",
-    pos: [3.4, 0, 1.4], // near the bookshelf
-    yaw: Math.PI * 0.75,
+    pos: [3.5, 0, 1.0], // near the bookshelf
+    yaw: Math.PI * 0.55,
   },
   {
     name: "Biscuit",
@@ -2054,7 +2057,7 @@ export const CAT_CAFE_CATS: CatSpec[] = [
     color: "#e3b36a",
     accent: "#a07a1a",
     pose: "stretch",
-    pos: [2.0, 0, -2.8], // in a warm patch by the back wall
+    pos: [1.4, 0, -3.2], // warm patch near the back wall
     yaw: -Math.PI / 2,
   },
 ];
@@ -2088,6 +2091,27 @@ export function makeCat3D(spec: CatSpec): THREE.Group {
     chest.position.set(0.05, 0.22, 0);
     chest.scale.set(0.6, 1.1, 0.6);
     torso.add(chest);
+    // Little front paws in front of the belly so the cat is clearly
+    // grounded rather than floating.
+    for (const pz of [-0.08, 0.08]) {
+      const paw = new THREE.Mesh(
+        new THREE.SphereGeometry(0.06, 10, 8),
+        body,
+      );
+      paw.position.set(0.16, 0.05, pz);
+      paw.scale.set(1.1, 0.55, 1);
+      torso.add(paw);
+    }
+    // Haunches showing the back legs tucked under.
+    for (const pz of [-0.12, 0.12]) {
+      const haunch = new THREE.Mesh(
+        new THREE.SphereGeometry(0.09, 12, 10),
+        body,
+      );
+      haunch.position.set(-0.08, 0.08, pz);
+      haunch.scale.set(1.2, 0.65, 1);
+      torso.add(haunch);
+    }
     head.position.set(0.1, 0.5, 0);
     const tailCurve = new THREE.Mesh(
       new THREE.TorusGeometry(0.14, 0.04, 8, 20, Math.PI * 1.2),
@@ -2214,15 +2238,16 @@ export function makeCat3D(spec: CatSpec): THREE.Group {
   smile.rotation.y = -Math.PI / 2;
   smile.rotation.z = Math.PI;
   head.add(smile);
-  // Whiskers
+  // Whiskers — straight, sticking horizontally out of each cheek.
   const whiskerM = mat({ color: "#fdf6de" });
-  const whiskerGeo = new THREE.CylinderGeometry(0.002, 0.002, 0.1, 4);
+  const whiskerGeo = new THREE.CylinderGeometry(0.002, 0.002, 0.12, 4);
   for (const side of [1, -1]) {
     for (const dy of [0.015, -0.005, -0.025]) {
       const w = new THREE.Mesh(whiskerGeo, whiskerM);
-      w.position.set(0.14, dy, 0.05 * side);
-      w.rotation.z = Math.PI / 2;
-      w.rotation.y = side > 0 ? 0.35 : -0.35;
+      // Cylinder native along Y → rotate around X to align with Z axis.
+      w.rotation.x = Math.PI / 2;
+      // Place centre outside the cheek so the whisker extends fully into fresh air.
+      w.position.set(0.14, dy, (0.08 + 0.06) * side);
       head.add(w);
     }
   }
@@ -2286,9 +2311,9 @@ export function buildCatCafeBasement(): THREE.Group {
   floor.receiveShadow = true;
   g.add(floor);
 
-  // Warm wallpaper — a gentle peach
-  const wallM = mat({ color: "#f5dec5", roughness: 0.95 });
-  const trimM = mat({ color: "#fff7e6", roughness: 0.5 });
+  // Coffee-shop vibe: deep forest-green walls with warm dark-wood trim.
+  const wallM = mat({ color: "#34503f", roughness: 0.95 });
+  const trimM = mat({ color: "#5a3a22", roughness: 0.6 });
 
   // Back wall (far +Z)
   const backWall = new THREE.Mesh(new THREE.PlaneGeometry(W, H), wallM);
@@ -2325,7 +2350,7 @@ export function buildCatCafeBasement(): THREE.Group {
   // Ceiling — slightly lowered to feel cozy
   const ceil = new THREE.Mesh(
     new THREE.BoxGeometry(W - 0.02, 0.06, D - 0.02),
-    mat({ color: "#fff1d6", roughness: 0.9 }),
+    mat({ color: "#241811", roughness: 0.9 }),
   );
   ceil.position.set(0, H + 0.03, 0);
   g.add(ceil);
@@ -2353,8 +2378,9 @@ export function buildCatCafeBasement(): THREE.Group {
   const topTex = counterTopTexture();
   topTex.repeat.set(2, 1);
   const topM = mat({ map: topTex, roughness: 0.5 });
-  const baseM = mat({ color: "#f7d3a6", roughness: 0.8 });
-  const baseTrim = mat({ color: "#b87a3e", roughness: 0.7 });
+  // Espresso-stained oak base with a mossy-green accent stripe.
+  const baseM = mat({ color: "#4a2f1c", roughness: 0.85 });
+  const baseTrim = mat({ color: "#2a3d30", roughness: 0.7 });
 
   // Long arm
   const longLen = 6.4;
@@ -2404,6 +2430,19 @@ export function buildCatCafeBasement(): THREE.Group {
   );
   shortTop.position.set(shortCX, 0.97, shortCZ);
   g.add(shortTop);
+  // Vertical paneling on the short arm's room-facing side (+X)
+  for (let i = 0; i < 4; i++) {
+    const stripe = new THREE.Mesh(
+      new THREE.BoxGeometry(0.02, 0.85, 0.04),
+      baseTrim,
+    );
+    stripe.position.set(
+      shortCX + shortDepth / 2 + 0.005,
+      0.45,
+      shortCZ - shortLen / 2 + 0.35 + i * 0.55,
+    );
+    g.add(stripe);
+  }
 
   // Stash counter colliders so BakeryWorld3D can apply them
   g.userData.counterColliders = [
@@ -2443,9 +2482,9 @@ export function buildCatCafeBasement(): THREE.Group {
     g.add(arm);
     const cup = new THREE.Mesh(
       new THREE.CylinderGeometry(0.05, 0.04, 0.08, 14),
-      mat({ color: "#fff2da", roughness: 0.5 }),
+      mat({ color: "#efe3c8", roughness: 0.5 }),
     );
-    cup.position.set(longCX - 1.2 + dx, 1.01, longCZ - 0.08);
+    cup.position.set(longCX - 1.2 + dx, 1.01, longCZ - 0.22);
     g.add(cup);
   }
   // Steam wand
@@ -2457,22 +2496,30 @@ export function buildCatCafeBasement(): THREE.Group {
   wand.rotation.z = 0.3;
   g.add(wand);
 
-  // A row of mug saucers
-  const saucerM = mat({ color: "#ffe4b8" });
-  const mugM = mat({ color: "#c97070", roughness: 0.5 });
+  // A row of mug saucers, nudged toward the customer side of the counter.
+  const saucerM = mat({ color: "#d8c49a", roughness: 0.5 });
+  const mugM = mat({ color: "#4a2f1c", roughness: 0.5 });
   for (let i = 0; i < 4; i++) {
     const saucer = new THREE.Mesh(
       new THREE.CylinderGeometry(0.09, 0.09, 0.015, 18),
       saucerM,
     );
-    saucer.position.set(longCX + 0.2 + i * 0.3, 1.01, longCZ + 0.05);
+    saucer.position.set(longCX + 0.2 + i * 0.3, 1.01, longCZ - 0.2);
     g.add(saucer);
     const mug = new THREE.Mesh(
       new THREE.CylinderGeometry(0.055, 0.055, 0.1, 18),
       mugM,
     );
-    mug.position.set(longCX + 0.2 + i * 0.3, 1.07, longCZ + 0.05);
+    mug.position.set(longCX + 0.2 + i * 0.3, 1.07, longCZ - 0.2);
     g.add(mug);
+    // Little handle
+    const handle = new THREE.Mesh(
+      new THREE.TorusGeometry(0.035, 0.01, 6, 10, Math.PI),
+      mugM,
+    );
+    handle.position.set(longCX + 0.2 + i * 0.3 + 0.06, 1.07, longCZ - 0.2);
+    handle.rotation.y = Math.PI / 2;
+    g.add(handle);
   }
 
   // Chalkboard menu on the back wall above the long arm
@@ -2490,7 +2537,7 @@ export function buildCatCafeBasement(): THREE.Group {
   g.add(boardFrame);
   // Chalk menu "lines" — rows of little white/pink box marks
   const chalkW = mat({ color: "#fff" });
-  const chalkPink = mat({ color: "#ffbad1" });
+  const chalkPink = mat({ color: "#e8c57a" }); // warm gold chalk accent
   for (let i = 0; i < 4; i++) {
     const head = new THREE.Mesh(
       new THREE.BoxGeometry(0.5, 0.04, 0.005),
@@ -2507,31 +2554,73 @@ export function buildCatCafeBasement(): THREE.Group {
   }
 
   // ---- "Upstairs" staircase at the front wall stair opening ----
-  // Half-hearted geometry — the player teleports; these are cosmetic steps
-  // rising into a dark rectangle that reads as "stairs going up".
+  // Player enters the basement at the deep end (+Z) and walks toward -Z
+  // to reach the stairs. The stairs should rise AWAY from the player — the
+  // lowest (bottom) step is closest to the player at higher z, and each
+  // successive step rises y while receding toward the wall at -Z.
   const stepM = mat({ color: "#d7a975", roughness: 0.7 });
-  const stairGeo = new THREE.BoxGeometry(1.7, 0.04, 0.3);
+  const stepRise = 0.18;
+  const stepRun = 0.26;
+  const stairGeo = new THREE.BoxGeometry(1.7, 0.04, stepRun + 0.02);
+  const stairBottomZ = -D / 2 + 1.8; // closest step to the player
   for (let i = 0; i < 6; i++) {
     const s = new THREE.Mesh(stairGeo, stepM);
-    s.position.set(0, 0.05 + i * 0.18, -D / 2 + 0.2 + i * 0.25);
+    s.position.set(0, 0.05 + i * stepRise, stairBottomZ - i * stepRun);
     g.add(s);
+    // Riser under each step
+    if (i > 0) {
+      const riser = new THREE.Mesh(
+        new THREE.BoxGeometry(1.7, stepRise, 0.02),
+        mat({ color: "#8c5a36", roughness: 0.8 }),
+      );
+      riser.position.set(
+        0,
+        0.05 + (i - 0.5) * stepRise,
+        stairBottomZ - i * stepRun + stepRun / 2,
+      );
+      g.add(riser);
+    }
   }
-  // "Dark up-ramp" above steps gives a sense of depth
+  // "Dark up-ramp" at the top of the steps — reads as "the stairwell
+  // continues up into darkness toward the bakery floor above".
   const darkPanel = new THREE.Mesh(
     new THREE.PlaneGeometry(1.9, 2.0),
-    mat({ color: "#2a1a14", roughness: 1 }),
+    mat({ color: "#1a0f0a", roughness: 1 }),
   );
-  darkPanel.position.set(0, 1.3, -D / 2 + 0.04);
+  darkPanel.position.set(0, 1.45, -D / 2 + 0.04);
   g.add(darkPanel);
+  // A thin wooden landing slab where the dark opening begins
+  const landing = new THREE.Mesh(
+    new THREE.BoxGeometry(1.7, 0.06, 0.4),
+    stepM,
+  );
+  landing.position.set(0, 0.05 + 5 * stepRise + 0.04, -D / 2 + 0.25);
+  g.add(landing);
 
-  // Handrails for the stairs
-  const railM = mat({ color: "#f5a3c7", roughness: 0.5 });
-  const railGeo = new THREE.CylinderGeometry(0.03, 0.03, 1.8, 10);
+  // Handrails — slope downward from the wall (high y) toward the player
+  // (low y) matching the step direction.
+  const railM = mat({ color: "#3d2617", roughness: 0.5 });
+  const railGeo = new THREE.CylinderGeometry(0.03, 0.03, 1.9, 10);
   for (const sx of [-0.85, 0.85]) {
     const r = new THREE.Mesh(railGeo, railM);
-    r.position.set(sx, 0.9, -D / 2 + 0.9);
-    r.rotation.x = 0.55;
+    r.position.set(sx, 0.85, -D / 2 + 0.9);
+    // Rotate so the high end is at -Z (wall) and low end is at +Z (player).
+    r.rotation.x = -Math.atan2(5 * stepRise, 5 * stepRun);
     g.add(r);
+    // Newel posts at the bottom
+    const post = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.04, 0.95, 10),
+      railM,
+    );
+    post.position.set(sx, 0.45, stairBottomZ + 0.05);
+    g.add(post);
+    // Ball top on each newel
+    const ball = new THREE.Mesh(
+      new THREE.SphereGeometry(0.07, 10, 8),
+      mat({ color: "#c9a15c", roughness: 0.4, metalness: 0.5 }), // brass ball top
+    );
+    ball.position.set(sx, 0.95, stairBottomZ + 0.05);
+    g.add(ball);
   }
   // ↑ sign above the stairs
   const exitSign = new THREE.Mesh(
@@ -2556,10 +2645,10 @@ export function buildCatCafeBasement(): THREE.Group {
     g.add(letter);
   }
 
-  // ---- Braided oval rug + big pink floor cushion ----
+  // ---- Braided oval rug + big mossy-green floor cushion ----
   const rug = new THREE.Mesh(
     new THREE.CircleGeometry(1.6, 32),
-    mat({ color: "#e17eb0", roughness: 0.95 }),
+    mat({ color: "#3d2a1a", roughness: 0.95 }), // dark espresso ring
   );
   rug.rotation.x = -Math.PI / 2;
   rug.position.set(0, 0.005, -0.5);
@@ -2567,7 +2656,7 @@ export function buildCatCafeBasement(): THREE.Group {
   g.add(rug);
   const rugInner = new THREE.Mesh(
     new THREE.CircleGeometry(1.15, 32),
-    mat({ color: "#f7b8c8", roughness: 0.95 }),
+    mat({ color: "#7a5a3a", roughness: 0.95 }), // warm caramel centre
   );
   rugInner.rotation.x = -Math.PI / 2;
   rugInner.position.set(0, 0.007, -0.5);
@@ -2577,42 +2666,61 @@ export function buildCatCafeBasement(): THREE.Group {
   // Giant squishy cushion on the rug (Latte sleeps on this)
   const cushion = new THREE.Mesh(
     new THREE.BoxGeometry(1.1, 0.2, 0.7),
-    mat({ color: "#d55a98", roughness: 0.9 }),
+    mat({ color: "#2f4a38", roughness: 0.9 }),
   );
   cushion.position.set(0, 0.12, -1.2);
   g.add(cushion);
   const cushionTop = new THREE.Mesh(
     new THREE.BoxGeometry(1.0, 0.08, 0.62),
-    mat({ color: "#ffe4b8", roughness: 0.9 }),
+    mat({ color: "#4a6b55", roughness: 0.9 }),
   );
   cushionTop.position.set(0, 0.25, -1.2);
   g.add(cushionTop);
 
-  // ---- Bookshelf ----
-  const shelfM = mat({ color: "#5c3a22", roughness: 0.8 });
+  // ---- Bookshelf (against right wall, books + spines face the room) ----
+  const shelfM = mat({ color: "#3d2617", roughness: 0.85 }); // dark walnut
   const shelfBack = new THREE.Mesh(
-    new THREE.BoxGeometry(1.4, 2.0, 0.12),
+    new THREE.BoxGeometry(1.4, 2.0, 0.08),
     shelfM,
   );
-  shelfBack.position.set(W / 2 - 0.75, 1.05, 0);
+  // Push back panel flush against the wall so shelves + books sit *in front*
+  // of it, visible from the room side (the player was previously looking at
+  // the back of the panel).
+  shelfBack.position.set(W / 2 - 0.05, 1.05, 0);
   shelfBack.rotation.y = -Math.PI / 2;
   g.add(shelfBack);
-  // Shelves + colorful books
-  const bookColors = ["#ef6464", "#f5b93b", "#7fd6ff", "#a6f0a1", "#c59ef5"];
+  // Vertical side panels framing the bookcase
+  const sideGeo = new THREE.BoxGeometry(0.5, 2.0, 0.05);
+  for (const sz of [-0.7, 0.7]) {
+    const sidePanel = new THREE.Mesh(sideGeo, shelfM);
+    sidePanel.position.set(W / 2 - 0.3, 1.05, sz);
+    g.add(sidePanel);
+  }
+  // Top cap + bottom kickplate
+  const capGeo = new THREE.BoxGeometry(0.55, 0.05, 1.45);
+  const cap = new THREE.Mesh(capGeo, shelfM);
+  cap.position.set(W / 2 - 0.3, 2.07, 0);
+  g.add(cap);
+  const kick = new THREE.Mesh(capGeo, shelfM);
+  kick.position.set(W / 2 - 0.3, 0.08, 0);
+  g.add(kick);
+  // Shelves + muted book spines in coffee-shop colours
+  const bookColors = ["#6b4a2f", "#3d5c4a", "#8c5a36", "#4a6b55", "#5a3a2a"];
   for (let row = 0; row < 4; row++) {
     const shelf = new THREE.Mesh(
-      new THREE.BoxGeometry(0.4, 0.04, 1.3),
+      new THREE.BoxGeometry(0.5, 0.04, 1.35),
       shelfM,
     );
-    shelf.position.set(W / 2 - 0.55, 0.35 + row * 0.45, 0);
+    shelf.position.set(W / 2 - 0.3, 0.35 + row * 0.45, 0);
     g.add(shelf);
     for (let b = 0; b < 5; b++) {
       const h = 0.28 + ((row + b) % 3) * 0.05;
+      // Book bodies sit in front of the back panel, spines facing the room (-X).
       const book = new THREE.Mesh(
-        new THREE.BoxGeometry(0.2, h, 0.12),
-        mat({ color: bookColors[(row + b) % bookColors.length] }),
+        new THREE.BoxGeometry(0.26, h, 0.14),
+        mat({ color: bookColors[(row + b) % bookColors.length], roughness: 0.9 }),
       );
-      book.position.set(W / 2 - 0.55, 0.37 + row * 0.45 + h / 2, -0.45 + b * 0.22);
+      book.position.set(W / 2 - 0.3, 0.37 + row * 0.45 + h / 2, -0.52 + b * 0.26);
       g.add(book);
     }
   }
@@ -2689,6 +2797,256 @@ export function buildCatCafeBasement(): THREE.Group {
       g.add(toe);
     }
   }
+
+  // ---- Big potted fiddle-leaf plant in the back-left corner ----
+  const potM = mat({ color: "#3d2617", roughness: 0.85 });
+  const pot = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.32, 0.26, 0.55, 18),
+    potM,
+  );
+  pot.position.set(-W / 2 + 0.7, 0.275, D / 2 - 0.7);
+  g.add(pot);
+  const soil = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.3, 0.3, 0.04, 18),
+    mat({ color: "#2a1810", roughness: 1 }),
+  );
+  soil.position.set(-W / 2 + 0.7, 0.56, D / 2 - 0.7);
+  g.add(soil);
+  // Trunk
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.04, 0.05, 1.4, 10),
+    mat({ color: "#5a3a22", roughness: 0.9 }),
+  );
+  trunk.position.set(-W / 2 + 0.7, 1.28, D / 2 - 0.7);
+  g.add(trunk);
+  // Leaves — a cluster of flat rounded blobs
+  const leafM = mat({ color: "#2f4a32", roughness: 0.9 });
+  for (let i = 0; i < 9; i++) {
+    const leaf = new THREE.Mesh(
+      new THREE.SphereGeometry(0.22, 10, 8),
+      leafM,
+    );
+    const a = (i / 9) * Math.PI * 2;
+    const y = 1.0 + (i % 3) * 0.35;
+    leaf.position.set(
+      -W / 2 + 0.7 + Math.cos(a) * 0.18,
+      y,
+      D / 2 - 0.7 + Math.sin(a) * 0.18,
+    );
+    leaf.scale.set(1.2, 0.5, 1.0);
+    leaf.rotation.y = a;
+    g.add(leaf);
+  }
+
+  // ---- Cat scratching post (near cushion) ----
+  const postBaseM = mat({ color: "#5a3a22", roughness: 0.9 });
+  const ropeM = mat({ color: "#c9a15c", roughness: 1 });
+  const postBase = new THREE.Mesh(
+    new THREE.BoxGeometry(0.4, 0.06, 0.4),
+    postBaseM,
+  );
+  postBase.position.set(1.6, 0.03, -1.4);
+  g.add(postBase);
+  const postShaft = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.08, 0.08, 0.9, 14),
+    ropeM,
+  );
+  postShaft.position.set(1.6, 0.51, -1.4);
+  g.add(postShaft);
+  const postTop = new THREE.Mesh(
+    new THREE.BoxGeometry(0.36, 0.06, 0.36),
+    postBaseM,
+  );
+  postTop.position.set(1.6, 0.99, -1.4);
+  g.add(postTop);
+  // Dangling feather toy
+  const feather = new THREE.Mesh(
+    new THREE.ConeGeometry(0.05, 0.18, 8),
+    mat({ color: "#c97070" }),
+  );
+  feather.position.set(1.72, 0.85, -1.4);
+  feather.rotation.z = -0.3;
+  g.add(feather);
+
+  // ---- Food + water bowls on the floor ----
+  const bowlMats = [
+    mat({ color: "#6b4a2f", roughness: 0.7 }),
+    mat({ color: "#4a6b55", roughness: 0.7 }),
+  ];
+  for (let i = 0; i < 2; i++) {
+    const bowl = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.1, 0.05, 18),
+      bowlMats[i],
+    );
+    bowl.position.set(-1.7 + i * 0.35, 0.025, -1.4);
+    g.add(bowl);
+    // Contents — kibble is warm brown, water shimmery blue
+    const contents = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1, 0.1, 0.02, 16),
+      mat({
+        color: i === 0 ? "#8c5a36" : "#7fb3d9",
+        roughness: i === 0 ? 0.9 : 0.3,
+      }),
+    );
+    contents.position.set(-1.7 + i * 0.35, 0.06, -1.4);
+    g.add(contents);
+  }
+
+  // ---- Framed painting on the left wall ----
+  const paintBgM = mat({ color: "#8c5a36", roughness: 0.5 });
+  const paintFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(0.06, 0.8, 1.2),
+    paintBgM,
+  );
+  paintFrame.position.set(-W / 2 + 0.04, 1.7, 2);
+  g.add(paintFrame);
+  const paintCanvas = new THREE.Mesh(
+    new THREE.BoxGeometry(0.03, 0.7, 1.1),
+    mat({ color: "#efe3c8", roughness: 0.9 }),
+  );
+  paintCanvas.position.set(-W / 2 + 0.08, 1.7, 2);
+  g.add(paintCanvas);
+  // A big cozy cat silhouette on the painting
+  const paintCat = mat({ color: "#3d2617", roughness: 0.9 });
+  const pcBody = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 12), paintCat);
+  pcBody.position.set(-W / 2 + 0.1, 1.6, 2);
+  pcBody.scale.set(0.12, 0.7, 1);
+  g.add(pcBody);
+  const pcHead = new THREE.Mesh(new THREE.SphereGeometry(0.12, 14, 10), paintCat);
+  pcHead.position.set(-W / 2 + 0.1, 1.82, 2.24);
+  pcHead.scale.set(0.12, 1, 1);
+  g.add(pcHead);
+  for (const ex of [0, 0.06]) {
+    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.08, 6), paintCat);
+    ear.position.set(-W / 2 + 0.1, 1.94, 2.2 + ex);
+    ear.scale.set(0.25, 1, 1);
+    g.add(ear);
+  }
+
+  // ---- A small cafe table with two seated patrons ----
+  // Placed in front of the short arm of the L-counter so the scene feels
+  // lived-in. Figures breathe via their update() call; BakeryWorld3D ticks
+  // them each frame from userData.patronFigs.
+  const tableM = mat({ color: "#5a3a22", roughness: 0.85 });
+  const tableGroup = new THREE.Group();
+  const tableTop = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.55, 0.55, 0.05, 24),
+    mat({ color: "#6b4a2f", roughness: 0.7 }),
+  );
+  tableTop.position.y = 0.74;
+  tableGroup.add(tableTop);
+  const tableStem = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.05, 0.05, 0.7, 10),
+    tableM,
+  );
+  tableStem.position.y = 0.39;
+  tableGroup.add(tableStem);
+  const tableBase = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.3, 0.32, 0.05, 18),
+    tableM,
+  );
+  tableBase.position.y = 0.025;
+  tableGroup.add(tableBase);
+  // Two mugs on the table
+  for (let i = 0; i < 2; i++) {
+    const sx = i === 0 ? -0.2 : 0.2;
+    const tmug = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.05, 0.045, 0.1, 14),
+      mat({ color: i === 0 ? "#4a2f1c" : "#8c5a36", roughness: 0.5 }),
+    );
+    tmug.position.set(sx, 0.82, 0.1);
+    tableGroup.add(tmug);
+    const th = new THREE.Mesh(
+      new THREE.TorusGeometry(0.032, 0.009, 6, 10, Math.PI),
+      mat({ color: i === 0 ? "#4a2f1c" : "#8c5a36" }),
+    );
+    th.position.set(sx + 0.055, 0.82, 0.1);
+    th.rotation.y = Math.PI / 2;
+    tableGroup.add(th);
+  }
+  // Little bud vase in the centre of the table
+  const vase = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.04, 0.05, 0.14, 10),
+    mat({ color: "#4a6b55", roughness: 0.6 }),
+  );
+  vase.position.set(0, 0.85, 0);
+  tableGroup.add(vase);
+  const vaseFlower = new THREE.Mesh(
+    new THREE.SphereGeometry(0.04, 10, 8),
+    mat({ color: "#c97070", roughness: 0.8 }),
+  );
+  vaseFlower.position.set(0, 0.96, 0);
+  tableGroup.add(vaseFlower);
+  // Table positioned in the open floor space beside the short arm.
+  tableGroup.position.set(-1.4, 0, 2.4);
+  g.add(tableGroup);
+
+  // Chairs facing each other across the table
+  function makeSimpleChair(color: string): THREE.Group {
+    const c = new THREE.Group();
+    const seat = new THREE.Mesh(
+      new THREE.BoxGeometry(0.42, 0.06, 0.42),
+      mat({ color, roughness: 0.8 }),
+    );
+    seat.position.y = 0.45;
+    c.add(seat);
+    const legGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.45, 8);
+    const legM = mat({ color: "#3d2617" });
+    for (const [cx, cz] of [
+      [-0.18, -0.18],
+      [0.18, -0.18],
+      [-0.18, 0.18],
+      [0.18, 0.18],
+    ] as const) {
+      const leg = new THREE.Mesh(legGeo, legM);
+      leg.position.set(cx, 0.225, cz);
+      c.add(leg);
+    }
+    const back = new THREE.Mesh(
+      new THREE.BoxGeometry(0.42, 0.55, 0.05),
+      mat({ color, roughness: 0.8 }),
+    );
+    back.position.set(0, 0.76, -0.19);
+    c.add(back);
+    return c;
+  }
+  const chairA = makeSimpleChair("#6b4a2f");
+  chairA.position.set(-1.4, 0, 2.4 + 0.85);
+  chairA.rotation.y = Math.PI; // back faces +Z, seat faces -Z (toward table)
+  g.add(chairA);
+  const chairB = makeSimpleChair("#4a6b55");
+  chairB.position.set(-1.4, 0, 2.4 - 0.85);
+  chairB.rotation.y = 0;
+  g.add(chairB);
+
+  // Seated NPC customers. We make full figures but sink them so the torso
+  // sits at chair height — it reads as "sitting" without rigged animation.
+  const patronFigs: CharacterFigure[] = [];
+  const patronA = makeCharacter({
+    skin: "#f0c8a5",
+    shirt: "#6b4a2f", // cozy brown sweater
+    pants: "#2a1a10",
+    hair: "#3d2617",
+    hairStyle: "short",
+  });
+  patronA.root.position.set(-1.4, 0.45, 2.4 + 0.85);
+  patronA.root.rotation.y = Math.PI; // face the table
+  g.add(patronA.root);
+  patronFigs.push(patronA);
+
+  const patronB = makeCharacter({
+    skin: "#d19270",
+    shirt: "#3d5c4a", // forest-green shirt
+    pants: "#2a1a10",
+    hair: "#5a3a22",
+    hairStyle: "bun",
+  });
+  patronB.root.position.set(-1.4, 0.45, 2.4 - 0.85);
+  patronB.root.rotation.y = 0; // face the table
+  g.add(patronB.root);
+  patronFigs.push(patronB);
+
+  g.userData.patronFigs = patronFigs;
 
   // ---- Cats ----
   const cats: THREE.Group[] = [];
