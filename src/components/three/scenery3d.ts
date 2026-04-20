@@ -1074,13 +1074,14 @@ export function makeCustomChewToy(hashId: string): THREE.Group {
 }
 
 /** Positions on the plushie shelf's top deck where custom plushies get
- *  stacked once invented. Relative to shelf anchor (-4, 0, -6.15). */
+ *  stacked once invented. Relative to shelf anchor (-5.6, 0, -6.15). The
+ *  shelf sits left of the back door so the two don't overlap. */
 export const CUSTOM_PLUSHIE_SLOTS: Array<[number, number, number]> = [
-  [-4.9, 1.5, -6.15],
-  [-4.4, 1.5, -6.15],
-  [-3.9, 1.5, -6.15],
-  [-3.4, 1.5, -6.15],
-  [-2.9, 1.5, -6.15],
+  [-6.5, 1.5, -6.15],
+  [-6.0, 1.5, -6.15],
+  [-5.5, 1.5, -6.15],
+  [-5.0, 1.5, -6.15],
+  [-4.5, 1.5, -6.15],
 ];
 
 /** Positions near the pet station where custom chew toys pile up. */
@@ -1095,9 +1096,9 @@ export const CUSTOM_CHEW_SLOTS: Array<[number, number, number]> = [
 export function buildPlushieShelf(): THREE.Group {
   const g = new THREE.Group();
   g.name = "plushie_shelf";
-  // Back-left area of the bakery, against the back wall (z ≈ -6.5).
-  // Offset from the wall so the kids can see the plushies from any angle.
-  const shelfX = -4.0;
+  // Back-left area of the bakery, against the back wall (z ≈ -6.5). Sits
+  // to the left of the back door so the two pieces don't overlap.
+  const shelfX = -5.6;
   const shelfZ = -6.15;
   const shelfW = 2.4;
 

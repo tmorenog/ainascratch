@@ -148,11 +148,12 @@ export const HOTSPOTS: Hotspot[] = [
   },
   {
     // Plushie merch shelf — grab a plush off the shelf and gift-wrap it,
-    // instead of routing merch through the pastry counter prep.
+    // instead of routing merch through the pastry counter prep. Sits to
+    // the left of the back door so the two don't overlap.
     id: "shelf",
     kind: "station",
     stationId: "shelf",
-    position: [-4.0, 0, -5.4],
+    position: [-5.6, 0, -5.4],
     facing: -Math.PI, // face -Z toward the shelf on the back wall
     label: "Plushie Shelf",
     prompt: "Pick out a plush",
