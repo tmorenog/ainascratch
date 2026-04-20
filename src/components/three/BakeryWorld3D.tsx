@@ -66,7 +66,7 @@ export function BakeryWorld3D({
 
   const [prompt, setPrompt] = useState<string | null>(null);
   const [nearCat, setNearCat] = useState(false);
-  const [noTreatToast, setNoTreatToast] = useState(false);
+  const [noTreatToast, setNoTreatToast] = useState<"treat" | "toy" | null>(null);
   const [locked, setLocked] = useState(false);
   const [isTouch, setIsTouch] = useState(false);
   const activeHotspotRef = useRef<Hotspot | null>(null);
@@ -601,9 +601,9 @@ export function BakeryWorld3D({
       // happens except a little toast telling the player to bake more.
       const fed = useGame.getState().feedCatTreat();
       if (!fed.ok) {
-        setNoTreatToast(true);
+        setNoTreatToast("treat");
         window.clearTimeout(noTreatToastTimer);
-        noTreatToastTimer = window.setTimeout(() => setNoTreatToast(false), 1600);
+        noTreatToastTimer = window.setTimeout(() => setNoTreatToast(null), 2400);
         return;
       }
       const catInfo = activeCatRef.userData.cat as {
@@ -661,9 +661,9 @@ export function BakeryWorld3D({
       if (!activeCatRef || !activeCatName) return;
       const gave = useGame.getState().giveCatToy();
       if (!gave.ok) {
-        setNoTreatToast(true);
+        setNoTreatToast("toy");
         window.clearTimeout(noTreatToastTimer);
-        noTreatToastTimer = window.setTimeout(() => setNoTreatToast(false), 1600);
+        noTreatToastTimer = window.setTimeout(() => setNoTreatToast(null), 2400);
         return;
       }
       const catInfo = activeCatRef.userData.cat as { favToy: string };
@@ -1503,7 +1503,9 @@ export function BakeryWorld3D({
       {noTreatToast && (
         <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-16 z-20">
           <div className="bg-amber-700/90 text-cream-50 text-sm px-4 py-2 rounded-full shadow-bakery">
-            🍪 Bake a Fishy Cat Cookie or Bone Biscuit upstairs first!
+            {noTreatToast === "treat"
+              ? "🍪 Bake a Fishy Cat Cookie or Bone Biscuit upstairs first!"
+              : "🧸 Bake a pet toy (feather wand, tennis ball…) upstairs first!"}
           </div>
         </div>
       )}
