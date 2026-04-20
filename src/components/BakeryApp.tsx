@@ -170,7 +170,7 @@ export function BakeryApp() {
             } else if (hs.kind === "counter-customer") {
               if (customer) setDialogCustomer(customer);
               else if (!isOpen && customers.length === 0) toggleStore();
-            } else if (hs.kind === "cat-cafe") {
+            } else if (hs.kind === "cat-cafe" || hs.kind === "cat-cafe-coffee") {
               setOpenCatCafe(true);
             }
           }}

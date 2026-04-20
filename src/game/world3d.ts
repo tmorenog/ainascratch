@@ -44,13 +44,48 @@ export interface Hotspot {
     | "supermarket"
     | "counter-customer"
     | "door"
-    | "cat-cafe";
+    | "cat-cafe"
+    | "cat-cafe-exit"
+    | "cat-cafe-coffee";
   position: [number, number, number];
   facing: number; // yaw in radians the player should face to interact
   label: string;
   prompt: string;
   stationId?: "drink" | "pastry" | "scratch" | "pet";
 }
+
+/** Recipes unlocked only while downstairs at the Cat Cafe. Kept here so
+ *  the 3D scene and the cafe modal agree on what shows up. */
+export const CAT_CAFE_UNLOCK_LEVEL = 5;
+
+/**
+ * The cat cafe is its own 3D room placed far to the +Z side of the map so
+ * it doesn't overlap anything else. When the player interacts with the
+ * "cat-cafe" stairs hotspot upstairs, we teleport the camera to
+ * BASEMENT.entry. An exit hotspot at the base of the stairs teleports them
+ * back next to the staircase in the bakery.
+ */
+export const BASEMENT = {
+  width: 12,
+  depth: 11,
+  height: 3.0,
+  cx: 0,
+  cz: 60, // far in +Z from the bakery; clearly separated
+  entry: { x: 0, z: 56.2, yaw: 0 }, // drops in facing +Z (into room)
+  exitUp: { x: 5.5, z: -4.2, yaw: 0 }, // teleport back near the stairs
+};
+
+export const CAT_CAFE_EXIT_POS: [number, number, number] = [
+  BASEMENT.cx,
+  0,
+  BASEMENT.cz - BASEMENT.depth / 2 + 0.6,
+];
+
+export const CAT_CAFE_COFFEE_POS: [number, number, number] = [
+  BASEMENT.cx - 2.4,
+  0,
+  BASEMENT.cz + 1.0,
+];
 
 /**
  * Hotspot positions are anchored to counter surfaces. The interact radius
@@ -131,7 +166,7 @@ export const HOTSPOTS: Hotspot[] = [
   },
   {
     // Spiral-ish staircase tucked into the back-right corner of the bakery.
-    // Unlocked at level 20 — leads down to the cozy Cat Cafe.
+    // Unlocks at level CAT_CAFE_UNLOCK_LEVEL — leads down to the cozy Cat Cafe.
     id: "cat-cafe",
     kind: "cat-cafe",
     position: [5.5, 0, -5.2],
@@ -139,11 +174,25 @@ export const HOTSPOTS: Hotspot[] = [
     label: "Cat Cafe ↓",
     prompt: "Head downstairs to the Cat Cafe",
   },
+  {
+    // Stairs back up, placed at the near edge of the basement room.
+    id: "cat-cafe-exit",
+    kind: "cat-cafe-exit",
+    position: CAT_CAFE_EXIT_POS,
+    facing: Math.PI, // face -Z (toward stairs leading up)
+    label: "Stairs Up",
+    prompt: "Climb back up to the bakery",
+  },
+  {
+    // Brewing counter inside the cafe. Opens the coffee brew panel.
+    id: "cat-cafe-coffee",
+    kind: "cat-cafe-coffee",
+    position: CAT_CAFE_COFFEE_POS,
+    facing: 0,
+    label: "Coffee Bar",
+    prompt: "Brew a cat cafe drink",
+  },
 ];
-
-/** Recipes unlocked only while downstairs at the Cat Cafe. Kept here so
- *  the 3D scene and the cafe modal agree on what shows up. */
-export const CAT_CAFE_UNLOCK_LEVEL = 5;
 
 export type FurnitureId =
   | "round_table"

@@ -9,6 +9,8 @@ import {
   PLAYER,
   FOV_DEG,
   HOTSPOTS,
+  BASEMENT,
+  CAT_CAFE_UNLOCK_LEVEL,
   type Hotspot,
 } from "@/game/world3d";
 import {
@@ -19,6 +21,7 @@ import {
   buildPantry,
   buildPlushieShelf,
   buildCatCafeStairs,
+  buildCatCafeBasement,
   buildSeatingArea,
   makeCustomPlushie,
   makeCustomChewToy,
@@ -78,6 +81,9 @@ export function BakeryWorld3D({
   // Fires when the player is next to a dog/cat — spawns hearts + wags
   // the tail. Wired up inside the main useEffect.
   const petTriggerRef = useRef<() => void>(() => {});
+  // Routes hotspot interactions — basement stairs teleport locally; everything
+  // else forwards to the parent via onInteract.
+  const interactHandlerRef = useRef<(hs: Hotspot) => void>(() => {});
   // Shared by the on-screen mobile joystick overlay and the per-frame tick.
   const moveVecRef = useRef({ x: 0, y: 0 });
   const onInteractRef = useRef(onInteract);
@@ -217,6 +223,16 @@ export function BakeryWorld3D({
     scene.add(buildPlushieShelf());
     scene.add(buildCatCafeStairs());
     scene.add(buildSeatingArea());
+    const basement = buildCatCafeBasement();
+    scene.add(basement);
+    const basementCats = (basement.userData.cats as THREE.Group[]) ?? [];
+    const basementCounterColliders =
+      (basement.userData.counterColliders as {
+        x: number;
+        z: number;
+        w: number;
+        d: number;
+      }[]) ?? [];
     const outdoors = buildOutdoors();
     scene.add(outdoors);
 
@@ -457,6 +473,39 @@ export function BakeryWorld3D({
     petTriggerRef.current = tryPet;
 
     // ---- Controls (pointer lock + WASD + touch) ----
+    function handleHotspot(hs: Hotspot) {
+      // Stairs down → teleport player into basement
+      if (hs.kind === "cat-cafe") {
+        const lvl = useGame.getState().level;
+        if (lvl < CAT_CAFE_UNLOCK_LEVEL) {
+          // Defer to parent so it can show a locked toast/modal
+          onInteractRef.current(hs, null);
+          return;
+        }
+        camera.position.set(
+          BASEMENT.entry.x,
+          PLAYER.eyeHeight,
+          BASEMENT.entry.z,
+        );
+        camera.rotation.y = BASEMENT.entry.yaw;
+        camera.rotation.x = 0;
+        return;
+      }
+      // Stairs up → teleport back to bakery
+      if (hs.kind === "cat-cafe-exit") {
+        camera.position.set(
+          BASEMENT.exitUp.x,
+          PLAYER.eyeHeight,
+          BASEMENT.exitUp.z,
+        );
+        camera.rotation.y = BASEMENT.exitUp.yaw;
+        camera.rotation.x = 0;
+        return;
+      }
+      onInteractRef.current(hs, activeCustomerRef.current);
+    }
+    interactHandlerRef.current = handleHotspot;
+
     const keys = new Set<string>();
     const onKeyDown = (e: KeyboardEvent) => {
       if (pausedRef.current) return;
@@ -464,7 +513,7 @@ export function BakeryWorld3D({
       if (e.code === "KeyE" || e.code === "Space") {
         const hs = activeHotspotRef.current;
         if (hs) {
-          onInteract(hs, activeCustomerRef.current);
+          handleHotspot(hs);
         } else if (activePetRef) {
           tryPet();
         }
@@ -636,6 +685,8 @@ export function BakeryWorld3D({
       { x: -5.6, z: -ROOM.depth / 2 - 34.6, w: 2.2, d: 0.7 },
       { x: -0.4, z: -ROOM.depth / 2 - 34.6, w: 2.2, d: 0.7 },
       { x: -3.0, z: -ROOM.depth / 2 - 34.8, w: 2.2, d: 0.7 },
+      // Basement L-counter (world coords baked in from scenery3d)
+      ...basementCounterColliders,
     ];
     function collides(x: number, z: number, r: number): boolean {
       for (const c of colliders) {
@@ -667,7 +718,19 @@ export function BakeryWorld3D({
     // walk sideways near a doorway.
     let wasOutdoor = false;
     let wasMarket = false;
+    // Basement bounds (local to BASEMENT.cx/cz).
+    const bmMinX = BASEMENT.cx - BASEMENT.width / 2 + 0.3;
+    const bmMaxX = BASEMENT.cx + BASEMENT.width / 2 - 0.3;
+    const bmMinZ = BASEMENT.cz - BASEMENT.depth / 2 + 0.3;
+    const bmMaxZ = BASEMENT.cz + BASEMENT.depth / 2 - 0.3;
     function applyBounds(pos: THREE.Vector3) {
+      // Basement is a disjoint island at z ≈ BASEMENT.cz — easy to detect.
+      if (pos.z > BASEMENT.cz - BASEMENT.depth) {
+        pos.x = Math.max(bmMinX, Math.min(bmMaxX, pos.x));
+        pos.z = Math.max(bmMinZ, Math.min(bmMaxZ, pos.z));
+        pos.y = PLAYER.eyeHeight;
+        return;
+      }
       const isMarket = wasMarket
         ? pos.z <= SM_FRONT_Z + 0.1
         : pos.z < SM_FRONT_Z;
@@ -865,6 +928,22 @@ export function BakeryWorld3D({
         }
       }
 
+      // Basement cats — gentle breathing + occasional tail flicks.
+      for (const cat of basementCats) {
+        const parts = cat.userData.cat as
+          | { head: THREE.Group; tail: THREE.Group; pose: string; name: string }
+          | undefined;
+        if (!parts) continue;
+        const seed = cat.position.x * 1.7 + cat.position.z * 0.9;
+        const breathe = Math.sin(now * 0.0025 + seed) * 0.012;
+        parts.head.position.y = (parts.head.position.y || 0) * 0 + (parts.head.position.y || 0); // no-op keep baseline
+        cat.scale.y = 1 + breathe;
+        // Tail flick for sit/loaf/stretch — rotate around its local origin
+        if (parts.pose !== "sleep") {
+          parts.tail.rotation.y = Math.sin(now * 0.002 + seed) * 0.4;
+        }
+      }
+
       // Gifted counter-pets: gentle idle breathing + occasional tail wag.
       for (const [, g] of giftedPetGroups) {
         const parts = g.userData.pet as
@@ -998,7 +1077,7 @@ export function BakeryWorld3D({
               if (pausedRef.current) return;
               const hs = activeHotspotRef.current;
               if (hs) {
-                onInteractRef.current(hs, activeCustomerRef.current);
+                interactHandlerRef.current(hs);
               } else {
                 petTriggerRef.current();
               }
