@@ -71,20 +71,23 @@ export const BASEMENT = {
   height: 3.0,
   cx: 0,
   cz: 60, // far in +Z from the bakery; clearly separated
-  entry: { x: 0, z: 56.2, yaw: 0 }, // drops in facing +Z (into room)
-  exitUp: { x: 5.5, z: -4.2, yaw: 0 }, // teleport back near the stairs
+  // Entry is deep enough in the room that the player isn't within reach
+  // of the "stairs up" hotspot the instant they arrive (otherwise the next
+  // E press would ping-pong them right back upstairs).
+  entry: { x: 0, z: 59.5, yaw: Math.PI }, // lands facing +Z into the room
+  exitUp: { x: 5.5, z: -4.2, yaw: Math.PI }, // back in bakery, facing the bar
 };
 
 export const CAT_CAFE_EXIT_POS: [number, number, number] = [
   BASEMENT.cx,
   0,
-  BASEMENT.cz - BASEMENT.depth / 2 + 0.6,
+  BASEMENT.cz - BASEMENT.depth / 2 + 0.9, // ~55.4 — near the stairs
 ];
 
 export const CAT_CAFE_COFFEE_POS: [number, number, number] = [
   BASEMENT.cx - 2.4,
   0,
-  BASEMENT.cz + 1.0,
+  BASEMENT.cz + 1.0, // ~61 — in front of the L-counter
 ];
 
 /**
