@@ -26,6 +26,12 @@ export const ROOM = {
 export const DOOR_POS = { x: -3.0, z: -ROOM.depth / 2 + 0.02 }; // back wall -Z
 export const DOOR_SIZE = { w: 1.6, h: 2.4 };
 
+/** Vet clinic sits east of the sidewalk between the bakery and the
+ *  supermarket. The door faces -X toward the path so you walk up to it
+ *  from the sidewalk. */
+export const VET_CENTER = { x: 4.5, z: -ROOM.depth / 2 - 14 };
+export const VET_DOOR_POS = { x: VET_CENTER.x - 2.5, z: VET_CENTER.z };
+
 export const PLAYER = {
   eyeHeight: 1.55,
   radius: 0.32,
@@ -46,7 +52,8 @@ export interface Hotspot {
     | "door"
     | "cat-cafe"
     | "cat-cafe-exit"
-    | "cat-cafe-coffee";
+    | "cat-cafe-coffee"
+    | "vet";
   position: [number, number, number];
   facing: number; // yaw in radians the player should face to interact
   label: string;
@@ -158,6 +165,16 @@ export const HOTSPOTS: Hotspot[] = [
     facing: Math.PI,
     label: "Supermarket",
     prompt: "Pay the cashier",
+  },
+  {
+    // Vet clinic along the sidewalk between the bakery and the
+    // supermarket. Carry a sick cat here and the clinic heals it.
+    id: "vet",
+    kind: "vet",
+    position: [VET_DOOR_POS.x - 1.2, 0, VET_DOOR_POS.z],
+    facing: Math.PI / 2, // face +X toward the clinic door
+    label: "Vet Clinic",
+    prompt: "Visit the vet",
   },
   {
     id: "counter-customer",

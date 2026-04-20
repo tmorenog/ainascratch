@@ -66,6 +66,8 @@ export function BakeryWorld3D({
 
   const [prompt, setPrompt] = useState<string | null>(null);
   const [nearCat, setNearCat] = useState(false);
+  const [nearSickCat, setNearSickCat] = useState(false);
+  const [carrying, setCarrying] = useState(false);
   const [noTreatToast, setNoTreatToast] = useState<"treat" | "toy" | null>(null);
   const [locked, setLocked] = useState(false);
   const [isTouch, setIsTouch] = useState(false);
@@ -86,6 +88,7 @@ export function BakeryWorld3D({
   const treatTriggerRef = useRef<() => void>(() => {});
   const toyTriggerRef = useRef<() => void>(() => {});
   const profileTriggerRef = useRef<() => void>(() => {});
+  const carryTriggerRef = useRef<() => void>(() => {});
   // Routes hotspot interactions — basement stairs teleport locally; everything
   // else forwards to the parent via onInteract.
   const interactHandlerRef = useRef<(hs: Hotspot) => void>(() => {});
@@ -488,6 +491,95 @@ export function BakeryWorld3D({
     const catTreats = new Map<string, THREE.Mesh>();
     let noTreatToastTimer = 0;
 
+    // Cat illness + vet mechanics. Each basement cat rolls a sickness
+    // timer — after some long interval they develop a cough/boo-boo
+    // (shown as a little red cross above their head) and the player has
+    // to carry them to the vet clinic outdoors to heal them. Timer is
+    // set long (average 6-12 min) so it isn't constant chaos.
+    type CatHealth = {
+      sick: boolean;
+      nextSickAt: number;
+      indicator?: THREE.Group;
+      basePos: { x: number; y: number; z: number };
+      baseYaw: number;
+    };
+    const catHealth = new Map<string, CatHealth>();
+    function randSickDelayMs(): number {
+      // Fresh cats: 6–12 min before first illness. After healing, same.
+      return 360_000 + Math.random() * 360_000;
+    }
+    for (const cat of basementCats) {
+      const info = cat.userData.cat as { name: string } | undefined;
+      if (!info) continue;
+      catHealth.set(info.name, {
+        sick: false,
+        nextSickAt: performance.now() + randSickDelayMs(),
+        basePos: { x: cat.position.x, y: cat.position.y, z: cat.position.z },
+        baseYaw: cat.rotation.y,
+      });
+    }
+    function makeSickIndicator(): THREE.Group {
+      const grp = new THREE.Group();
+      const redM = new THREE.MeshStandardMaterial({
+        color: "#e24a4a",
+        roughness: 0.5,
+        emissive: "#6b1d1d",
+        emissiveIntensity: 0.35,
+      });
+      const h = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.04), redM);
+      grp.add(h);
+      const v = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.18, 0.04), redM);
+      grp.add(v);
+      return grp;
+    }
+    function markCatSick(cat: THREE.Group, name: string) {
+      const hc = catHealth.get(name);
+      if (!hc || hc.sick) return;
+      hc.sick = true;
+      const ind = makeSickIndicator();
+      ind.position.set(0, 0.8, 0);
+      cat.add(ind);
+      hc.indicator = ind;
+    }
+    function healCat(name: string) {
+      const hc = catHealth.get(name);
+      if (!hc) return;
+      hc.sick = false;
+      if (hc.indicator) {
+        hc.indicator.parent?.remove(hc.indicator);
+        hc.indicator.traverse((o) => {
+          if ((o as THREE.Mesh).geometry) (o as THREE.Mesh).geometry.dispose();
+        });
+        hc.indicator = undefined;
+      }
+      hc.nextSickAt = performance.now() + randSickDelayMs();
+    }
+
+    // Carry state: when picking up a sick cat, we detach it from the
+    // basement group so it can move through the outdoors. The cat
+    // bobs just in front of the player until dropped or healed.
+    let carriedCat: THREE.Group | null = null;
+    let carriedCatName: string | null = null;
+    function pickUpCat(cat: THREE.Group, name: string) {
+      if (carriedCat) return;
+      basement.remove(cat);
+      scene.add(cat);
+      carriedCat = cat;
+      carriedCatName = name;
+    }
+    function returnCarriedCatToBasement() {
+      if (!carriedCat || !carriedCatName) return;
+      const hc = catHealth.get(carriedCatName);
+      scene.remove(carriedCat);
+      basement.add(carriedCat);
+      if (hc) {
+        carriedCat.position.set(hc.basePos.x, hc.basePos.y, hc.basePos.z);
+        carriedCat.rotation.set(0, hc.baseYaw, 0);
+      }
+      carriedCat = null;
+      carriedCatName = null;
+    }
+
     // NPC patrons each adopt the nearest basement cat and pet/play with it
     // every few seconds. Stored as { patron, cat, nextPetAt, baseRotX }.
     type PatronPlay = {
@@ -733,6 +825,17 @@ export function BakeryWorld3D({
     toyTriggerRef.current = () => {
       if (activeCatRef) tryGiveCatToy();
     };
+    carryTriggerRef.current = () => {
+      if (carriedCat) {
+        // Pressing carry while already holding a cat = put them back.
+        returnCarriedCatToBasement();
+        return;
+      }
+      if (!activeCatRef || !activeCatName) return;
+      const hc = catHealth.get(activeCatName);
+      if (!hc || !hc.sick) return;
+      pickUpCat(activeCatRef, activeCatName);
+    };
     // Synthesize the coffee-bar hotspot event so the parent opens the
     // existing CatCafe modal (which already shows per-cat profiles).
     profileTriggerRef.current = () => {
@@ -766,6 +869,19 @@ export function BakeryWorld3D({
         );
         camera.rotation.y = BASEMENT.entry.yaw;
         camera.rotation.x = 0;
+        return;
+      }
+      // Vet clinic: if we're carrying a cat, heal them on the spot.
+      if (hs.kind === "vet") {
+        if (carriedCat && carriedCatName) {
+          healCat(carriedCatName);
+          const wp = new THREE.Vector3();
+          carriedCat.getWorldPosition(wp);
+          spawnHearts(wp, 8);
+          returnCarriedCatToBasement();
+          useGame.getState().grantXp(8);
+          useGame.getState().addCoins(5);
+        }
         return;
       }
       // Stairs up → teleport back to bakery
@@ -806,6 +922,10 @@ export function BakeryWorld3D({
       if (e.code === "KeyB") {
         // Cat "bio book" — opens the CatCafe modal with profiles.
         if (activeCatRef) profileTriggerRef.current();
+      }
+      if (e.code === "KeyH") {
+        // Carry a sick cat (or put the current one back).
+        carryTriggerRef.current();
       }
     };
     const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code);
@@ -1205,6 +1325,35 @@ export function BakeryWorld3D({
       activePetRef = nearestPet;
       activePetCustomerId = nearestPetCustId;
 
+      // Tick cat illness timers — roll at most one cat sick per frame to
+      // keep the rate sane, and only when the player isn't already busy
+      // carrying one.
+      if (!carriedCat) {
+        for (const cat of basementCats) {
+          const info = cat.userData.cat as { name: string } | undefined;
+          if (!info) continue;
+          const hc = catHealth.get(info.name);
+          if (!hc || hc.sick) continue;
+          if (now >= hc.nextSickAt) {
+            markCatSick(cat, info.name);
+            break;
+          }
+        }
+      }
+
+      // Carried cat follows just in front of the player, held up at
+      // chest height with a gentle bob.
+      if (carriedCat) {
+        const forwardX = -Math.sin(camera.rotation.y);
+        const forwardZ = -Math.cos(camera.rotation.y);
+        carriedCat.position.set(
+          camera.position.x + forwardX * 0.55,
+          1.05 + Math.sin(now * 0.006) * 0.03,
+          camera.position.z + forwardZ * 0.55,
+        );
+        carriedCat.rotation.y = camera.rotation.y + Math.PI / 2;
+      }
+
       // Basement cat proximity — cats are children of the basement group
       // which sits at world z ≈ BASEMENT.cz, so we have to compare against
       // world coordinates, not the cat's local .position.
@@ -1213,6 +1362,7 @@ export function BakeryWorld3D({
       let nearestCatD = 1.5;
       const _catWP = new THREE.Vector3();
       for (const cat of basementCats) {
+        if (cat === carriedCat) continue; // skip the one we're holding
         cat.getWorldPosition(_catWP);
         const d = Math.hypot(
           _catWP.x - camera.position.x,
@@ -1227,16 +1377,24 @@ export function BakeryWorld3D({
       }
       activeCatRef = nearestCat;
       activeCatName = nearestCatName;
+      const nearestSick =
+        nearestCatName && catHealth.get(nearestCatName)?.sick === true;
 
       let promptText = best ? best.prompt : null;
       if (nearestPet) {
         const kind = (nearestPet.userData.pet as { kind: "dog" | "cat" }).kind;
         promptText = `Pet the ${kind}`;
+      } else if (carriedCat && carriedCatName) {
+        promptText = `Carrying ${carriedCatName} — take to vet clinic!`;
       } else if (nearestCat && nearestCatName) {
-        promptText = `Pet ${nearestCatName} · F: treat · G: toy · B: profile`;
+        promptText = nearestSick
+          ? `${nearestCatName} is sick! H: carry to vet`
+          : `Pet ${nearestCatName} · F: treat · G: toy · B: profile`;
       }
       setPrompt(promptText);
       setNearCat(!!nearestCat);
+      setNearSickCat(!!nearestSick && !carriedCat);
+      setCarrying(!!carriedCat);
 
       // Animate every pet — gentle idle breathing, plus a joyful bounce +
       // tail wag in the 1.2s after being petted.
@@ -1479,6 +1637,19 @@ export function BakeryWorld3D({
         activeVisitor.dispose();
         activeVisitor = null;
       }
+      // If the player was holding a cat when the component unmounted,
+      // put the cat back in the basement first so we don't leak it.
+      if (carriedCat) returnCarriedCatToBasement();
+      catHealth.forEach((hc) => {
+        if (hc.indicator) {
+          hc.indicator.parent?.remove(hc.indicator);
+          hc.indicator.traverse((o) => {
+            if ((o as THREE.Mesh).geometry)
+              (o as THREE.Mesh).geometry.dispose();
+          });
+        }
+      });
+      catHealth.clear();
       catTreats.forEach((t) => {
         basement.remove(t);
         t.geometry.dispose();
@@ -1567,9 +1738,36 @@ export function BakeryWorld3D({
           />
         </>
       )}
+      {/* Carry / Put Back button for sick cats. Shows next to the
+          regular cat buttons when you're near a sick cat, or by itself
+          while you're carrying one so you can put the cat back. */}
+      {!placingFurniture && (nearSickCat || carrying) && (
+        <button
+          type="button"
+          onTouchStart={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (pausedRef.current) return;
+            carryTriggerRef.current();
+          }}
+          onClick={() => {
+            if (pausedRef.current) return;
+            carryTriggerRef.current();
+          }}
+          className="pointer-events-auto absolute right-56 bottom-32 z-30 w-20 h-20 rounded-full border-2 border-white text-white font-black shadow-bakery active:scale-95 transition-transform touch-none select-none bg-teal-600"
+          aria-label={carrying ? "Put cat back" : "Carry cat to vet"}
+        >
+          <div className="flex flex-col items-center justify-center leading-tight">
+            <span className="text-2xl">{carrying ? "🔙" : "🏥"}</span>
+            <span className="text-[10px] font-bold">
+              {carrying ? "Back (H)" : "Carry (H)"}
+            </span>
+          </div>
+        </button>
+      )}
       {/* Cat action buttons (Treat / Toy / Profile) — visible on both
           touch and desktop so laptop players can click them too. */}
-      {nearCat && !placingFurniture && (
+      {nearCat && !placingFurniture && !carrying && (
         <>
           <button
             type="button"

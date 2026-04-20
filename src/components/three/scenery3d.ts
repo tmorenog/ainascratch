@@ -21,6 +21,7 @@ import {
   DOOR_POS,
   DOOR_SIZE,
   BASEMENT,
+  VET_CENTER,
   type Hotspot,
 } from "@/game/world3d";
 import { makeCharacter, type CharacterFigure } from "./characters";
@@ -1588,6 +1589,11 @@ export function buildOutdoors(): THREE.Group {
     z: -ROOM.depth / 2 - 30,
   };
 
+  // Vet clinic — small pastel-green building along the sidewalk. Carry
+  // a sick cat here to heal it.
+  const vet = buildVetClinic(VET_CENTER.x, VET_CENTER.z);
+  g.add(vet);
+
   // Birds (animated sprites)
   for (let i = 0; i < 5; i++) {
     g.add(makeBirdSprite(-10 + i * 5, 6 + Math.random() * 2, -ROOM.depth / 2 - 10 - Math.random() * 15));
@@ -1864,6 +1870,197 @@ function buildSupermarket(x: number, z: number): THREE.Group {
   }
 
   g.position.set(x, 0, z);
+  return g;
+}
+
+/** Simple pastel-green vet clinic sitting by the sidewalk. Door faces
+ *  -X (toward the bakery-to-supermarket path). The clinic has a big
+ *  red medical cross on the facade so it reads at a glance. */
+export function buildVetClinic(cx: number, cz: number): THREE.Group {
+  const g = new THREE.Group();
+  const W = 5;
+  const D = 5;
+  const H = 3.2;
+  const wallM = mat({ color: "#d8ebd3", roughness: 0.85 });
+  const trimM = mat({ color: "#4e7a55", roughness: 0.6 });
+  const crossM = mat({ color: "#e35a5a", roughness: 0.6 });
+  const glassM = mat({
+    color: "#bcd6e6",
+    roughness: 0.25,
+    transparent: true,
+    opacity: 0.7,
+  });
+  const floorM = mat({ color: "#f4f7f0", roughness: 0.7 });
+
+  // Floor
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), floorM);
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.set(0, 0.01, 0);
+  g.add(floor);
+
+  // Back + side walls
+  const back = new THREE.Mesh(new THREE.BoxGeometry(W, H, 0.2), wallM);
+  back.position.set(0, H / 2, D / 2);
+  g.add(back);
+  const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.2, H, D), wallM);
+  sideL.position.set(-W / 2, H / 2, 0);
+  g.add(sideL);
+  const sideR = sideL.clone();
+  sideR.position.x = W / 2;
+  g.add(sideR);
+
+  // Front wall with a door-sized gap on the -X side. We build it as two
+  // panels + a lintel so the player can walk in.
+  const doorW = 1.4;
+  const doorH = 2.3;
+  const frontFull = W; // wall width
+  const leftPanelW = (frontFull - doorW) / 2 - 0.2;
+  const rightPanelW = frontFull - doorW - leftPanelW;
+  const frontLeft = new THREE.Mesh(
+    new THREE.BoxGeometry(leftPanelW, H, 0.2),
+    wallM,
+  );
+  frontLeft.position.set(-W / 2 + leftPanelW / 2, H / 2, -D / 2);
+  g.add(frontLeft);
+  const frontRight = new THREE.Mesh(
+    new THREE.BoxGeometry(rightPanelW, H, 0.2),
+    wallM,
+  );
+  frontRight.position.set(W / 2 - rightPanelW / 2, H / 2, -D / 2);
+  g.add(frontRight);
+  const frontLintel = new THREE.Mesh(
+    new THREE.BoxGeometry(doorW + 0.2, H - doorH, 0.2),
+    wallM,
+  );
+  frontLintel.position.set(
+    -W / 2 + leftPanelW + 0.1 + doorW / 2,
+    doorH + (H - doorH) / 2,
+    -D / 2,
+  );
+  g.add(frontLintel);
+
+  // Ceiling
+  const ceiling = new THREE.Mesh(new THREE.BoxGeometry(W, 0.1, D), floorM);
+  ceiling.position.set(0, H, 0);
+  g.add(ceiling);
+
+  // Pitched roof on top (simple pyramid)
+  const roofGeo = new THREE.ConeGeometry(W * 0.78, 1.2, 4);
+  const roof = new THREE.Mesh(roofGeo, trimM);
+  roof.position.set(0, H + 0.6, 0);
+  roof.rotation.y = Math.PI / 4;
+  g.add(roof);
+
+  // Giant red medical cross on the front wall (two boxes overlapping)
+  const crossH = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.3, 0.05), crossM);
+  crossH.position.set(W / 2 - 1.0, H - 0.7, -D / 2 - 0.06);
+  g.add(crossH);
+  const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.1, 0.05), crossM);
+  crossV.position.copy(crossH.position);
+  g.add(crossV);
+
+  // Window on the left of the door — frame behind, glass in front.
+  const winFrame = new THREE.Mesh(
+    new THREE.BoxGeometry(1.0, 1.0, 0.04),
+    trimM,
+  );
+  winFrame.position.set(-W / 2 + leftPanelW / 2, 1.6, -D / 2 - 0.01);
+  g.add(winFrame);
+  const window1 = new THREE.Mesh(
+    new THREE.BoxGeometry(0.9, 0.9, 0.08),
+    glassM,
+  );
+  window1.position.set(-W / 2 + leftPanelW / 2, 1.6, -D / 2 - 0.05);
+  g.add(window1);
+
+  // Signboard over the door
+  const signTex = signboardTexture("🐾 VET CLINIC", "#4e7a55");
+  const signGeo = new THREE.PlaneGeometry(2.2, 0.6);
+  const sign = new THREE.Mesh(
+    signGeo,
+    new THREE.MeshBasicMaterial({ map: signTex, transparent: true }),
+  );
+  sign.position.set(0, H - 0.35, -D / 2 - 0.12);
+  g.add(sign);
+
+  // Interior: exam table, vet stool, cat bed, shelf
+  const tableTop = new THREE.Mesh(
+    new THREE.BoxGeometry(1.4, 0.1, 0.8),
+    mat({ color: "#f6f4ee", roughness: 0.4 }),
+  );
+  tableTop.position.set(0.4, 0.85, 0.8);
+  g.add(tableTop);
+  const tableLegGeo = new THREE.BoxGeometry(0.08, 0.8, 0.08);
+  for (const sx of [-0.6, 0.6]) {
+    for (const sz of [-0.35, 0.35]) {
+      const leg = new THREE.Mesh(tableLegGeo, trimM);
+      leg.position.set(0.4 + sx, 0.4, 0.8 + sz);
+      g.add(leg);
+    }
+  }
+  // Stethoscope (dark ring + tubes) resting on the table
+  const stethoRing = new THREE.Mesh(
+    new THREE.TorusGeometry(0.07, 0.015, 6, 14),
+    mat({ color: "#1f2a30" }),
+  );
+  stethoRing.rotation.x = Math.PI / 2;
+  stethoRing.position.set(0.1, 0.93, 0.95);
+  g.add(stethoRing);
+
+  // Cat bed on the floor
+  const bed = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.55, 0.6, 0.18, 18),
+    mat({ color: "#c88aa8" }),
+  );
+  bed.position.set(-W / 2 + 0.8, 0.09, 1.2);
+  g.add(bed);
+  const bedInner = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.45, 0.45, 0.05, 18),
+    mat({ color: "#f6d3e2" }),
+  );
+  bedInner.position.set(-W / 2 + 0.8, 0.18, 1.2);
+  g.add(bedInner);
+
+  // Medicine shelf on the back wall
+  const shelf = new THREE.Mesh(
+    new THREE.BoxGeometry(2.2, 0.06, 0.3),
+    trimM,
+  );
+  shelf.position.set(-W / 2 + 1.4, 1.8, D / 2 - 0.2);
+  g.add(shelf);
+  // Bottles on the shelf
+  const bottleColors = ["#e08a8a", "#8fc3e0", "#b8d49a", "#e6c77a"];
+  for (let i = 0; i < 4; i++) {
+    const bottle = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.07, 0.07, 0.22, 10),
+      mat({ color: bottleColors[i] }),
+    );
+    bottle.position.set(-W / 2 + 0.6 + i * 0.45, 1.94, D / 2 - 0.2);
+    g.add(bottle);
+    const cap = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.07, 0.07, 0.04, 10),
+      mat({ color: "#444" }),
+    );
+    cap.position.set(-W / 2 + 0.6 + i * 0.45, 2.07, D / 2 - 0.2);
+    g.add(cap);
+  }
+
+  // Vet NPC behind the table — a seated character builder for warmth.
+  const vet = makeCharacter({
+    skin: "#eec4a6",
+    shirt: "#f6f4ee",
+    pants: "#4e7a55",
+    hair: "#3a2418",
+    hairStyle: "bun",
+  });
+  vet.root.position.set(0.4, 0, 1.9);
+  vet.root.rotation.y = Math.PI; // face -Z (toward player walking in)
+  g.add(vet.root);
+  g.userData.vetFig = vet;
+
+  g.position.set(cx, 0, cz);
+  // Rotate so the door opening at -Z side points toward the sidewalk (-X).
+  g.rotation.y = Math.PI / 2;
   return g;
 }
 
