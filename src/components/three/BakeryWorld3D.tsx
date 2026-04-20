@@ -1547,9 +1547,8 @@ export function BakeryWorld3D({
         </div>
       )}
 
-      {/* Mobile controls: visible joystick (bottom-left) and interact
-          button (bottom-right). Only rendered once a touch has been seen
-          so desktop users aren't cluttered. */}
+      {/* Mobile-only controls: visible joystick (bottom-left) and
+          interact button (bottom-right). */}
       {isTouch && !placingFurniture && (
         <>
           <Joystick moveVecRef={moveVecRef} pausedRef={pausedRef} />
@@ -1566,70 +1565,72 @@ export function BakeryWorld3D({
               }
             }}
           />
-          {nearCat && (
-            <>
-              <button
-                type="button"
-                onTouchStart={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (pausedRef.current) return;
-                  treatTriggerRef.current();
-                }}
-                onClick={() => {
-                  if (pausedRef.current) return;
-                  treatTriggerRef.current();
-                }}
-                className="pointer-events-auto absolute right-32 bottom-8 z-30 w-20 h-20 rounded-full border-2 border-white text-white font-black shadow-bakery active:scale-95 transition-transform touch-none select-none bg-amber-500"
-                aria-label="Feed treat"
-              >
-                <div className="flex flex-col items-center justify-center leading-tight">
-                  <span className="text-2xl">🍪</span>
-                  <span className="text-[10px] font-bold">Treat</span>
-                </div>
-              </button>
-              <button
-                type="button"
-                onTouchStart={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (pausedRef.current) return;
-                  toyTriggerRef.current();
-                }}
-                onClick={() => {
-                  if (pausedRef.current) return;
-                  toyTriggerRef.current();
-                }}
-                className="pointer-events-auto absolute right-56 bottom-8 z-30 w-20 h-20 rounded-full border-2 border-white text-white font-black shadow-bakery active:scale-95 transition-transform touch-none select-none bg-rose-500"
-                aria-label="Give toy"
-              >
-                <div className="flex flex-col items-center justify-center leading-tight">
-                  <span className="text-2xl">🧸</span>
-                  <span className="text-[10px] font-bold">Toy</span>
-                </div>
-              </button>
-              <button
-                type="button"
-                onTouchStart={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (pausedRef.current) return;
-                  profileTriggerRef.current();
-                }}
-                onClick={() => {
-                  if (pausedRef.current) return;
-                  profileTriggerRef.current();
-                }}
-                className="pointer-events-auto absolute right-32 bottom-32 z-30 w-20 h-20 rounded-full border-2 border-white text-white font-black shadow-bakery active:scale-95 transition-transform touch-none select-none bg-indigo-500"
-                aria-label="Cat profile"
-              >
-                <div className="flex flex-col items-center justify-center leading-tight">
-                  <span className="text-2xl">📖</span>
-                  <span className="text-[10px] font-bold">Profile</span>
-                </div>
-              </button>
-            </>
-          )}
+        </>
+      )}
+      {/* Cat action buttons (Treat / Toy / Profile) — visible on both
+          touch and desktop so laptop players can click them too. */}
+      {nearCat && !placingFurniture && (
+        <>
+          <button
+            type="button"
+            onTouchStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (pausedRef.current) return;
+              treatTriggerRef.current();
+            }}
+            onClick={() => {
+              if (pausedRef.current) return;
+              treatTriggerRef.current();
+            }}
+            className="pointer-events-auto absolute right-32 bottom-8 z-30 w-20 h-20 rounded-full border-2 border-white text-white font-black shadow-bakery active:scale-95 transition-transform touch-none select-none bg-amber-500"
+            aria-label="Feed treat"
+          >
+            <div className="flex flex-col items-center justify-center leading-tight">
+              <span className="text-2xl">🍪</span>
+              <span className="text-[10px] font-bold">Treat (F)</span>
+            </div>
+          </button>
+          <button
+            type="button"
+            onTouchStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (pausedRef.current) return;
+              toyTriggerRef.current();
+            }}
+            onClick={() => {
+              if (pausedRef.current) return;
+              toyTriggerRef.current();
+            }}
+            className="pointer-events-auto absolute right-56 bottom-8 z-30 w-20 h-20 rounded-full border-2 border-white text-white font-black shadow-bakery active:scale-95 transition-transform touch-none select-none bg-rose-500"
+            aria-label="Give toy"
+          >
+            <div className="flex flex-col items-center justify-center leading-tight">
+              <span className="text-2xl">🧸</span>
+              <span className="text-[10px] font-bold">Toy (G)</span>
+            </div>
+          </button>
+          <button
+            type="button"
+            onTouchStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (pausedRef.current) return;
+              profileTriggerRef.current();
+            }}
+            onClick={() => {
+              if (pausedRef.current) return;
+              profileTriggerRef.current();
+            }}
+            className="pointer-events-auto absolute right-32 bottom-32 z-30 w-20 h-20 rounded-full border-2 border-white text-white font-black shadow-bakery active:scale-95 transition-transform touch-none select-none bg-indigo-500"
+            aria-label="Cat profile"
+          >
+            <div className="flex flex-col items-center justify-center leading-tight">
+              <span className="text-2xl">📖</span>
+              <span className="text-[10px] font-bold">Profile (B)</span>
+            </div>
+          </button>
         </>
       )}
     </div>
