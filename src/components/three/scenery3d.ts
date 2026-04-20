@@ -1948,11 +1948,12 @@ function makeCashier(x: number, z: number): THREE.Group {
   const leg2 = leg.clone();
   leg2.position.x = 0.1;
   g.add(leg2);
-  // torso (uniform with blue apron)
+  // torso (uniform with blue apron) — oval rather than boxy
   const torso = new THREE.Mesh(
-    new THREE.BoxGeometry(0.46, 0.55, 0.26),
+    new THREE.SphereGeometry(1, 20, 14),
     shirtM,
   );
+  torso.scale.set(0.24, 0.3, 0.14);
   torso.position.set(0, 1.03, 0);
   g.add(torso);
   const apron = new THREE.Mesh(

@@ -114,10 +114,12 @@ export function makeCharacter(opts: CharacterOptions): CharacterFigure {
   }
 
   // ---- Torso ----
-  const torsoGeo = new THREE.BoxGeometry(0.46, 0.55, 0.26);
-  // Rounded corners via chamfer: quick scale-based trick
-  (torsoGeo as THREE.BoxGeometry).translate(0, 0, 0);
+  // Ellipsoid (scaled sphere) so bodies read as soft / oval rather than
+  // a blocky rectangle. Dimensions roughly match the old box so arms,
+  // apron, and shirt stripes still line up.
+  const torsoGeo = new THREE.SphereGeometry(1, 20, 14);
   const torso = new THREE.Mesh(torsoGeo, shirtM);
+  torso.scale.set(0.24, 0.3, 0.14);
   torso.position.set(0, 1.03, 0);
   torso.castShadow = true;
   root.add(torso);
