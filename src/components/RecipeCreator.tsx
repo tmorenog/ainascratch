@@ -1,11 +1,49 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Modal } from "./ui/Modal";
 import { INGREDIENTS, INGREDIENT_LIST } from "@/game/ingredients";
 import type { IngredientId, RecipeCategory } from "@/game/types";
 import { useGame } from "@/game/store";
 import { useT } from "@/game/i18n";
+
+/** Animals + themes for the plush combiner. Pick one of each and the
+ *  creator mashes them together into a cute themed plush. */
+type PlushOption = { id: string; name: string; emoji: string };
+
+const PLUSH_ANIMALS: PlushOption[] = [
+  { id: "bear", name: "Bear", emoji: "🐻" },
+  { id: "bunny", name: "Bunny", emoji: "🐰" },
+  { id: "cat", name: "Cat", emoji: "🐱" },
+  { id: "puppy", name: "Puppy", emoji: "🐶" },
+  { id: "fox", name: "Fox", emoji: "🦊" },
+  { id: "panda", name: "Panda", emoji: "🐼" },
+  { id: "penguin", name: "Penguin", emoji: "🐧" },
+  { id: "frog", name: "Frog", emoji: "🐸" },
+  { id: "koala", name: "Koala", emoji: "🐨" },
+  { id: "tiger", name: "Tiger", emoji: "🐯" },
+  { id: "owl", name: "Owl", emoji: "🦉" },
+  { id: "unicorn", name: "Unicorn", emoji: "🦄" },
+];
+
+const PLUSH_THEMES: PlushOption[] = [
+  { id: "pineapple", name: "Pineapple", emoji: "🍍" },
+  { id: "donut", name: "Donut", emoji: "🍩" },
+  { id: "cupcake", name: "Cupcake", emoji: "🧁" },
+  { id: "strawberry", name: "Strawberry", emoji: "🍓" },
+  { id: "rainbow", name: "Rainbow", emoji: "🌈" },
+  { id: "cloud", name: "Cloud", emoji: "☁️" },
+  { id: "star", name: "Star", emoji: "⭐" },
+  { id: "croissant", name: "Croissant", emoji: "🥐" },
+  { id: "coffee", name: "Coffee", emoji: "☕" },
+  { id: "lemon", name: "Lemon", emoji: "🍋" },
+  { id: "flower", name: "Flower", emoji: "🌸" },
+  { id: "heart", name: "Heart", emoji: "💖" },
+  { id: "watermelon", name: "Watermelon", emoji: "🍉" },
+  { id: "cherry", name: "Cherry", emoji: "🍒" },
+  { id: "mushroom", name: "Mushroom", emoji: "🍄" },
+  { id: "moon", name: "Moon", emoji: "🌙" },
+];
 
 const CATEGORIES: {
   id: RecipeCategory;
@@ -72,6 +110,23 @@ export function RecipeCreator({
   const [description, setDescription] = useState("");
   const [isSpecial, setIsSpecial] = useState(false);
   const [isRecommended, setIsRecommended] = useState(false);
+  // Plush combiner picks — only meaningful when category === "plush".
+  const [plushAnimal, setPlushAnimal] = useState<string | null>(null);
+  const [plushTheme, setPlushTheme] = useState<string | null>(null);
+
+  // When the player picks an animal + theme for a plush, auto-fill the
+  // name / emoji / description so they don't have to type anything.
+  useEffect(() => {
+    if (category !== "plush") return;
+    const animal = PLUSH_ANIMALS.find((a) => a.id === plushAnimal);
+    const theme = PLUSH_THEMES.find((t) => t.id === plushTheme);
+    if (!animal || !theme) return;
+    setName(`${theme.name} ${animal.name} Plush`);
+    setEmoji(`${theme.emoji}${animal.emoji}`);
+    setDescription(
+      `A squishy ${animal.name.toLowerCase()} with a ${theme.name.toLowerCase()} twist — totally huggable.`,
+    );
+  }, [category, plushAnimal, plushTheme]);
 
   // Suggested price: 2x total ingredient cost, rounded to nearest dollar.
   const ingredientCost = useMemo(() => {
@@ -90,13 +145,23 @@ export function RecipeCreator({
       ),
     [amounts],
   );
-  const autoPrepMs = Math.max(5000, 4000 + ingredientCount * 1500);
+  // Plushies are always a 5.5s wrap-at-the-pastry-counter loop, ingredients
+  // or not. For everything else, prep time scales with the number of picks.
+  const autoPrepMs =
+    category === "plush"
+      ? 5500
+      : Math.max(5000, 4000 + ingredientCount * 1500);
 
-  // Re-suggest price when ingredient cost changes meaningfully
-  const suggestedPrice = Math.max(3, Math.round(ingredientCost * 2));
+  // Re-suggest price when ingredient cost changes meaningfully. Plushies
+  // suggest a flat price since they have no ingredients.
+  const suggestedPrice =
+    category === "plush" ? 20 : Math.max(3, Math.round(ingredientCost * 2));
 
   const hasIngredient = ingredientCount > 0;
-  const canSave = name.trim().length > 0 && hasIngredient;
+  const plushPicked =
+    category === "plush" && plushAnimal !== null && plushTheme !== null;
+  const canSave =
+    name.trim().length > 0 && (plushPicked || hasIngredient);
 
   function bump(id: IngredientId, delta: number) {
     setAmounts((prev) => {
@@ -118,6 +183,8 @@ export function RecipeCreator({
     setIsSpecial(false);
     setIsRecommended(false);
     setPrice(6);
+    setPlushAnimal(null);
+    setPlushTheme(null);
   }
 
   function handleSave() {
@@ -218,6 +285,16 @@ export function RecipeCreator({
                         return next;
                       });
                     }
+                    // Switching to plushie: ingredients become irrelevant;
+                    // prime the price and let the combiner pickers drive
+                    // the name/emoji.
+                    if (c.id === "plush") {
+                      setAmounts({});
+                      setPrice(20);
+                      setName("");
+                      setPlushAnimal(null);
+                      setPlushTheme(null);
+                    }
                   }}
                   className={`rounded-xl p-2 border-2 text-center transition ${
                     active
@@ -235,29 +312,108 @@ export function RecipeCreator({
           </div>
         </div>
 
-        {/* Emoji picker */}
-        <div>
-          <label className="block text-xs font-bold uppercase tracking-wide text-cocoa-400 mb-1">
-            {t("recipeIcon")}
-          </label>
-          <div className="flex flex-wrap gap-1.5">
-            {EMOJI_OPTIONS.map((em, i) => (
-              <button
-                key={`${em}-${i}`}
-                onClick={() => setEmoji(em)}
-                className={`w-10 h-10 rounded-xl text-2xl flex items-center justify-center transition ${
-                  emoji === em
-                    ? "bg-cocoa-400 ring-2 ring-cocoa-400"
-                    : "bg-white hover:bg-cream-100 border border-cream-200"
-                }`}
-              >
-                {em}
-              </button>
-            ))}
+        {/* Emoji picker — skipped for plushes since the combiner
+            auto-builds the icon from animal + theme. */}
+        {category !== "plush" && (
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wide text-cocoa-400 mb-1">
+              {t("recipeIcon")}
+            </label>
+            <div className="flex flex-wrap gap-1.5">
+              {EMOJI_OPTIONS.map((em, i) => (
+                <button
+                  key={`${em}-${i}`}
+                  onClick={() => setEmoji(em)}
+                  className={`w-10 h-10 rounded-xl text-2xl flex items-center justify-center transition ${
+                    emoji === em
+                      ? "bg-cocoa-400 ring-2 ring-cocoa-400"
+                      : "bg-white hover:bg-cream-100 border border-cream-200"
+                  }`}
+                >
+                  {em}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Plushie combiner — only shown for the plush category. */}
+        {category === "plush" && (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wide text-cocoa-400 mb-1">
+                Pick an animal 🐾
+              </label>
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                {PLUSH_ANIMALS.map((a) => {
+                  const active = plushAnimal === a.id;
+                  return (
+                    <button
+                      key={a.id}
+                      onClick={() => setPlushAnimal(a.id)}
+                      className={`rounded-xl p-2 border-2 text-center transition ${
+                        active
+                          ? "border-berry-400 bg-berry-50 shadow-soft"
+                          : "border-cream-200 bg-white/70 hover:bg-cream-100"
+                      }`}
+                    >
+                      <div className="text-2xl">{a.emoji}</div>
+                      <div className="text-[11px] font-bold text-cocoa-500 mt-0.5">
+                        {a.name}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wide text-cocoa-400 mb-1">
+                Pick a theme 🎀
+              </label>
+              <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                {PLUSH_THEMES.map((th) => {
+                  const active = plushTheme === th.id;
+                  return (
+                    <button
+                      key={th.id}
+                      onClick={() => setPlushTheme(th.id)}
+                      className={`rounded-xl p-2 border-2 text-center transition ${
+                        active
+                          ? "border-berry-400 bg-berry-50 shadow-soft"
+                          : "border-cream-200 bg-white/70 hover:bg-cream-100"
+                      }`}
+                    >
+                      <div className="text-2xl">{th.emoji}</div>
+                      <div className="text-[11px] font-bold text-cocoa-500 mt-0.5">
+                        {th.name}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="rounded-xl border border-cream-200 bg-cream-50 px-3 py-2 text-sm text-cocoa-500">
+              {plushPicked ? (
+                <>
+                  🧸 Combining{" "}
+                  <span className="font-bold">
+                    {PLUSH_THEMES.find((th) => th.id === plushTheme)?.name}
+                  </span>{" "}
+                  +{" "}
+                  <span className="font-bold">
+                    {PLUSH_ANIMALS.find((a) => a.id === plushAnimal)?.name}
+                  </span>{" "}
+                  → a one-of-a-kind themed plush!
+                </>
+              ) : (
+                <>Pick an animal and a theme to combine them into a custom plush.</>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Ingredients */}
+        {category !== "plush" && (
         <div>
           <label className="block text-xs font-bold uppercase tracking-wide text-cocoa-400 mb-1">
             {t("recipeIngredients")}
@@ -322,6 +478,7 @@ export function RecipeCreator({
             })}
           </div>
         </div>
+        )}
 
         {/* Price + description + flags */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
