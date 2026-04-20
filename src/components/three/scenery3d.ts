@@ -437,6 +437,7 @@ export function buildStationSignboards(stations: Hotspot[]): THREE.Group {
     pastry: "#e87aa0",
     scratch: "#9c6d3f",
     pet: "#7bc97b",
+    shelf: "#e87aa0",
   };
   for (const s of stations) {
     if (s.kind !== "station" || !s.stationId) continue;
@@ -450,6 +451,10 @@ export function buildStationSignboards(stations: Hotspot[]): THREE.Group {
       // pet is on the left arm of the L
       sign.position.set(-3.6, 1.9, s.position[2]);
       sign.rotation.y = Math.PI / 2;
+    } else if (s.stationId === "shelf") {
+      // The plush shelf already has its own colourful banner + bunting, so
+      // skip the wall-mounted signboard here to keep it uncluttered.
+      continue;
     } else {
       sign.position.set(s.position[0], 1.9, -3.55);
     }

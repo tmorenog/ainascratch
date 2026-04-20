@@ -21,7 +21,15 @@ export type IngredientId =
   | "almond"
   | "pet_mix";
 
-export type StationId = "drink" | "pastry" | "oven" | "scratch" | "pet";
+export type StationId =
+  | "drink"
+  | "pastry"
+  | "oven"
+  | "scratch"
+  | "pet"
+  /** Plushies live on their own display shelf — you grab and gift-wrap
+   *  one instead of baking it at the pastry counter. */
+  | "shelf";
 
 export type RecipeCategory =
   | "drink"
@@ -69,6 +77,10 @@ export interface Recipe {
   isRecommended?: boolean;
   /** Emoji used as the "art" for custom recipes (no SVG registered). */
   emoji?: string;
+  /** For custom plushies made in the Invent combiner: the chosen animal
+   *  + theme ids so we can render a proper mesh / SVG instead of emoji. */
+  plushAnimal?: string;
+  plushTheme?: string;
 }
 
 export interface CustomerArchetype {

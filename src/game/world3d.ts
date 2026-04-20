@@ -58,7 +58,7 @@ export interface Hotspot {
   facing: number; // yaw in radians the player should face to interact
   label: string;
   prompt: string;
-  stationId?: "drink" | "pastry" | "scratch" | "pet";
+  stationId?: "drink" | "pastry" | "scratch" | "pet" | "shelf";
 }
 
 /** Recipes unlocked only while downstairs at the Cat Cafe. Kept here so
@@ -145,6 +145,17 @@ export const HOTSPOTS: Hotspot[] = [
     facing: 0,
     label: "Pantry Shelf",
     prompt: "Check the pantry",
+  },
+  {
+    // Plushie merch shelf — grab a plush off the shelf and gift-wrap it,
+    // instead of routing merch through the pastry counter prep.
+    id: "shelf",
+    kind: "station",
+    stationId: "shelf",
+    position: [-4.0, 0, -5.4],
+    facing: -Math.PI, // face -Z toward the shelf on the back wall
+    label: "Plushie Shelf",
+    prompt: "Pick out a plush",
   },
   {
     id: "door",

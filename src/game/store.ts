@@ -39,6 +39,7 @@ const STATION_LABEL: Record<StationId, string> = {
   oven: "Oven",
   scratch: "Bakery Oven",
   pet: "Pet Treat Nook",
+  shelf: "Plush Shelf",
 };
 
 interface SupplyOrder {
@@ -89,6 +90,10 @@ export interface CustomRecipeInput {
   description?: string;
   isSpecial?: boolean;
   isRecommended?: boolean;
+  /** For plush combiner inventions — the chosen animal + theme ids so
+   *  the shelf/tray can render a real figure instead of an emoji. */
+  plushAnimal?: string;
+  plushTheme?: string;
 }
 
 interface GameState {
@@ -894,8 +899,9 @@ export const useGame = create<GameState>()(
           // "Everyone-Safe" treats are assembled at the pastry counter — no
           // extra 3D station needed, and the pastry vibe matches.
           safe: "pastry",
-          // Plushies are wrapped at the pastry counter too.
-          plush: "pastry",
+          // Plushies live on the plush shelf — grabbed and wrapped there,
+          // never routed through the pastry oven.
+          plush: "shelf",
         };
         // Step labels are auto-generated from ingredient list so the prep
         // scene still shows a step ticker. Durations split the total prepMs.
@@ -931,6 +937,8 @@ export const useGame = create<GameState>()(
           isCustom: true,
           isSpecial: !!input.isSpecial,
           isRecommended: !!input.isRecommended,
+          plushAnimal: input.plushAnimal,
+          plushTheme: input.plushTheme,
         };
         // Only one Special at a time. Promoting a new one demotes the old.
         let specialRecipeId = s.specialRecipeId;

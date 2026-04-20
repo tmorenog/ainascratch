@@ -199,6 +199,8 @@ export function RecipeCreator({
       description: description.trim(),
       isSpecial,
       isRecommended,
+      plushAnimal: category === "plush" ? plushAnimal ?? undefined : undefined,
+      plushTheme: category === "plush" ? plushTheme ?? undefined : undefined,
     });
     reset();
     onClose();

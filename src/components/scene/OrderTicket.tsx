@@ -89,7 +89,14 @@ export function OrderTicket({
                       key={i}
                       className="flex items-center gap-1.5 rounded-xl bg-white/5 border border-white/10 px-2 py-1"
                     >
-                      <FoodArt id={id} size={32} withShadow={false} emoji={recipe?.emoji} />
+                      <FoodArt
+                        id={id}
+                        size={32}
+                        withShadow={false}
+                        emoji={recipe?.emoji}
+                        plushAnimal={recipe?.plushAnimal}
+                        plushTheme={recipe?.plushTheme}
+                      />
                       <span className="text-xs font-bold text-cream-100">
                         {recipe?.name ?? id}
                       </span>

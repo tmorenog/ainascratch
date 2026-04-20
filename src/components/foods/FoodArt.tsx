@@ -1115,12 +1115,178 @@ const FOOD_ART_BY_ID: Record<string, React.FC> = {
   tennis_ball_toy: TennisBallToyArt,
 };
 
+const ANIMAL_PLUSH_META: Record<
+  string,
+  { fur: string; belly?: string; ear: "round" | "long" | "triangle" | "fold" | "tuft" | "horn" }
+> = {
+  bear: { fur: "#b8896a", belly: "#e6c79a", ear: "round" },
+  bunny: { fur: "#f4d7c0", belly: "#fff", ear: "long" },
+  cat: { fur: "#e8c89d", belly: "#fff6e4", ear: "triangle" },
+  puppy: { fur: "#d4a265", belly: "#f7e0b2", ear: "fold" },
+  fox: { fur: "#e08c4e", belly: "#fff6e4", ear: "tuft" },
+  panda: { fur: "#fafafa", belly: "#fafafa", ear: "round" },
+  penguin: { fur: "#2e3a42", belly: "#fff", ear: "round" },
+  frog: { fur: "#7fc87b", belly: "#e3f5d9", ear: "round" },
+  koala: { fur: "#9aa0a6", belly: "#d9dde1", ear: "round" },
+  tiger: { fur: "#e5a14a", belly: "#f7e0b2", ear: "triangle" },
+  owl: { fur: "#b98a54", belly: "#e6c79a", ear: "tuft" },
+  unicorn: { fur: "#f5d9ea", belly: "#fff", ear: "horn" },
+};
+
+const THEME_PLUSH_META: Record<
+  string,
+  { color: string; accent: string; icon: "heart" | "star" | "dot" | "leaf" }
+> = {
+  pineapple: { color: "#f5d24a", accent: "#3a8f3a", icon: "leaf" },
+  donut: { color: "#f4b0ce", accent: "#ffe66a", icon: "dot" },
+  cupcake: { color: "#f7b8c8", accent: "#fff", icon: "dot" },
+  strawberry: { color: "#e85d6e", accent: "#3a8f3a", icon: "leaf" },
+  rainbow: { color: "#ffd0e4", accent: "#a6e3ff", icon: "star" },
+  cloud: { color: "#e6f0ff", accent: "#fff", icon: "dot" },
+  star: { color: "#ffde7a", accent: "#fff", icon: "star" },
+  croissant: { color: "#d4a56a", accent: "#c08a4a", icon: "dot" },
+  coffee: { color: "#6b3a1e", accent: "#fff", icon: "dot" },
+  lemon: { color: "#f5d24a", accent: "#d7b84a", icon: "leaf" },
+  flower: { color: "#f7c8e0", accent: "#ffe66a", icon: "star" },
+  heart: { color: "#f28aa3", accent: "#fff", icon: "heart" },
+  watermelon: { color: "#e85d6e", accent: "#3a8f3a", icon: "leaf" },
+  cherry: { color: "#c4253a", accent: "#3a8f3a", icon: "leaf" },
+  mushroom: { color: "#c8504c", accent: "#fff", icon: "dot" },
+  moon: { color: "#e6ddf0", accent: "#ffe66a", icon: "star" },
+};
+
+function CustomPlushArt({
+  animalId,
+  themeId,
+}: {
+  animalId: string;
+  themeId: string;
+}) {
+  const animal = ANIMAL_PLUSH_META[animalId] ?? ANIMAL_PLUSH_META.bear;
+  const theme = THEME_PLUSH_META[themeId] ?? THEME_PLUSH_META.star;
+  return (
+    <g>
+      {/* body (oval) */}
+      <ellipse cx="50" cy="62" rx="24" ry="22" fill={animal.fur} />
+      {/* belly patch tinted toward the theme so the combo reads clearly */}
+      <ellipse
+        cx="50"
+        cy="66"
+        rx="14"
+        ry="12"
+        fill={animal.belly ?? theme.color}
+      />
+      {/* head */}
+      <circle cx="50" cy="38" r="18" fill={animal.fur} />
+      {/* muzzle / tummy highlight */}
+      <ellipse cx="50" cy="44" rx="9" ry="6" fill={animal.belly ?? "#fff3de"} />
+      {/* ears — animal-specific shape */}
+      {animal.ear === "round" && (
+        <>
+          <circle cx="34" cy="24" r="6" fill={animal.fur} />
+          <circle cx="66" cy="24" r="6" fill={animal.fur} />
+          <circle cx="34" cy="24" r="3" fill={theme.color} opacity="0.55" />
+          <circle cx="66" cy="24" r="3" fill={theme.color} opacity="0.55" />
+        </>
+      )}
+      {animal.ear === "triangle" && (
+        <>
+          <polygon points="32,28 38,12 44,28" fill={animal.fur} />
+          <polygon points="56,28 62,12 68,28" fill={animal.fur} />
+          <polygon points="36,24 38,18 41,24" fill={theme.color} opacity="0.7" />
+          <polygon points="59,24 62,18 65,24" fill={theme.color} opacity="0.7" />
+        </>
+      )}
+      {animal.ear === "long" && (
+        <>
+          <ellipse cx="38" cy="14" rx="4" ry="12" fill={animal.fur} />
+          <ellipse cx="62" cy="14" rx="4" ry="12" fill={animal.fur} />
+          <ellipse cx="38" cy="14" rx="1.5" ry="8" fill={theme.color} opacity="0.7" />
+          <ellipse cx="62" cy="14" rx="1.5" ry="8" fill={theme.color} opacity="0.7" />
+        </>
+      )}
+      {animal.ear === "fold" && (
+        <>
+          <ellipse cx="34" cy="28" rx="7" ry="5" fill={animal.fur} />
+          <ellipse cx="66" cy="28" rx="7" ry="5" fill={animal.fur} />
+        </>
+      )}
+      {animal.ear === "tuft" && (
+        <>
+          <polygon points="30,30 38,10 42,28" fill={animal.fur} />
+          <polygon points="58,28 62,10 70,30" fill={animal.fur} />
+          <polygon points="34,26 38,18 40,26" fill="#fff" opacity="0.6" />
+          <polygon points="60,26 62,18 66,26" fill="#fff" opacity="0.6" />
+        </>
+      )}
+      {animal.ear === "horn" && (
+        <>
+          <circle cx="34" cy="24" r="5" fill={animal.fur} />
+          <circle cx="66" cy="24" r="5" fill={animal.fur} />
+          <polygon points="46,22 50,6 54,22" fill={theme.color} />
+          <polygon points="48,20 50,12 52,20" fill={theme.accent} />
+        </>
+      )}
+      {/* eyes */}
+      <circle cx="42" cy="38" r="2.2" fill="#1a1a1a" />
+      <circle cx="58" cy="38" r="2.2" fill="#1a1a1a" />
+      <circle cx="42.8" cy="37.2" r="0.6" fill="#fff" />
+      <circle cx="58.8" cy="37.2" r="0.6" fill="#fff" />
+      {/* nose */}
+      <ellipse cx="50" cy="44" rx="2" ry="1.4" fill="#3d1d0c" />
+      {/* mouth */}
+      <path d="M46 47 Q50 50 54 47" stroke="#3d1d0c" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+      {/* theme hat/accent on top */}
+      {theme.icon === "dot" && (
+        <g>
+          <ellipse cx="50" cy="14" rx="9" ry="3" fill={theme.color} />
+          <circle cx="50" cy="12" r="6" fill={theme.color} />
+          <circle cx="48" cy="10" r="1.2" fill={theme.accent} />
+          <circle cx="52" cy="13" r="1.2" fill={theme.accent} />
+        </g>
+      )}
+      {theme.icon === "star" && (
+        <polygon
+          points="50,4 53,12 61,12 55,17 57,25 50,20 43,25 45,17 39,12 47,12"
+          fill={theme.color}
+          stroke={theme.accent}
+          strokeWidth="0.7"
+        />
+      )}
+      {theme.icon === "heart" && (
+        <path
+          d="M50 24 Q42 16 42 10 Q42 4 50 8 Q58 4 58 10 Q58 16 50 24 Z"
+          fill={theme.color}
+          stroke={theme.accent}
+          strokeWidth="0.7"
+        />
+      )}
+      {theme.icon === "leaf" && (
+        <g>
+          <circle cx="50" cy="14" r="7" fill={theme.color} />
+          <path
+            d="M44 6 Q50 -2 56 6 Q53 10 50 10 Q47 10 44 6 Z"
+            fill={theme.accent}
+          />
+        </g>
+      )}
+      {/* little paws */}
+      <circle cx="32" cy="70" r="4" fill={animal.fur} />
+      <circle cx="68" cy="70" r="4" fill={animal.fur} />
+      <circle cx="32" cy="70" r="2" fill={theme.color} opacity="0.55" />
+      <circle cx="68" cy="70" r="2" fill={theme.color} opacity="0.55" />
+    </g>
+  );
+}
+
 export function FoodArt({
   id,
   size = 80,
   className = "",
   withShadow = true,
   emoji,
+  plushAnimal,
+  plushTheme,
 }: {
   id: string;
   size?: number;
@@ -1129,8 +1295,32 @@ export function FoodArt({
   /** Fallback icon for custom recipes that don't have a hand-built SVG.
    *  Rendered as a big emoji sitting on a pastel plate. */
   emoji?: string;
+  /** For custom plushies from the invent combiner — if both are provided,
+   *  we render a hand-drawn combined plush instead of falling back to
+   *  the plate-with-emoji look. */
+  plushAnimal?: string;
+  plushTheme?: string;
 }) {
   const Art = FOOD_ART_BY_ID[id];
+  // Custom plushie path: combined animal + theme rendered from primitives.
+  if (!Art && plushAnimal && plushTheme) {
+    return (
+      <svg
+        viewBox="0 0 100 100"
+        width={size}
+        height={size}
+        className={className}
+        role="img"
+        aria-label={id}
+      >
+        {defs}
+        {withShadow && (
+          <ellipse cx="50" cy="90" rx="28" ry="4" fill="#000" opacity="0.15" />
+        )}
+        <CustomPlushArt animalId={plushAnimal} themeId={plushTheme} />
+      </svg>
+    );
+  }
   // Custom recipe path: pretty pastel plate + large emoji at the center.
   if (!Art && emoji) {
     return (

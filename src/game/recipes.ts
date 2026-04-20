@@ -489,7 +489,7 @@ export const RECIPES: Recipe[] = [
     id: "donut_bear_plush",
     name: "Donut Bear Plush",
     category: "plush",
-    station: "pastry",
+    station: "shelf",
     ingredients: {},
     steps: [
       { label: "Pick one off the plush shelf", durationMs: 1500 },
@@ -507,7 +507,7 @@ export const RECIPES: Recipe[] = [
     id: "croissant_cat_plush",
     name: "Chocolate Croissant Cat",
     category: "plush",
-    station: "pastry",
+    station: "shelf",
     ingredients: {},
     steps: [
       { label: "Pick one off the plush shelf", durationMs: 1500 },
@@ -524,7 +524,7 @@ export const RECIPES: Recipe[] = [
     id: "cupcake_bunny_plush",
     name: "Cupcake Bunny",
     category: "plush",
-    station: "pastry",
+    station: "shelf",
     ingredients: {},
     steps: [
       { label: "Pick one off the plush shelf", durationMs: 1500 },
@@ -541,7 +541,7 @@ export const RECIPES: Recipe[] = [
     id: "coffee_cup_puppy_plush",
     name: "Coffee Cup Puppy",
     category: "plush",
-    station: "pastry",
+    station: "shelf",
     ingredients: {},
     steps: [
       { label: "Lift one from the cozy shelf", durationMs: 1500 },

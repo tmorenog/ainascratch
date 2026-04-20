@@ -106,7 +106,13 @@ export function RecipeBook({
               <div className="flex items-start gap-3">
                 <div className="shrink-0">
                   {isUnlocked ? (
-                    <FoodArt id={r.id} size={72} emoji={r.emoji} />
+                    <FoodArt
+                      id={r.id}
+                      size={72}
+                      emoji={r.emoji}
+                      plushAnimal={r.plushAnimal}
+                      plushTheme={r.plushTheme}
+                    />
                   ) : (
                     <div className="w-[72px] h-[72px] rounded-xl bg-cream-100 flex items-center justify-center text-3xl">
                       🔒

@@ -18,6 +18,7 @@ const STATION_TITLE: Record<StationId, { title: string; emoji: string }> = {
   oven: { title: "Oven", emoji: "🔥" },
   scratch: { title: "Bakery Oven", emoji: "🥣" },
   pet: { title: "Pet Treat Nook", emoji: "🐾" },
+  shelf: { title: "Plush Shelf", emoji: "🧸" },
 };
 
 /**
@@ -30,6 +31,7 @@ const STATION_ACTION: Record<StationId, string> = {
   scratch: "Roll & bake 🔥",
   pet: "Shape & bake 🐾",
   oven: "Bake 🔥",
+  shelf: "Gift-wrap 🎀",
 };
 
 /**
@@ -151,7 +153,13 @@ export function PrepScene({
             {slotRecipe ? (
               <div className="panel max-w-2xl mx-auto">
                 <div className="flex items-center gap-3">
-                  <FoodArt id={slotRecipe.id} size={56} emoji={slotRecipe.emoji} />
+                  <FoodArt
+                    id={slotRecipe.id}
+                    size={56}
+                    emoji={slotRecipe.emoji}
+                    plushAnimal={slotRecipe.plushAnimal}
+                    plushTheme={slotRecipe.plushTheme}
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="font-display text-lg text-cocoa-600 truncate">
                       {slotRecipe.name}
@@ -276,7 +284,14 @@ function RecipeChoice({
       className="rounded-2xl border border-cream-200 p-2 text-left bg-white/80 shadow-soft transition hover:bg-cream-100 disabled:opacity-60"
     >
       <div className="flex items-center gap-2">
-        <FoodArt id={recipe.id} size={56} withShadow={false} emoji={recipe.emoji} />
+        <FoodArt
+          id={recipe.id}
+          size={56}
+          withShadow={false}
+          emoji={recipe.emoji}
+          plushAnimal={recipe.plushAnimal}
+          plushTheme={recipe.plushTheme}
+        />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1">
             <span className="font-bold text-cocoa-600 truncate">{recipe.name}</span>
@@ -327,6 +342,7 @@ function SceneBackdrop({ stationId }: { stationId: StationId }) {
     scratch: ["#fceadb", "#ddb98a"],
     pet: ["#e6f7df", "#bce0a8"],
     oven: ["#fde0c0", "#e0a070"],
+    shelf: ["#f5e7d9", "#d7a975"],
   };
   const [a, b] = palette[stationId];
   return (
@@ -386,7 +402,13 @@ function PrepStage({
           transition={{ duration: done ? 0.5 : 2, repeat: done ? 0 : Infinity }}
         >
           {recipe ? (
-            <FoodArt id={recipe.id} size={220} emoji={recipe.emoji} />
+            <FoodArt
+              id={recipe.id}
+              size={220}
+              emoji={recipe.emoji}
+              plushAnimal={recipe.plushAnimal}
+              plushTheme={recipe.plushTheme}
+            />
           ) : (
             <div className="w-[220px] h-[220px] rounded-full bg-white/40 border-2 border-dashed border-cocoa-300" />
           )}
@@ -715,7 +737,14 @@ function CombiningPanel({
   return (
     <div className="panel max-w-3xl mx-auto">
       <div className="flex items-center gap-3 mb-2">
-        <FoodArt id={recipe.id} size={48} withShadow={false} emoji={recipe.emoji} />
+        <FoodArt
+          id={recipe.id}
+          size={48}
+          withShadow={false}
+          emoji={recipe.emoji}
+          plushAnimal={recipe.plushAnimal}
+          plushTheme={recipe.plushTheme}
+        />
         <div className="flex-1 min-w-0">
           <div className="font-display text-lg text-cocoa-600 truncate">
             Combining: {recipe.name}

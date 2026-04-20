@@ -404,6 +404,7 @@ const STATION_LABEL: Record<StationId, string> = {
   oven: "Oven",
   scratch: "Bake",
   pet: "Pets",
+  shelf: "Plush",
 };
 
 function Hotspot({
