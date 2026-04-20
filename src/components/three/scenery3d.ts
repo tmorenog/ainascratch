@@ -1354,6 +1354,44 @@ export function buildCatCafeStairs(): THREE.Group {
   arrow.rotation.z = Math.PI;
   g.add(arrow);
 
+  // 🔒 LOCKED overlay — shown until the Cat Cafe unlocks. A banner above
+  // the hole plus a gold padlock hovering over the steps.
+  const lockedGroup = new THREE.Group();
+  lockedGroup.name = "cat_cafe_locked";
+  const bannerTex = signboardTexture("🔒 LOCKED — Level 20", "#8a2d3a");
+  const banner = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.9, 0.55),
+    new THREE.MeshBasicMaterial({ map: bannerTex, transparent: true }),
+  );
+  banner.position.set(x, 1.55, z + 0.35);
+  banner.rotation.y = 0;
+  lockedGroup.add(banner);
+  // Gold padlock body
+  const gold = mat({ color: "#e6b948", roughness: 0.4, metalness: 0.3 });
+  const lockBody = new THREE.Mesh(
+    new THREE.BoxGeometry(0.28, 0.32, 0.12),
+    gold,
+  );
+  lockBody.position.set(x, 0.8, z + 0.15);
+  lockedGroup.add(lockBody);
+  // Shackle (torus half)
+  const shackle = new THREE.Mesh(
+    new THREE.TorusGeometry(0.1, 0.025, 8, 16, Math.PI),
+    gold,
+  );
+  shackle.position.set(x, 0.98, z + 0.15);
+  shackle.rotation.x = Math.PI;
+  lockedGroup.add(shackle);
+  // Keyhole dot on the padlock
+  const keyhole = new THREE.Mesh(
+    new THREE.CircleGeometry(0.035, 12),
+    mat({ color: "#3a2418" }),
+  );
+  keyhole.position.set(x, 0.78, z + 0.215);
+  lockedGroup.add(keyhole);
+  g.add(lockedGroup);
+  g.userData.lockedOverlay = lockedGroup;
+
   return g;
 }
 
@@ -1984,34 +2022,6 @@ export function buildVetClinic(cx: number, cz: number): THREE.Group {
   );
   sign.position.set(0, H - 0.35, -D / 2 - 0.12);
   g.add(sign);
-
-  // Padlock sign hung over the door for pre-unlock players. Toggled by
-  // BakeryWorld3D based on the player's level.
-  const lockedGroup = new THREE.Group();
-  const lockedTex = signboardTexture("🔒 LOCKED — Level 20", "#8a2a2a");
-  const lockedBanner = new THREE.Mesh(
-    new THREE.PlaneGeometry(2.2, 0.55),
-    new THREE.MeshBasicMaterial({ map: lockedTex, transparent: true }),
-  );
-  lockedBanner.position.set(0, 1.2, -D / 2 - 0.14);
-  lockedGroup.add(lockedBanner);
-  // Big golden padlock dangling under the banner.
-  const lockBody = new THREE.Mesh(
-    new THREE.BoxGeometry(0.4, 0.45, 0.15),
-    mat({ color: "#e8b93a", roughness: 0.4 }),
-  );
-  lockBody.position.set(0, 0.6, -D / 2 - 0.18);
-  lockedGroup.add(lockBody);
-  const lockShackle = new THREE.Mesh(
-    new THREE.TorusGeometry(0.14, 0.04, 6, 14, Math.PI),
-    mat({ color: "#c7c7c7", roughness: 0.3, metalness: 0.6 }),
-  );
-  lockShackle.position.set(0, 0.84, -D / 2 - 0.18);
-  lockShackle.rotation.z = Math.PI;
-  lockedGroup.add(lockShackle);
-  lockedGroup.visible = false;
-  g.add(lockedGroup);
-  g.userData.lockedOverlay = lockedGroup;
 
   // Interior: exam table, vet stool, cat bed, shelf
   const tableTop = new THREE.Mesh(

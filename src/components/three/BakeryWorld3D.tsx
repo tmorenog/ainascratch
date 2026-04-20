@@ -230,7 +230,11 @@ export function BakeryWorld3D({
     scene.add(buildStationProps());
     scene.add(buildPantry());
     scene.add(buildPlushieShelf());
-    scene.add(buildCatCafeStairs());
+    const catCafeStairs = buildCatCafeStairs();
+    scene.add(catCafeStairs);
+    const stairsLockedOverlay = catCafeStairs.userData.lockedOverlay as
+      | THREE.Group
+      | undefined;
     scene.add(buildSeatingArea());
     const basement = buildCatCafeBasement();
     scene.add(basement);
@@ -246,9 +250,6 @@ export function BakeryWorld3D({
       }[]) ?? [];
     const outdoors = buildOutdoors();
     const vetBuilding = outdoors.userData.vet as THREE.Group | undefined;
-    const vetLockedOverlay = vetBuilding?.userData.lockedOverlay as
-      | THREE.Group
-      | undefined;
     scene.add(outdoors);
 
     // Supermarket sliding doors — the builder stashes the mesh refs and
@@ -1290,13 +1291,19 @@ export function BakeryWorld3D({
         applyBounds(camera.position);
       }
 
-      // Vet clinic is always visible, but before the Cat Cafe unlocks
-      // we show a 🔒 padlock overlay and skip its hotspot so the player
-      // can't interact with a clinic they can't use yet.
+      // Below the Cat Cafe unlock level we hide the vet entirely (since
+      // it only exists to heal cafe cats) and show a 🔒 padlock overlay
+      // on the basement stairs so the player knows what's coming.
       const catCafeUnlocked =
         useGame.getState().level >= CAT_CAFE_UNLOCK_LEVEL;
-      if (vetLockedOverlay && vetLockedOverlay.visible === catCafeUnlocked) {
-        vetLockedOverlay.visible = !catCafeUnlocked;
+      if (vetBuilding && vetBuilding.visible === !catCafeUnlocked) {
+        vetBuilding.visible = catCafeUnlocked;
+      }
+      if (
+        stairsLockedOverlay &&
+        stairsLockedOverlay.visible === catCafeUnlocked
+      ) {
+        stairsLockedOverlay.visible = !catCafeUnlocked;
       }
 
       // hotspot detection
