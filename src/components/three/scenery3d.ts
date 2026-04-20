@@ -1590,9 +1590,12 @@ export function buildOutdoors(): THREE.Group {
   };
 
   // Vet clinic — small pastel-green building along the sidewalk. Carry
-  // a sick cat here to heal it.
+  // a sick cat here to heal it. Hidden until the Cat Cafe unlocks, then
+  // toggled on by BakeryWorld3D via userData.vet.
   const vet = buildVetClinic(VET_CENTER.x, VET_CENTER.z);
+  vet.visible = false;
   g.add(vet);
+  g.userData.vet = vet;
 
   // Birds (animated sprites)
   for (let i = 0; i < 5; i++) {

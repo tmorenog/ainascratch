@@ -245,6 +245,7 @@ export function BakeryWorld3D({
         d: number;
       }[]) ?? [];
     const outdoors = buildOutdoors();
+    const vetBuilding = outdoors.userData.vet as THREE.Group | undefined;
     scene.add(outdoors);
 
     // Supermarket sliding doors — the builder stashes the mesh refs and
@@ -1286,10 +1287,19 @@ export function BakeryWorld3D({
         applyBounds(camera.position);
       }
 
+      // Vet clinic + its hotspot only appear once the Cat Cafe unlocks,
+      // since the vet exists specifically to heal sick cafe cats.
+      const catCafeUnlocked =
+        useGame.getState().level >= CAT_CAFE_UNLOCK_LEVEL;
+      if (vetBuilding && vetBuilding.visible !== catCafeUnlocked) {
+        vetBuilding.visible = catCafeUnlocked;
+      }
+
       // hotspot detection
       let best: Hotspot | null = null;
       let bestD = Infinity;
       for (const hs of HOTSPOTS) {
+        if (hs.kind === "vet" && !catCafeUnlocked) continue;
         const d = Math.hypot(hs.position[0] - camera.position.x, hs.position[2] - camera.position.z);
         if (d < PLAYER.reachDistance && d < bestD) {
           best = hs;
