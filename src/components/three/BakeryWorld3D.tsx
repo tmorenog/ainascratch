@@ -494,13 +494,15 @@ export function BakeryWorld3D({
       leanUntil: number;
     };
     const patronPlays: PatronPlay[] = [];
+    const _pp = new THREE.Vector3();
+    const _cp = new THREE.Vector3();
     for (const p of basementPatrons) {
-      const wp = new THREE.Vector3();
-      p.root.getWorldPosition(wp);
+      p.root.getWorldPosition(_pp);
       let nearestCat: THREE.Group | null = null;
       let bestD = Infinity;
       for (const cat of basementCats) {
-        const d = Math.hypot(cat.position.x - wp.x, cat.position.z - wp.z);
+        cat.getWorldPosition(_cp);
+        const d = Math.hypot(_cp.x - _pp.x, _cp.z - _pp.z);
         if (d < bestD) {
           bestD = d;
           nearestCat = cat;
@@ -531,12 +533,14 @@ export function BakeryWorld3D({
       // Remove any leftover treat from a previous feed.
       const old = catTreats.get(activeCatName);
       if (old) {
-        scene.remove(old);
+        basement.remove(old);
         old.geometry.dispose();
         (old.material as THREE.Material).dispose();
         catTreats.delete(activeCatName);
       }
       // Spawn a tiny biscuit-coloured treat just in front of the cat.
+      // Attached to the basement group so the cat's local-space coords
+      // just work for the treat's position.
       const treat = new THREE.Mesh(
         new THREE.BoxGeometry(0.07, 0.04, 0.07),
         new THREE.MeshStandardMaterial({ color: "#c97a4a", roughness: 0.7 }),
@@ -548,7 +552,7 @@ export function BakeryWorld3D({
         activeCatRef.position.y + 0.02,
         activeCatRef.position.z + facingZ * 0.28,
       );
-      scene.add(treat);
+      basement.add(treat);
       catTreats.set(activeCatName, treat);
     }
 
@@ -989,14 +993,18 @@ export function BakeryWorld3D({
       activePetRef = nearestPet;
       activePetCustomerId = nearestPetCustId;
 
-      // Basement cat proximity — same idea, but we look at cat groups.
+      // Basement cat proximity — cats are children of the basement group
+      // which sits at world z ≈ BASEMENT.cz, so we have to compare against
+      // world coordinates, not the cat's local .position.
       let nearestCat: THREE.Group | null = null;
       let nearestCatName: string | null = null;
       let nearestCatD = 1.5;
+      const _catWP = new THREE.Vector3();
       for (const cat of basementCats) {
+        cat.getWorldPosition(_catWP);
         const d = Math.hypot(
-          cat.position.x - camera.position.x,
-          cat.position.z - camera.position.z,
+          _catWP.x - camera.position.x,
+          _catWP.z - camera.position.z,
         );
         if (d < nearestCatD) {
           nearestCat = cat;
@@ -1092,7 +1100,7 @@ export function BakeryWorld3D({
             const remaining = Math.max(0.01, 1 - t * 1.05);
             treat.scale.setScalar(remaining);
             if (t >= 1) {
-              scene.remove(treat);
+              basement.remove(treat);
               treat.geometry.dispose();
               (treat.material as THREE.Material).dispose();
               catTreats.delete(parts.name);
@@ -1231,7 +1239,7 @@ export function BakeryWorld3D({
       customerFigs.forEach((cf) => cf.fig.dispose());
       basementPatrons.forEach((p) => p.dispose());
       catTreats.forEach((t) => {
-        scene.remove(t);
+        basement.remove(t);
         t.geometry.dispose();
         (t.material as THREE.Material).dispose();
       });
