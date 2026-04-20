@@ -6,6 +6,7 @@ import { Modal } from "./ui/Modal";
 import { useGame } from "@/game/store";
 import { useT } from "@/game/i18n";
 import { CAT_CAFE_UNLOCK_LEVEL } from "@/game/world3d";
+import { RECIPE_BY_ID } from "@/game/recipes";
 
 /**
  * The cats themselves live in the 3D basement scene now — this modal is
@@ -54,6 +55,7 @@ export function CatCafe({ open, onClose }: { open: boolean; onClose: () => void 
   const coins = useGame((s) => s.coins);
   const addCoins = useGame((s) => s.addCoins);
   const grantXp = useGame((s) => s.grantXp);
+  const catProfiles = useGame((s) => s.catProfiles);
   useT();
 
   const unlocked = level >= CAT_CAFE_UNLOCK_LEVEL;
@@ -184,17 +186,58 @@ export function CatCafe({ open, onClose }: { open: boolean; onClose: () => void 
           </div>
 
           <div className="rounded-2xl bg-white/80 border border-cream-200 p-3">
-            <div className="font-bold text-cocoa-600 mb-1">🐾 Our resident cats</div>
-            <div className="flex flex-wrap gap-2 text-xs">
-              {CATS.map((c) => (
-                <span
-                  key={c.id}
-                  className="px-2 py-1 rounded-full bg-cream-100 border border-cream-200 text-cocoa-600"
-                >
-                  <span className="font-bold">{c.name}</span>
-                  <span className="text-cocoa-400"> · {c.personality}</span>
-                </span>
-              ))}
+            <div className="font-bold text-cocoa-600 mb-2">🐾 Our resident cats</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              {CATS.map((c) => {
+                const profile = catProfiles[c.name];
+                const totalFeeds = profile
+                  ? Object.values(profile.feedCounts).reduce((a, b) => a + b, 0)
+                  : 0;
+                const totalToys = profile
+                  ? Object.values(profile.toyCounts).reduce((a, b) => a + b, 0)
+                  : 0;
+                const favTreat = profile?.favTreatKnown
+                  ? RECIPE_BY_ID[profile.favTreatKnown]?.name
+                  : null;
+                const favToy = profile?.favToyKnown
+                  ? RECIPE_BY_ID[profile.favToyKnown]?.name
+                  : null;
+                return (
+                  <div
+                    key={c.id}
+                    className="rounded-xl bg-cream-100 border border-cream-200 text-cocoa-600 p-2"
+                  >
+                    <div className="font-bold text-sm">🐱 {c.name}</div>
+                    <div className="text-cocoa-400">{c.personality}</div>
+                    <div className="mt-1 space-y-0.5">
+                      <div>
+                        🍪 Fav treat:{" "}
+                        {favTreat ? (
+                          <span className="font-bold text-amber-600">
+                            {favTreat}
+                          </span>
+                        ) : (
+                          <span className="text-cocoa-400">
+                            ??? ({totalFeeds}/4 fed)
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        🧸 Fav toy:{" "}
+                        {favToy ? (
+                          <span className="font-bold text-rose-600">
+                            {favToy}
+                          </span>
+                        ) : (
+                          <span className="text-cocoa-400">
+                            ??? ({totalToys}/3 given)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

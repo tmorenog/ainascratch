@@ -2011,6 +2011,11 @@ export interface CatSpec {
   pose: CatPose;
   pos: [number, number, number]; // local to basement group
   yaw: number;
+  /** Hidden favorite treat recipe — only revealed in the cat's profile
+   *  after the player has fed them enough. */
+  favTreat: string;
+  /** Hidden favorite toy recipe id. */
+  favToy: string;
 }
 
 // Positions are in BASEMENT-local coords. Counter top y ≈ 1.00, cushion
@@ -2022,8 +2027,10 @@ export const CAT_CAFE_CATS: CatSpec[] = [
     color: "#f0e1c0",
     accent: "#c8a674",
     pose: "loaf",
-    pos: [-2.4, 1.0, 4.3], // loafing on the L-counter long arm
+    pos: [-2.4, 1.0, 4.3],
     yaw: Math.PI * 0.9,
+    favTreat: "cat_fish",
+    favToy: "feather_wand_toy",
   },
   {
     name: "Espresso",
@@ -2031,8 +2038,10 @@ export const CAT_CAFE_CATS: CatSpec[] = [
     color: "#6b4a33",
     accent: "#3d2a1e",
     pose: "sit",
-    pos: [-1.2, 0, 0.2], // on the braided rug
+    pos: [-1.2, 0, 0.2],
     yaw: -0.5,
+    favTreat: "dog_bone",
+    favToy: "rope_tug_toy",
   },
   {
     name: "Latte",
@@ -2040,8 +2049,10 @@ export const CAT_CAFE_CATS: CatSpec[] = [
     color: "#fff4ec",
     accent: "#f7dfc4",
     pose: "sleep",
-    pos: [0, 0.22, -1.2], // on top of the big pink cushion
+    pos: [0, 0.22, -1.2],
     yaw: 0.4,
+    favTreat: "cat_fish",
+    favToy: "tennis_ball_toy",
   },
   {
     name: "Muffin",
@@ -2049,8 +2060,10 @@ export const CAT_CAFE_CATS: CatSpec[] = [
     color: "#caa980",
     accent: "#a07a4a",
     pose: "sit",
-    pos: [3.5, 0, 1.0], // near the bookshelf
+    pos: [3.5, 0, 1.0],
     yaw: Math.PI * 0.55,
+    favTreat: "dog_bone",
+    favToy: "feather_wand_toy",
   },
   {
     name: "Biscuit",
@@ -2058,8 +2071,10 @@ export const CAT_CAFE_CATS: CatSpec[] = [
     color: "#e3b36a",
     accent: "#a07a1a",
     pose: "stretch",
-    pos: [1.4, 0, -3.2], // warm patch near the back wall
+    pos: [1.4, 0, -3.2],
     yaw: -Math.PI / 2,
+    favTreat: "cat_fish",
+    favToy: "rubber_bone_toy",
   },
 ];
 
@@ -2283,6 +2298,8 @@ export function makeCat3D(spec: CatSpec): THREE.Group {
     tail,
     pose: spec.pose,
     name: spec.name,
+    favTreat: spec.favTreat,
+    favToy: spec.favToy,
     baseHeadY: head.position.y,
     baseHeadRotX: head.rotation.x,
     baseHeadRotZ: head.rotation.z,

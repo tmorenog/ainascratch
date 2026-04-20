@@ -129,6 +129,19 @@ interface GameState {
   // Pets gifted by 5-star customers who loved the food. Persisted.
   giftedPets: GiftedPet[];
 
+  // Per-cat basement profile: how many of each treat / toy we've given
+  // them. Favorites are revealed in the cat's profile card once the
+  // total count crosses the threshold (see store actions).
+  catProfiles: Record<
+    string,
+    {
+      feedCounts: Record<string, number>;
+      toyCounts: Record<string, number>;
+      favTreatKnown?: string;
+      favToyKnown?: string;
+    }
+  >;
+
   // Player-invented recipes. Fully integrated into the menu — the chef
   // can prep them at the matching station and customers can order them.
   customRecipes: Recipe[];
@@ -165,6 +178,17 @@ interface GameState {
   acknowledgeTip: (id: string) => void;
 
   orderSupplies: (items: Partial<Record<IngredientId, number>>) => void;
+
+  /** Consume one pet-treat ready item (cat_fish preferred, dog_bone
+   *  fallback) from the tray and return which kind was fed. Used by
+   *  the cat-cafe to turn upstairs-baked pet treats into cat food. */
+  feedCatTreat: () => { ok: boolean; recipeId?: string };
+  /** Consume one ready pet-toy item and return which toy was given. */
+  giveCatToy: () => { ok: boolean; recipeId?: string };
+  /** Record a feed for a specific cat and reveal their favorite once
+   *  the player has fed them the fav enough times. */
+  recordCatFeed: (catName: string, recipeId: string, favTreat: string) => void;
+  recordCatToy: (catName: string, recipeId: string, favToy: string) => void;
 
   buyFurniture: (kind: string, x: number, z: number, rot: number, price: number) => boolean;
   removeFurniture: (id: string) => void;
@@ -357,6 +381,7 @@ export const useGame = create<GameState>()(
       tipEvents: [],
       furniture: [],
       giftedPets: [],
+      catProfiles: {},
       customRecipes: [],
       specialRecipeId: null,
 
@@ -391,6 +416,7 @@ export const useGame = create<GameState>()(
           tipEvents: [],
           furniture: [],
           giftedPets: [],
+          catProfiles: {},
           customRecipes: [],
           specialRecipeId: null,
           lastTickAt: Date.now(),
@@ -763,6 +789,81 @@ export const useGame = create<GameState>()(
         return "escaped";
       },
 
+      feedCatTreat: () => {
+        const s = get();
+        // Cats prefer fish; fall back to bone biscuit if no fish on tray.
+        const tray = s.ready;
+        let idx = tray.findIndex((r) => r.recipeId === "cat_fish");
+        if (idx === -1) idx = tray.findIndex((r) => r.recipeId === "dog_bone");
+        if (idx === -1) return { ok: false };
+        const used = tray[idx];
+        set({ ready: tray.filter((_, i) => i !== idx) });
+        return { ok: true, recipeId: used.recipeId };
+      },
+
+      giveCatToy: () => {
+        const s = get();
+        const TOY_IDS = [
+          "feather_wand_toy",
+          "rope_tug_toy",
+          "tennis_ball_toy",
+          "rubber_bone_toy",
+        ];
+        const idx = s.ready.findIndex((r) => TOY_IDS.includes(r.recipeId));
+        if (idx === -1) return { ok: false };
+        const used = s.ready[idx];
+        set({ ready: s.ready.filter((_, i) => i !== idx) });
+        return { ok: true, recipeId: used.recipeId };
+      },
+
+      recordCatFeed: (catName, recipeId, favTreat) => {
+        const s = get();
+        const profile = s.catProfiles[catName] ?? {
+          feedCounts: {},
+          toyCounts: {},
+        };
+        const feedCounts = {
+          ...profile.feedCounts,
+          [recipeId]: (profile.feedCounts[recipeId] ?? 0) + 1,
+        };
+        const total = Object.values(feedCounts).reduce((a, b) => a + b, 0);
+        // Reveal their favorite once they've been fed 4+ treats overall
+        // AND their actual favorite has been tried at least once.
+        const favTreatKnown =
+          profile.favTreatKnown ??
+          (total >= 4 && (feedCounts[favTreat] ?? 0) >= 1
+            ? favTreat
+            : undefined);
+        set({
+          catProfiles: {
+            ...s.catProfiles,
+            [catName]: { ...profile, feedCounts, favTreatKnown },
+          },
+        });
+      },
+
+      recordCatToy: (catName, recipeId, favToy) => {
+        const s = get();
+        const profile = s.catProfiles[catName] ?? {
+          feedCounts: {},
+          toyCounts: {},
+        };
+        const toyCounts = {
+          ...profile.toyCounts,
+          [recipeId]: (profile.toyCounts[recipeId] ?? 0) + 1,
+        };
+        const total = Object.values(toyCounts).reduce((a, b) => a + b, 0);
+        const favToyKnown =
+          profile.favToyKnown ??
+          (total >= 3 && (toyCounts[favToy] ?? 0) >= 1 ? favToy : undefined);
+        set({
+          catProfiles: {
+            ...s.catProfiles,
+            [catName]: { ...profile, toyCounts, favToyKnown },
+          },
+        });
+      },
+
       orderSupplies: (items) => {
         const s = get();
         const cost = (Object.entries(items) as [IngredientId, number][]).reduce(
@@ -1017,7 +1118,7 @@ export const useGame = create<GameState>()(
       storage: createJSONStorage(() => localStorage),
       // Bump whenever we add recipes or ingredients so returning players
       // automatically get the new menu + a full inventory slot list.
-      version: 7,
+      version: 8,
       migrate: (persisted, _version) => {
         const p = (persisted ?? {}) as Partial<GameState>;
         // Merge in any newly-unlocked recipes that weren't in the save.
@@ -1041,6 +1142,7 @@ export const useGame = create<GameState>()(
           unlockedRecipeIds: Array.from(savedUnlocked),
           inventory: mergedInventory,
           giftedPets: p.giftedPets ?? [],
+          catProfiles: p.catProfiles ?? {},
           language: p.language ?? ("en" as Lang),
           customRecipes: p.customRecipes ?? [],
           specialRecipeId: p.specialRecipeId ?? null,
@@ -1061,6 +1163,7 @@ export const useGame = create<GameState>()(
         stats: s.stats,
         furniture: s.furniture,
         giftedPets: s.giftedPets,
+        catProfiles: s.catProfiles,
         customRecipes: s.customRecipes,
         specialRecipeId: s.specialRecipeId,
       }),

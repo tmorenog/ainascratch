@@ -66,6 +66,7 @@ export function BakeryWorld3D({
 
   const [prompt, setPrompt] = useState<string | null>(null);
   const [nearCat, setNearCat] = useState(false);
+  const [noTreatToast, setNoTreatToast] = useState(false);
   const [locked, setLocked] = useState(false);
   const [isTouch, setIsTouch] = useState(false);
   const activeHotspotRef = useRef<Hotspot | null>(null);
@@ -83,6 +84,7 @@ export function BakeryWorld3D({
   // the tail. Wired up inside the main useEffect.
   const petTriggerRef = useRef<() => void>(() => {});
   const treatTriggerRef = useRef<() => void>(() => {});
+  const toyTriggerRef = useRef<() => void>(() => {});
   // Routes hotspot interactions — basement stairs teleport locally; everything
   // else forwards to the parent via onInteract.
   const interactHandlerRef = useRef<(hs: Hotspot) => void>(() => {});
@@ -483,6 +485,7 @@ export function BakeryWorld3D({
     const catLastPetAt = new Map<string, number>();
     const catLastFedAt = new Map<string, number>();
     const catTreats = new Map<string, THREE.Mesh>();
+    let noTreatToastTimer = 0;
 
     // NPC patrons each adopt the nearest basement cat and pet/play with it
     // every few seconds. Stored as { patron, cat, nextPetAt, baseRotX }.
@@ -594,6 +597,24 @@ export function BakeryWorld3D({
 
     function tryFeedCat() {
       if (!activeCatRef || !activeCatName) return;
+      // Pull a baked pet treat off the upstairs tray. No treats → nothing
+      // happens except a little toast telling the player to bake more.
+      const fed = useGame.getState().feedCatTreat();
+      if (!fed.ok) {
+        setNoTreatToast(true);
+        window.clearTimeout(noTreatToastTimer);
+        noTreatToastTimer = window.setTimeout(() => setNoTreatToast(false), 1600);
+        return;
+      }
+      const catInfo = activeCatRef.userData.cat as {
+        favTreat: string;
+        favToy: string;
+      };
+      if (fed.recipeId) {
+        useGame
+          .getState()
+          .recordCatFeed(activeCatName, fed.recipeId, catInfo.favTreat);
+      }
       catLastFedAt.set(activeCatName, performance.now());
       // Remove any leftover treat from a previous feed.
       const old = catTreats.get(activeCatName);
@@ -603,12 +624,18 @@ export function BakeryWorld3D({
         (old.material as THREE.Material).dispose();
         catTreats.delete(activeCatName);
       }
-      // Spawn a tiny biscuit-coloured treat just in front of the cat.
-      // Attached to the basement group so the cat's local-space coords
-      // just work for the treat's position.
+      // Fish cookies are orange-pink; bone biscuits are biscuit-tan.
+      const isFish = fed.recipeId === "cat_fish";
+      const treatGeo = isFish
+        ? new THREE.SphereGeometry(0.045, 8, 6)
+        : new THREE.BoxGeometry(0.09, 0.04, 0.05);
+      if (isFish) (treatGeo as THREE.SphereGeometry).scale(1.4, 0.7, 0.9);
       const treat = new THREE.Mesh(
-        new THREE.BoxGeometry(0.07, 0.04, 0.07),
-        new THREE.MeshStandardMaterial({ color: "#c97a4a", roughness: 0.7 }),
+        treatGeo,
+        new THREE.MeshStandardMaterial({
+          color: isFish ? "#e89166" : "#d9a470",
+          roughness: 0.7,
+        }),
       );
       const facingX = Math.sin(activeCatRef.rotation.y);
       const facingZ = Math.cos(activeCatRef.rotation.y);
@@ -619,6 +646,79 @@ export function BakeryWorld3D({
       );
       basement.add(treat);
       catTreats.set(activeCatName, treat);
+      // Hearts for the cat's gratitude + a tiny tip from the cafe patrons.
+      const wp = new THREE.Vector3();
+      (activeCatRef.userData.cat as { head: THREE.Group }).head.getWorldPosition(wp);
+      spawnHearts(wp, 5);
+      useGame.getState().addCoins(3);
+    }
+
+    // Give a pet toy to the current cat. Pulls a ready toy off the
+    // upstairs tray, records the toy type on the cat's profile, and
+    // plops a tiny toy mesh next to them for a few seconds.
+    const catToys = new Map<string, { mesh: THREE.Mesh; born: number }>();
+    function tryGiveCatToy() {
+      if (!activeCatRef || !activeCatName) return;
+      const gave = useGame.getState().giveCatToy();
+      if (!gave.ok) {
+        setNoTreatToast(true);
+        window.clearTimeout(noTreatToastTimer);
+        noTreatToastTimer = window.setTimeout(() => setNoTreatToast(false), 1600);
+        return;
+      }
+      const catInfo = activeCatRef.userData.cat as { favToy: string };
+      if (gave.recipeId) {
+        useGame
+          .getState()
+          .recordCatToy(activeCatName, gave.recipeId, catInfo.favToy);
+      }
+      const old = catToys.get(activeCatName);
+      if (old) {
+        basement.remove(old.mesh);
+        old.mesh.geometry.dispose();
+        (old.mesh.material as THREE.Material).dispose();
+        catToys.delete(activeCatName);
+      }
+      // Toy meshes — cheap proxies coloured by kind.
+      let toyGeo: THREE.BufferGeometry;
+      let toyColor = "#d9a470";
+      switch (gave.recipeId) {
+        case "feather_wand_toy":
+          toyGeo = new THREE.ConeGeometry(0.04, 0.2, 8);
+          toyColor = "#d14d6a";
+          break;
+        case "tennis_ball_toy":
+          toyGeo = new THREE.SphereGeometry(0.06, 10, 8);
+          toyColor = "#c9d14d";
+          break;
+        case "rope_tug_toy":
+          toyGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.22, 8);
+          toyColor = "#e05e5e";
+          break;
+        case "rubber_bone_toy":
+        default:
+          toyGeo = new THREE.BoxGeometry(0.16, 0.05, 0.05);
+          toyColor = "#e89166";
+          break;
+      }
+      const toyMesh = new THREE.Mesh(
+        toyGeo,
+        new THREE.MeshStandardMaterial({ color: toyColor, roughness: 0.6 }),
+      );
+      const facingX = Math.sin(activeCatRef.rotation.y);
+      const facingZ = Math.cos(activeCatRef.rotation.y);
+      toyMesh.position.set(
+        activeCatRef.position.x + facingX * 0.35,
+        activeCatRef.position.y + 0.04,
+        activeCatRef.position.z + facingZ * 0.35,
+      );
+      basement.add(toyMesh);
+      catToys.set(activeCatName, { mesh: toyMesh, born: performance.now() });
+      // The cat reacts (pet animation reuses nicely for "toy excitement").
+      catLastPetAt.set(activeCatName, performance.now());
+      const wp = new THREE.Vector3();
+      (activeCatRef.userData.cat as { head: THREE.Group }).head.getWorldPosition(wp);
+      spawnHearts(wp, 5);
     }
 
     // Expose via ref so the on-screen Interact button can trigger this too.
@@ -628,6 +728,9 @@ export function BakeryWorld3D({
     };
     treatTriggerRef.current = () => {
       if (activeCatRef) tryFeedCat();
+    };
+    toyTriggerRef.current = () => {
+      if (activeCatRef) tryGiveCatToy();
     };
 
     // ---- Controls (pointer lock + WASD + touch) ----
@@ -680,6 +783,9 @@ export function BakeryWorld3D({
       }
       if (e.code === "KeyF") {
         if (activeCatRef) tryFeedCat();
+      }
+      if (e.code === "KeyG") {
+        if (activeCatRef) tryGiveCatToy();
       }
     };
     const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code);
@@ -1107,7 +1213,7 @@ export function BakeryWorld3D({
         const kind = (nearestPet.userData.pet as { kind: "dog" | "cat" }).kind;
         promptText = `Pet the ${kind}`;
       } else if (nearestCat && nearestCatName) {
-        promptText = `Pet ${nearestCatName} · F: treat`;
+        promptText = `Pet ${nearestCatName} · F: treat · G: toy`;
       }
       setPrompt(promptText);
       setNearCat(!!nearestCat);
@@ -1200,6 +1306,20 @@ export function BakeryWorld3D({
           if (parts.pose !== "sleep") {
             parts.tail.rotation.y = Math.sin(now * 0.002 + seed) * 0.4;
           }
+        }
+      }
+
+      // Cat toys linger for a few seconds (bobbing playfully) then
+      // disappear — simulating the cat batting them around off-screen.
+      for (const [name, entry] of catToys) {
+        const age = (now - entry.born) / 1000;
+        entry.mesh.position.y += Math.sin((now + entry.born) * 0.008) * 0.0008;
+        entry.mesh.rotation.z = Math.sin(now * 0.006) * 0.3;
+        if (age >= 6) {
+          basement.remove(entry.mesh);
+          entry.mesh.geometry.dispose();
+          (entry.mesh.material as THREE.Material).dispose();
+          catToys.delete(name);
         }
       }
 
@@ -1345,6 +1465,12 @@ export function BakeryWorld3D({
         (t.material as THREE.Material).dispose();
       });
       catTreats.clear();
+      catToys.forEach((e) => {
+        basement.remove(e.mesh);
+        e.mesh.geometry.dispose();
+        (e.mesh.material as THREE.Material).dispose();
+      });
+      catToys.clear();
       giftedPetGroups.forEach((g) => scene.remove(g));
       giftedPetGroups.clear();
       customMerchGroups.forEach((g) => scene.remove(g));
@@ -1369,6 +1495,15 @@ export function BakeryWorld3D({
         <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-32 z-20">
           <div className="bg-cocoa-900/85 text-cream-50 text-sm px-4 py-2 rounded-full shadow-bakery">
             <span className="font-bold">[E]</span> {prompt}
+          </div>
+        </div>
+      )}
+
+      {/* no-pet-treats toast */}
+      {noTreatToast && (
+        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-16 z-20">
+          <div className="bg-amber-700/90 text-cream-50 text-sm px-4 py-2 rounded-full shadow-bakery">
+            🍪 Bake a Fishy Cat Cookie or Bone Biscuit upstairs first!
           </div>
         </div>
       )}
@@ -1410,26 +1545,48 @@ export function BakeryWorld3D({
             }}
           />
           {nearCat && (
-            <button
-              type="button"
-              onTouchStart={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (pausedRef.current) return;
-                treatTriggerRef.current();
-              }}
-              onClick={() => {
-                if (pausedRef.current) return;
-                treatTriggerRef.current();
-              }}
-              className="pointer-events-auto absolute right-32 bottom-8 z-30 w-20 h-20 rounded-full border-2 border-white text-white font-black shadow-bakery active:scale-95 transition-transform touch-none select-none bg-amber-500"
-              aria-label="Feed treat"
-            >
-              <div className="flex flex-col items-center justify-center leading-tight">
-                <span className="text-2xl">🍪</span>
-                <span className="text-[10px] font-bold">Treat</span>
-              </div>
-            </button>
+            <>
+              <button
+                type="button"
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (pausedRef.current) return;
+                  treatTriggerRef.current();
+                }}
+                onClick={() => {
+                  if (pausedRef.current) return;
+                  treatTriggerRef.current();
+                }}
+                className="pointer-events-auto absolute right-32 bottom-8 z-30 w-20 h-20 rounded-full border-2 border-white text-white font-black shadow-bakery active:scale-95 transition-transform touch-none select-none bg-amber-500"
+                aria-label="Feed treat"
+              >
+                <div className="flex flex-col items-center justify-center leading-tight">
+                  <span className="text-2xl">🍪</span>
+                  <span className="text-[10px] font-bold">Treat</span>
+                </div>
+              </button>
+              <button
+                type="button"
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (pausedRef.current) return;
+                  toyTriggerRef.current();
+                }}
+                onClick={() => {
+                  if (pausedRef.current) return;
+                  toyTriggerRef.current();
+                }}
+                className="pointer-events-auto absolute right-56 bottom-8 z-30 w-20 h-20 rounded-full border-2 border-white text-white font-black shadow-bakery active:scale-95 transition-transform touch-none select-none bg-rose-500"
+                aria-label="Give toy"
+              >
+                <div className="flex flex-col items-center justify-center leading-tight">
+                  <span className="text-2xl">🧸</span>
+                  <span className="text-[10px] font-bold">Toy</span>
+                </div>
+              </button>
+            </>
           )}
         </>
       )}
