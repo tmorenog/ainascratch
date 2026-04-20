@@ -1020,20 +1020,30 @@ export function BakeryWorld3D({
 
     const onMouseMove = (e: MouseEvent) => {
       if (pausedRef.current) return;
+      // Cap per-event deltas so a brief focus change or the initial burst
+      // from pointer-lock engagement can't whip the camera around. Values
+      // above ~80px in a single mousemove are almost never intentional.
+      const mxRaw = e.movementX ?? 0;
+      const myRaw = e.movementY ?? 0;
+      const mx = Math.max(-80, Math.min(80, mxRaw));
+      const my = Math.max(-80, Math.min(80, myRaw));
       if (document.pointerLockElement === renderer.domElement) {
-        camera.rotation.y -= e.movementX * 0.0025;
-        camera.rotation.x -= e.movementY * 0.0025;
+        camera.rotation.y -= mx * 0.0025;
+        camera.rotation.x -= my * 0.0025;
       } else if (isDragging) {
-        const dx = e.clientX - dragLastX;
-        const dy = e.clientY - dragLastY;
+        const dxRaw = e.clientX - dragLastX;
+        const dyRaw = e.clientY - dragLastY;
         dragLastX = e.clientX;
         dragLastY = e.clientY;
+        const dx = Math.max(-80, Math.min(80, dxRaw));
+        const dy = Math.max(-80, Math.min(80, dyRaw));
         camera.rotation.y -= dx * 0.005;
         camera.rotation.x -= dy * 0.005;
       } else {
         return;
       }
       camera.rotation.x = Math.max(-1.2, Math.min(1.2, camera.rotation.x));
+      camera.rotation.z = 0;
     };
     document.addEventListener("mousemove", onMouseMove);
 
@@ -1045,6 +1055,7 @@ export function BakeryWorld3D({
       lookLast: { x: 0, y: 0 },
     };
     const onTouchStart = (e: TouchEvent) => {
+      if (pausedRef.current) return;
       for (const t of Array.from(e.changedTouches)) {
         if (touchState.lookId === -1) {
           touchState.lookId = t.identifier;
@@ -1053,14 +1064,17 @@ export function BakeryWorld3D({
       }
     };
     const onTouchMove = (e: TouchEvent) => {
+      if (pausedRef.current) return;
       for (const t of Array.from(e.changedTouches)) {
         if (t.identifier === touchState.lookId) {
-          const dx = t.clientX - touchState.lookLast.x;
-          const dy = t.clientY - touchState.lookLast.y;
-          // Gentler sensitivity so a kid's flick doesn't spin the world.
+          // Same per-event cap as the mouse path — a dropped frame
+          // followed by a big catch-up delta should not spin the camera.
+          const dx = Math.max(-80, Math.min(80, t.clientX - touchState.lookLast.x));
+          const dy = Math.max(-80, Math.min(80, t.clientY - touchState.lookLast.y));
           camera.rotation.y -= dx * 0.0035;
           camera.rotation.x -= dy * 0.0035;
           camera.rotation.x = Math.max(-1.2, Math.min(1.2, camera.rotation.x));
+          camera.rotation.z = 0;
           touchState.lookLast = { x: t.clientX, y: t.clientY };
         }
       }
