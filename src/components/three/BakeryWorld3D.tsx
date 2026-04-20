@@ -518,6 +518,15 @@ export function BakeryWorld3D({
       });
     }
 
+    // Rotating visitor: a patron flagged `userData.visitor` toggles visible
+    // on/off on a timer so it feels like real customers drop in for a cat
+    // session and then leave.
+    const visitorPatron = basementPatrons.find(
+      (p) => p.root.userData.visitor === true,
+    );
+    // First arrival 5-20s after load.
+    let visitorNextToggleAt = performance.now() + 5000 + Math.random() * 15000;
+
     function tryPetCat() {
       if (!activeCatRef || !activeCatName) return;
       const head = (activeCatRef.userData.cat as { head: THREE.Group }).head;
@@ -1147,13 +1156,29 @@ export function BakeryWorld3D({
 
       // update animated entities
       customerFigs.forEach((cf) => cf.fig.update(now));
-      // Basement patrons: gentle breathing + sway while seated.
-      basementPatrons.forEach((p) => p.update(now));
+      // Basement patrons: gentle breathing + sway while seated. Skip
+      // hidden visitors so they don't animate while off-screen.
+      basementPatrons.forEach((p) => {
+        if (p.root.visible) p.update(now);
+      });
+
+      // Visitor comes + goes on a timer so there's customer turnover.
+      if (visitorPatron && now >= visitorNextToggleAt) {
+        visitorPatron.root.visible = !visitorPatron.root.visible;
+        if (visitorPatron.root.visible) {
+          // Stay 30-60s.
+          visitorNextToggleAt = now + 30000 + Math.random() * 30000;
+        } else {
+          // Gone 30-90s.
+          visitorNextToggleAt = now + 30000 + Math.random() * 60000;
+        }
+      }
 
       // Patrons periodically lean over and pet the nearest cat. We trigger
       // the cat's existing pet-reaction animation and pop hearts above it,
       // so it reads as "the customer is playing with the cat".
       for (const pp of patronPlays) {
+        if (!pp.patron.root.visible) continue;
         if (now >= pp.nextPetAt) {
           const parts = pp.cat.userData.cat as
             | { name: string; head: THREE.Group }
@@ -1180,7 +1205,8 @@ export function BakeryWorld3D({
       // Passive cafe income: $5/min per seated customer, accrued only while
       // the player is downstairs in the basement.
       if (camera.position.z > BASEMENT.cz - BASEMENT.depth) {
-        const perMs = (5 * basementPatrons.length) / 60000;
+        const presentPatrons = basementPatrons.filter((p) => p.root.visible).length;
+        const perMs = (5 * presentPatrons) / 60000;
         basementIncomeAccumRef.current += dt * 1000 * perMs;
         if (basementIncomeAccumRef.current >= 1) {
           const whole = Math.floor(basementIncomeAccumRef.current);

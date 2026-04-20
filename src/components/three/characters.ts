@@ -27,6 +27,13 @@ interface CharacterOptions {
   apron?: boolean; // renders a chef apron over the shirt
   name?: string;
   scale?: number;
+  /**
+   * If true, the figure is built for a seated pose: standing legs + shoes
+   * are replaced with horizontal thighs extending forward (+Z) from the
+   * hips and short shins hanging down from the knees. Callers then place
+   * the root so the hips sit on a chair seat.
+   */
+  seated?: boolean;
 }
 
 const materials: THREE.MeshStandardMaterial[] = [];
@@ -65,23 +72,46 @@ export function makeCharacter(opts: CharacterOptions): CharacterFigure {
   const cheekM = mat("#f5b7c8", { transparent: true, opacity: 0.55 });
   const mouthM = mat("#3a1c10");
 
-  // ---- Legs ----
-  const legGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.75, 12);
-  const leftLeg = new THREE.Mesh(legGeo, pantsM);
-  leftLeg.position.set(-0.11, 0.375, 0);
-  leftLeg.castShadow = true;
-  const rightLeg = leftLeg.clone();
-  rightLeg.position.set(0.11, 0.375, 0);
-  root.add(leftLeg, rightLeg);
+  if (opts.seated) {
+    // ---- Seated thighs (horizontal) + shins (vertical) ----
+    // Thigh runs from hip (local z≈0) forward to the knee at z≈+0.32,
+    // resting at seat height. Shins drop straight down from the knees.
+    const thighGeo = new THREE.BoxGeometry(0.15, 0.12, 0.34);
+    const shinGeo = new THREE.CylinderGeometry(0.07, 0.07, 0.36, 10);
+    const shoeM = mat("#3f2614");
+    const shoeGeo = new THREE.BoxGeometry(0.15, 0.05, 0.2);
+    for (const side of [-1, 1]) {
+      const thigh = new THREE.Mesh(thighGeo, pantsM);
+      thigh.position.set(0.11 * side, 0.77, 0.18);
+      thigh.castShadow = true;
+      root.add(thigh);
+      const shin = new THREE.Mesh(shinGeo, pantsM);
+      shin.position.set(0.11 * side, 0.55, 0.33);
+      shin.castShadow = true;
+      root.add(shin);
+      const shoe = new THREE.Mesh(shoeGeo, shoeM);
+      shoe.position.set(0.11 * side, 0.39, 0.4);
+      root.add(shoe);
+    }
+  } else {
+    // ---- Legs ----
+    const legGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.75, 12);
+    const leftLeg = new THREE.Mesh(legGeo, pantsM);
+    leftLeg.position.set(-0.11, 0.375, 0);
+    leftLeg.castShadow = true;
+    const rightLeg = leftLeg.clone();
+    rightLeg.position.set(0.11, 0.375, 0);
+    root.add(leftLeg, rightLeg);
 
-  // ---- Shoes ----
-  const shoeGeo = new THREE.BoxGeometry(0.17, 0.06, 0.22);
-  const shoeM = mat("#3f2614");
-  const leftShoe = new THREE.Mesh(shoeGeo, shoeM);
-  leftShoe.position.set(-0.11, 0.03, 0.03);
-  const rightShoe = leftShoe.clone();
-  rightShoe.position.x = 0.11;
-  root.add(leftShoe, rightShoe);
+    // ---- Shoes ----
+    const shoeGeo = new THREE.BoxGeometry(0.17, 0.06, 0.22);
+    const shoeM = mat("#3f2614");
+    const leftShoe = new THREE.Mesh(shoeGeo, shoeM);
+    leftShoe.position.set(-0.11, 0.03, 0.03);
+    const rightShoe = leftShoe.clone();
+    rightShoe.position.x = 0.11;
+    root.add(leftShoe, rightShoe);
+  }
 
   // ---- Torso ----
   const torsoGeo = new THREE.BoxGeometry(0.46, 0.55, 0.26);

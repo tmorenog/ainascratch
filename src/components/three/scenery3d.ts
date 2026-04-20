@@ -3026,33 +3026,62 @@ export function buildCatCafeBasement(): THREE.Group {
   chairB.position.set(-1.4, 0, 2.4 - 0.85);
   chairB.rotation.y = 0;
   g.add(chairB);
+  // A third "visitor" chair on the room side of the table — this is where
+  // rotating bakery customers pop in for their cat session.
+  const chairC = makeSimpleChair("#5a3a22");
+  chairC.position.set(-1.4 + 0.85, 0, 2.4);
+  chairC.rotation.y = -Math.PI / 2; // back faces +X, seat faces -X (toward table)
+  g.add(chairC);
 
-  // Seated NPC customers. We make full figures but sink them so the torso
-  // sits at chair height — it reads as "sitting" without rigged animation.
+  // Seated NPC customers. The character builder's `seated` mode swaps the
+  // standing legs for a horizontal thigh + dangling shins, and we drop the
+  // root so the hips land on the chair seat (y=0.45) instead of their
+  // feet-on-the-cushion danger pose.
+  const SEAT_HIP_DROP = -0.31;
   const patronFigs: CharacterFigure[] = [];
   const patronA = makeCharacter({
     skin: "#f0c8a5",
-    shirt: "#6b4a2f", // cozy brown sweater
+    shirt: "#6b4a2f",
     pants: "#2a1a10",
     hair: "#3d2617",
     hairStyle: "short",
+    seated: true,
   });
-  patronA.root.position.set(-1.4, 0.45, 2.4 + 0.85);
-  patronA.root.rotation.y = Math.PI; // face the table
+  patronA.root.position.set(-1.4, SEAT_HIP_DROP, 2.4 + 0.85);
+  patronA.root.rotation.y = Math.PI;
   g.add(patronA.root);
   patronFigs.push(patronA);
 
   const patronB = makeCharacter({
     skin: "#d19270",
-    shirt: "#3d5c4a", // forest-green shirt
+    shirt: "#3d5c4a",
     pants: "#2a1a10",
     hair: "#5a3a22",
     hairStyle: "bun",
+    seated: true,
   });
-  patronB.root.position.set(-1.4, 0.45, 2.4 - 0.85);
-  patronB.root.rotation.y = 0; // face the table
+  patronB.root.position.set(-1.4, SEAT_HIP_DROP, 2.4 - 0.85);
+  patronB.root.rotation.y = 0;
   g.add(patronB.root);
   patronFigs.push(patronB);
+
+  // Rotating "visitor" who only shows up sometimes — simulates bakery
+  // customers dropping in for a cat session. BakeryWorld3D toggles
+  // .visible on a timer.
+  const patronC = makeCharacter({
+    skin: "#e8b893",
+    shirt: "#8c5a36",
+    pants: "#2a1a10",
+    hair: "#2a1a10",
+    hairStyle: "short",
+    seated: true,
+  });
+  patronC.root.position.set(-1.4 + 0.85, SEAT_HIP_DROP, 2.4);
+  patronC.root.rotation.y = -Math.PI / 2;
+  patronC.root.userData.visitor = true;
+  patronC.root.visible = false;
+  g.add(patronC.root);
+  patronFigs.push(patronC);
 
   g.userData.patronFigs = patronFigs;
 
