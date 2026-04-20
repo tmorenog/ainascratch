@@ -65,6 +65,7 @@ export function BakeryWorld3D({
   const toggleStore = useGame((s) => s.toggleStore);
 
   const [prompt, setPrompt] = useState<string | null>(null);
+  const [nearCat, setNearCat] = useState(false);
   const [locked, setLocked] = useState(false);
   const [isTouch, setIsTouch] = useState(false);
   const activeHotspotRef = useRef<Hotspot | null>(null);
@@ -81,6 +82,7 @@ export function BakeryWorld3D({
   // Fires when the player is next to a dog/cat — spawns hearts + wags
   // the tail. Wired up inside the main useEffect.
   const petTriggerRef = useRef<() => void>(() => {});
+  const treatTriggerRef = useRef<() => void>(() => {});
   // Routes hotspot interactions — basement stairs teleport locally; everything
   // else forwards to the parent via onInteract.
   const interactHandlerRef = useRef<(hs: Hotspot) => void>(() => {});
@@ -472,8 +474,92 @@ export function BakeryWorld3D({
       spawnHearts(activePetRef.position);
       petLastPetAt.set(activePetCustomerId, performance.now());
     }
+
+    // Cat petting + treat-feeding (basement). Cats track their own
+    // last-petted and last-fed timestamps; treats are tiny meshes that
+    // shrink away during the eating animation.
+    let activeCatRef: THREE.Group | null = null;
+    let activeCatName: string | null = null;
+    const catLastPetAt = new Map<string, number>();
+    const catLastFedAt = new Map<string, number>();
+    const catTreats = new Map<string, THREE.Mesh>();
+
+    // NPC patrons each adopt the nearest basement cat and pet/play with it
+    // every few seconds. Stored as { patron, cat, nextPetAt, baseRotX }.
+    type PatronPlay = {
+      patron: CharacterFigure;
+      cat: THREE.Group;
+      nextPetAt: number;
+      baseRotX: number;
+      leanUntil: number;
+    };
+    const patronPlays: PatronPlay[] = [];
+    for (const p of basementPatrons) {
+      const wp = new THREE.Vector3();
+      p.root.getWorldPosition(wp);
+      let nearestCat: THREE.Group | null = null;
+      let bestD = Infinity;
+      for (const cat of basementCats) {
+        const d = Math.hypot(cat.position.x - wp.x, cat.position.z - wp.z);
+        if (d < bestD) {
+          bestD = d;
+          nearestCat = cat;
+        }
+      }
+      if (!nearestCat) continue;
+      patronPlays.push({
+        patron: p,
+        cat: nearestCat,
+        nextPetAt: performance.now() + 3000 + Math.random() * 4000,
+        baseRotX: p.root.rotation.x,
+        leanUntil: 0,
+      });
+    }
+
+    function tryPetCat() {
+      if (!activeCatRef || !activeCatName) return;
+      const head = (activeCatRef.userData.cat as { head: THREE.Group }).head;
+      const wp = new THREE.Vector3();
+      head.getWorldPosition(wp);
+      spawnHearts(wp, 4);
+      catLastPetAt.set(activeCatName, performance.now());
+    }
+
+    function tryFeedCat() {
+      if (!activeCatRef || !activeCatName) return;
+      catLastFedAt.set(activeCatName, performance.now());
+      // Remove any leftover treat from a previous feed.
+      const old = catTreats.get(activeCatName);
+      if (old) {
+        scene.remove(old);
+        old.geometry.dispose();
+        (old.material as THREE.Material).dispose();
+        catTreats.delete(activeCatName);
+      }
+      // Spawn a tiny biscuit-coloured treat just in front of the cat.
+      const treat = new THREE.Mesh(
+        new THREE.BoxGeometry(0.07, 0.04, 0.07),
+        new THREE.MeshStandardMaterial({ color: "#c97a4a", roughness: 0.7 }),
+      );
+      const facingX = Math.sin(activeCatRef.rotation.y);
+      const facingZ = Math.cos(activeCatRef.rotation.y);
+      treat.position.set(
+        activeCatRef.position.x + facingX * 0.28,
+        activeCatRef.position.y + 0.02,
+        activeCatRef.position.z + facingZ * 0.28,
+      );
+      scene.add(treat);
+      catTreats.set(activeCatName, treat);
+    }
+
     // Expose via ref so the on-screen Interact button can trigger this too.
-    petTriggerRef.current = tryPet;
+    petTriggerRef.current = () => {
+      if (activePetRef) tryPet();
+      else if (activeCatRef) tryPetCat();
+    };
+    treatTriggerRef.current = () => {
+      if (activeCatRef) tryFeedCat();
+    };
 
     // ---- Controls (pointer lock + WASD + touch) ----
     function handleHotspot(hs: Hotspot) {
@@ -519,7 +605,12 @@ export function BakeryWorld3D({
           handleHotspot(hs);
         } else if (activePetRef) {
           tryPet();
+        } else if (activeCatRef) {
+          tryPetCat();
         }
+      }
+      if (e.code === "KeyF") {
+        if (activeCatRef) tryFeedCat();
       }
     };
     const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code);
@@ -898,12 +989,34 @@ export function BakeryWorld3D({
       activePetRef = nearestPet;
       activePetCustomerId = nearestPetCustId;
 
+      // Basement cat proximity — same idea, but we look at cat groups.
+      let nearestCat: THREE.Group | null = null;
+      let nearestCatName: string | null = null;
+      let nearestCatD = 1.5;
+      for (const cat of basementCats) {
+        const d = Math.hypot(
+          cat.position.x - camera.position.x,
+          cat.position.z - camera.position.z,
+        );
+        if (d < nearestCatD) {
+          nearestCat = cat;
+          nearestCatName =
+            (cat.userData.cat as { name: string } | undefined)?.name ?? null;
+          nearestCatD = d;
+        }
+      }
+      activeCatRef = nearestCat;
+      activeCatName = nearestCatName;
+
       let promptText = best ? best.prompt : null;
       if (nearestPet) {
         const kind = (nearestPet.userData.pet as { kind: "dog" | "cat" }).kind;
         promptText = `Pet the ${kind}`;
+      } else if (nearestCat && nearestCatName) {
+        promptText = `Pet ${nearestCatName} · F: treat`;
       }
       setPrompt(promptText);
+      setNearCat(!!nearestCat);
 
       // Animate every pet — gentle idle breathing, plus a joyful bounce +
       // tail wag in the 1.2s after being petted.
@@ -931,19 +1044,68 @@ export function BakeryWorld3D({
         }
       }
 
-      // Basement cats — gentle breathing + occasional tail flicks.
+      // Basement cats — gentle breathing + tail flicks, plus reaction
+      // animations when the player pets or feeds them.
       for (const cat of basementCats) {
         const parts = cat.userData.cat as
-          | { head: THREE.Group; tail: THREE.Group; pose: string; name: string }
+          | {
+              head: THREE.Group;
+              tail: THREE.Group;
+              pose: string;
+              name: string;
+              baseHeadY: number;
+              baseHeadRotX: number;
+              baseHeadRotZ: number;
+            }
           | undefined;
         if (!parts) continue;
         const seed = cat.position.x * 1.7 + cat.position.z * 0.9;
         const breathe = Math.sin(now * 0.0025 + seed) * 0.012;
-        parts.head.position.y = (parts.head.position.y || 0) * 0 + (parts.head.position.y || 0); // no-op keep baseline
         cat.scale.y = 1 + breathe;
-        // Tail flick for sit/loaf/stretch — rotate around its local origin
-        if (parts.pose !== "sleep") {
-          parts.tail.rotation.y = Math.sin(now * 0.002 + seed) * 0.4;
+
+        const sincePet = now - (catLastPetAt.get(parts.name) ?? -Infinity);
+        const sinceFed = now - (catLastFedAt.get(parts.name) ?? -Infinity);
+
+        if (sincePet < 1200) {
+          // Happy bouncing while being petted: head bob + tilt + tail wag.
+          const t = sincePet / 1200;
+          const bob = Math.sin(t * Math.PI * 4) * 0.05 * (1 - t);
+          parts.head.position.y = parts.baseHeadY + bob;
+          parts.head.rotation.x = parts.baseHeadRotX;
+          parts.head.rotation.z =
+            parts.baseHeadRotZ + Math.sin(t * Math.PI * 6) * 0.18 * (1 - t);
+          parts.tail.rotation.y = Math.sin(t * Math.PI * 8) * 0.9;
+        } else if (sinceFed < 2200) {
+          // Eating: head dips toward the treat, chews, returns. The treat
+          // mesh shrinks away as the cat finishes it.
+          const t = sinceFed / 2200;
+          let dip: number;
+          if (t < 0.2) dip = (t / 0.2) * 0.7;
+          else if (t < 0.85) dip = 0.7 + Math.sin((t - 0.2) * 30) * 0.06;
+          else dip = 0.7 * (1 - (t - 0.85) / 0.15);
+          parts.head.position.y = parts.baseHeadY - dip * 0.12;
+          parts.head.rotation.x = parts.baseHeadRotX + dip;
+          parts.head.rotation.z = parts.baseHeadRotZ;
+          parts.tail.rotation.y = Math.sin(now * 0.012 + seed) * 0.5;
+          const treat = catTreats.get(parts.name);
+          if (treat) {
+            const remaining = Math.max(0.01, 1 - t * 1.05);
+            treat.scale.setScalar(remaining);
+            if (t >= 1) {
+              scene.remove(treat);
+              treat.geometry.dispose();
+              (treat.material as THREE.Material).dispose();
+              catTreats.delete(parts.name);
+            }
+          }
+        } else {
+          // Idle: restore baseline pose + slow tail flick.
+          parts.head.position.y = parts.baseHeadY;
+          parts.head.rotation.x = parts.baseHeadRotX;
+          parts.head.rotation.z = parts.baseHeadRotZ;
+          if (parts.pose !== "sleep") {
+            parts.tail.rotation.y = Math.sin(now * 0.002 + seed) * 0.4;
+          }
         }
       }
 
@@ -979,6 +1141,33 @@ export function BakeryWorld3D({
       customerFigs.forEach((cf) => cf.fig.update(now));
       // Basement patrons: gentle breathing + sway while seated.
       basementPatrons.forEach((p) => p.update(now));
+
+      // Patrons periodically lean over and pet the nearest cat. We trigger
+      // the cat's existing pet-reaction animation and pop hearts above it,
+      // so it reads as "the customer is playing with the cat".
+      for (const pp of patronPlays) {
+        if (now >= pp.nextPetAt) {
+          const parts = pp.cat.userData.cat as
+            | { name: string; head: THREE.Group }
+            | undefined;
+          if (parts) {
+            catLastPetAt.set(parts.name, now);
+            const wp = new THREE.Vector3();
+            parts.head.getWorldPosition(wp);
+            spawnHearts(wp, 3);
+          }
+          pp.leanUntil = now + 900;
+          pp.nextPetAt = now + 6000 + Math.random() * 5000;
+        }
+        // While leaning, tilt the patron forward toward the cat.
+        if (now < pp.leanUntil) {
+          const t = 1 - (pp.leanUntil - now) / 900;
+          const lean = Math.sin(t * Math.PI) * 0.35;
+          pp.patron.root.rotation.x = pp.baseRotX + lean;
+        } else if (pp.patron.root.rotation.x !== pp.baseRotX) {
+          pp.patron.root.rotation.x = pp.baseRotX;
+        }
+      }
 
       // Passive cafe income: $5/min per seated customer, accrued only while
       // the player is downstairs in the basement.
@@ -1041,6 +1230,12 @@ export function BakeryWorld3D({
       // dispose everything
       customerFigs.forEach((cf) => cf.fig.dispose());
       basementPatrons.forEach((p) => p.dispose());
+      catTreats.forEach((t) => {
+        scene.remove(t);
+        t.geometry.dispose();
+        (t.material as THREE.Material).dispose();
+      });
+      catTreats.clear();
       giftedPetGroups.forEach((g) => scene.remove(g));
       giftedPetGroups.clear();
       customMerchGroups.forEach((g) => scene.remove(g));
@@ -1105,6 +1300,28 @@ export function BakeryWorld3D({
               }
             }}
           />
+          {nearCat && (
+            <button
+              type="button"
+              onTouchStart={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (pausedRef.current) return;
+                treatTriggerRef.current();
+              }}
+              onClick={() => {
+                if (pausedRef.current) return;
+                treatTriggerRef.current();
+              }}
+              className="pointer-events-auto absolute right-32 bottom-8 z-30 w-20 h-20 rounded-full border-2 border-white text-white font-black shadow-bakery active:scale-95 transition-transform touch-none select-none bg-amber-500"
+              aria-label="Feed treat"
+            >
+              <div className="flex flex-col items-center justify-center leading-tight">
+                <span className="text-2xl">🍪</span>
+                <span className="text-[10px] font-bold">Treat</span>
+              </div>
+            </button>
+          )}
         </>
       )}
     </div>

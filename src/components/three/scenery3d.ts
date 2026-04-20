@@ -2277,7 +2277,15 @@ export function makeCat3D(spec: CatSpec): THREE.Group {
   g.add(shadow);
 
   void white; // reserved for future sparkle highlights
-  g.userData.cat = { head, tail, pose: spec.pose, name: spec.name };
+  g.userData.cat = {
+    head,
+    tail,
+    pose: spec.pose,
+    name: spec.name,
+    baseHeadY: head.position.y,
+    baseHeadRotX: head.rotation.x,
+    baseHeadRotZ: head.rotation.z,
+  };
   return g;
 }
 
