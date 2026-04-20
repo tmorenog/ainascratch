@@ -63,7 +63,7 @@ export interface Hotspot {
 
 /** Recipes unlocked only while downstairs at the Cat Cafe. Kept here so
  *  the 3D scene and the cafe modal agree on what shows up. */
-export const CAT_CAFE_UNLOCK_LEVEL = 5;
+export const CAT_CAFE_UNLOCK_LEVEL = 20;
 
 /**
  * The cat cafe is its own 3D room placed far to the +Z side of the map so
