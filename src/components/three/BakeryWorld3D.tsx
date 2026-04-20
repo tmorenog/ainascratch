@@ -518,14 +518,70 @@ export function BakeryWorld3D({
       });
     }
 
-    // Rotating visitor: a patron flagged `userData.visitor` toggles visible
-    // on/off on a timer so it feels like real customers drop in for a cat
-    // session and then leave.
-    const visitorPatron = basementPatrons.find(
-      (p) => p.root.userData.visitor === true,
-    );
-    // First arrival 5-20s after load.
-    let visitorNextToggleAt = performance.now() + 5000 + Math.random() * 15000;
+    // Cat-cafe visitor: when a real bakery customer finishes their order,
+    // with some probability we spawn a seated clone of them downstairs
+    // using their stored CustomerLookData. They stay for 30-60s then leave.
+    const visitorSeat =
+      (basement.userData.visitorSeat as {
+        x: number;
+        y: number;
+        z: number;
+        rotY: number;
+      }) ?? { x: -0.55, y: -0.31, z: 2.4, rotY: -Math.PI / 2 };
+    let activeVisitor: CharacterFigure | null = null;
+    let activeVisitorPlay: PatronPlay | null = null;
+    let activeVisitorLeaveAt = 0;
+    const prevCustomerIds = new Set<string>();
+    const recentCustomerLooks = new Map<string, Customer>();
+
+    function spawnCatCafeVisitor(c: Customer) {
+      if (activeVisitor) return;
+      const look = c.look;
+      const fig = makeCharacter({
+        skin: look?.skin ?? "#fbd6b2",
+        shirt: look?.shirt ?? "#3aa1d0",
+        pants: "#2a1a10",
+        hair: look?.hairColor ?? "#3a2418",
+        hairStyle: look?.hair ?? "short",
+        seated: true,
+      });
+      fig.root.position.set(visitorSeat.x, visitorSeat.y, visitorSeat.z);
+      fig.root.rotation.y = visitorSeat.rotY;
+      basement.add(fig.root);
+      activeVisitor = fig;
+      // Assign them the nearest cat so they pet it too.
+      const vp = new THREE.Vector3();
+      fig.root.getWorldPosition(vp);
+      let nearest: THREE.Group | null = null;
+      let bestD = Infinity;
+      const cp = new THREE.Vector3();
+      for (const cat of basementCats) {
+        cat.getWorldPosition(cp);
+        const d = Math.hypot(cp.x - vp.x, cp.z - vp.z);
+        if (d < bestD) {
+          bestD = d;
+          nearest = cat;
+        }
+      }
+      if (nearest) {
+        activeVisitorPlay = {
+          patron: fig,
+          cat: nearest,
+          nextPetAt: performance.now() + 2000 + Math.random() * 3000,
+          baseRotX: fig.root.rotation.x,
+          leanUntil: 0,
+        };
+      }
+      activeVisitorLeaveAt = performance.now() + 30000 + Math.random() * 30000;
+    }
+
+    function despawnCatCafeVisitor() {
+      if (!activeVisitor) return;
+      basement.remove(activeVisitor.root);
+      activeVisitor.dispose();
+      activeVisitor = null;
+      activeVisitorPlay = null;
+    }
 
     function tryPetCat() {
       if (!activeCatRef || !activeCatName) return;
@@ -897,7 +953,28 @@ export function BakeryWorld3D({
       lastT = now;
 
       // keep customers in sync
-      ensureCustomerFigs(customersRef.current);
+      const currentCustomers = customersRef.current;
+      // Detect customers that just left: if we previously knew them and
+      // they're gone from the list now, they finished their order (or
+      // timed out / bolted). ~40% of departing customers head downstairs
+      // for a cat session, provided a seat is free.
+      if (prevCustomerIds.size > 0) {
+        for (const id of prevCustomerIds) {
+          if (!currentCustomers.find((c) => c.id === id)) {
+            const c = recentCustomerLooks.get(id);
+            recentCustomerLooks.delete(id);
+            if (c && !c.isRobber && !activeVisitor && Math.random() < 0.4) {
+              spawnCatCafeVisitor(c);
+            }
+          }
+        }
+      }
+      prevCustomerIds.clear();
+      for (const c of currentCustomers) {
+        prevCustomerIds.add(c.id);
+        recentCustomerLooks.set(c.id, c);
+      }
+      ensureCustomerFigs(currentCustomers);
       syncFurniture();
       syncGiftedPets();
       syncCustomMerch();
@@ -1156,29 +1233,22 @@ export function BakeryWorld3D({
 
       // update animated entities
       customerFigs.forEach((cf) => cf.fig.update(now));
-      // Basement patrons: gentle breathing + sway while seated. Skip
-      // hidden visitors so they don't animate while off-screen.
-      basementPatrons.forEach((p) => {
-        if (p.root.visible) p.update(now);
-      });
+      // Basement patrons: gentle breathing + sway while seated.
+      basementPatrons.forEach((p) => p.update(now));
+      if (activeVisitor) activeVisitor.update(now);
 
-      // Visitor comes + goes on a timer so there's customer turnover.
-      if (visitorPatron && now >= visitorNextToggleAt) {
-        visitorPatron.root.visible = !visitorPatron.root.visible;
-        if (visitorPatron.root.visible) {
-          // Stay 30-60s.
-          visitorNextToggleAt = now + 30000 + Math.random() * 30000;
-        } else {
-          // Gone 30-90s.
-          visitorNextToggleAt = now + 30000 + Math.random() * 60000;
-        }
+      // Visitor leaves after their session.
+      if (activeVisitor && now >= activeVisitorLeaveAt) {
+        despawnCatCafeVisitor();
       }
 
       // Patrons periodically lean over and pet the nearest cat. We trigger
       // the cat's existing pet-reaction animation and pop hearts above it,
       // so it reads as "the customer is playing with the cat".
-      for (const pp of patronPlays) {
-        if (!pp.patron.root.visible) continue;
+      const activePlays = activeVisitorPlay
+        ? [...patronPlays, activeVisitorPlay]
+        : patronPlays;
+      for (const pp of activePlays) {
         if (now >= pp.nextPetAt) {
           const parts = pp.cat.userData.cat as
             | { name: string; head: THREE.Group }
@@ -1205,7 +1275,7 @@ export function BakeryWorld3D({
       // Passive cafe income: $5/min per seated customer, accrued only while
       // the player is downstairs in the basement.
       if (camera.position.z > BASEMENT.cz - BASEMENT.depth) {
-        const presentPatrons = basementPatrons.filter((p) => p.root.visible).length;
+        const presentPatrons = basementPatrons.length + (activeVisitor ? 1 : 0);
         const perMs = (5 * presentPatrons) / 60000;
         basementIncomeAccumRef.current += dt * 1000 * perMs;
         if (basementIncomeAccumRef.current >= 1) {
@@ -1264,6 +1334,11 @@ export function BakeryWorld3D({
       // dispose everything
       customerFigs.forEach((cf) => cf.fig.dispose());
       basementPatrons.forEach((p) => p.dispose());
+      if (activeVisitor) {
+        basement.remove(activeVisitor.root);
+        activeVisitor.dispose();
+        activeVisitor = null;
+      }
       catTreats.forEach((t) => {
         basement.remove(t);
         t.geometry.dispose();

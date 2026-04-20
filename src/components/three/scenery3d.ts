@@ -3065,25 +3065,15 @@ export function buildCatCafeBasement(): THREE.Group {
   g.add(patronB.root);
   patronFigs.push(patronB);
 
-  // Rotating "visitor" who only shows up sometimes — simulates bakery
-  // customers dropping in for a cat session. BakeryWorld3D toggles
-  // .visible on a timer.
-  const patronC = makeCharacter({
-    skin: "#e8b893",
-    shirt: "#8c5a36",
-    pants: "#2a1a10",
-    hair: "#2a1a10",
-    hairStyle: "short",
-    seated: true,
-  });
-  patronC.root.position.set(-1.4 + 0.85, SEAT_HIP_DROP, 2.4);
-  patronC.root.rotation.y = -Math.PI / 2;
-  patronC.root.userData.visitor = true;
-  patronC.root.visible = false;
-  g.add(patronC.root);
-  patronFigs.push(patronC);
-
   g.userData.patronFigs = patronFigs;
+  // Visitor seat spec — BakeryWorld3D spawns real bakery customers into
+  // this slot after they finish their order.
+  g.userData.visitorSeat = {
+    x: -1.4 + 0.85,
+    y: SEAT_HIP_DROP,
+    z: 2.4,
+    rotY: -Math.PI / 2,
+  };
 
   // ---- Cats ----
   const cats: THREE.Group[] = [];
