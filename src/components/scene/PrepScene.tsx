@@ -7,31 +7,33 @@ import { RECIPE_BY_ID, RECIPES } from "@/game/recipes";
 import { INGREDIENTS } from "@/game/ingredients";
 import type { IngredientId, Recipe, StationId } from "@/game/types";
 import { FoodArt } from "../foods/FoodArt";
+import { useT } from "@/game/i18n";
+import type { TKey } from "@/game/i18n";
 
 function resolveRecipe(id: string, custom: Recipe[]): Recipe | undefined {
   return RECIPE_BY_ID[id] ?? custom.find((r) => r.id === id);
 }
 
-const STATION_TITLE: Record<StationId, { title: string; emoji: string }> = {
-  drink: { title: "Drink Bar", emoji: "🥤" },
-  pastry: { title: "Pastry Counter", emoji: "🧁" },
-  oven: { title: "Oven", emoji: "🔥" },
-  scratch: { title: "Bakery Oven", emoji: "🥣" },
-  pet: { title: "Pet Treat Nook", emoji: "🐾" },
-  shelf: { title: "Plush Shelf", emoji: "🧸" },
+const STATION_TITLE: Record<StationId, { titleKey: TKey; emoji: string }> = {
+  drink: { titleKey: "stationDrinkTitle", emoji: "🥤" },
+  pastry: { titleKey: "stationPastryTitle", emoji: "🧁" },
+  oven: { titleKey: "stationOvenTitle", emoji: "🔥" },
+  scratch: { titleKey: "stationScratchTitle", emoji: "🥣" },
+  pet: { titleKey: "stationPetTitle", emoji: "🐾" },
+  shelf: { titleKey: "stationShelfTitle", emoji: "🧸" },
 };
 
 /**
  * Per-station "go time" button label — what the player actually does to
  * kick off the prep timer after combining the ingredients.
  */
-const STATION_ACTION: Record<StationId, string> = {
-  drink: "Squeeze & pour 🍋",
-  pastry: "Decorate 🎀",
-  scratch: "Roll & bake 🔥",
-  pet: "Shape & bake 🐾",
-  oven: "Bake 🔥",
-  shelf: "Gift-wrap 🎀",
+const STATION_ACTION: Record<StationId, TKey> = {
+  drink: "stationDrinkAction",
+  pastry: "stationPastryAction",
+  scratch: "stationScratchAction",
+  pet: "stationPetAction",
+  oven: "stationOvenAction",
+  shelf: "stationShelfAction",
 };
 
 /**
@@ -57,6 +59,7 @@ export function PrepScene({
   const specialRecipeId = useGame((s) => s.specialRecipeId);
   const playerLevel = useGame((s) => s.level);
   const slot = useGame((s) => (stationId ? s.prep[stationId] : undefined));
+  const t = useT();
 
   const [now, setNow] = useState(() => Date.now());
   const [combining, setCombining] = useState<{
@@ -118,7 +121,7 @@ export function PrepScene({
           {/* Header bar */}
           <div className="relative z-10 px-3 pt-3 flex items-center gap-2">
             <div className="rounded-full bg-cream-50/95 border border-cream-200 px-3 py-1.5 font-display text-cocoa-600 shadow-soft">
-              {STATION_TITLE[stationId].emoji} {STATION_TITLE[stationId].title}
+              {STATION_TITLE[stationId].emoji} {t(STATION_TITLE[stationId].titleKey)}
             </div>
             <div className="flex-1" />
             <button className="btn-icon" onClick={onClose}>✕</button>
@@ -142,7 +145,7 @@ export function PrepScene({
                 animate={{ opacity: 1, y: 0 }}
               >
                 <div className="inline-block bg-cocoa-600/90 text-cream-50 px-4 py-2 rounded-full font-bold shadow-bakery">
-                  {done ? "All done — looks delicious!" : currentStep}
+                  {done ? t("allDoneDelicious") : currentStep}
                 </div>
               </motion.div>
             )}
@@ -174,7 +177,7 @@ export function PrepScene({
                         onClose();
                       }}
                     >
-                      Plate it ✨
+                      {t("plateIt")}
                     </button>
                   ) : (
                     <span className="text-sm text-cocoa-400 font-bold">
@@ -209,11 +212,11 @@ export function PrepScene({
             ) : (
               <div className="panel max-w-3xl mx-auto">
                 <div className="font-display text-lg text-cocoa-600 mb-2">
-                  Pick a recipe to make
+                  {t("pickRecipeToMake")}
                 </div>
                 {recipes.length === 0 ? (
                   <div className="text-center text-cocoa-400 py-3">
-                    Nothing unlocked here yet.
+                    {t("nothingUnlockedYet")}
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[40vh] overflow-y-auto cozy-scroll">
@@ -243,7 +246,7 @@ function pickCurrentStep(recipe: Recipe, progress: number): string {
     acc += step.durationMs;
     if (progress * total <= acc) return step.label;
   }
-  return recipe.steps[recipe.steps.length - 1]?.label ?? "Almost ready…";
+  return recipe.steps[recipe.steps.length - 1]?.label ?? "…";
 }
 
 function ProgressTrack({ value, done }: { value: number; done: boolean }) {
@@ -273,6 +276,7 @@ function RecipeChoice({
   inventory: Record<IngredientId, number>;
   onStart: () => void;
 }) {
+  const t = useT();
   const missing = (Object.entries(recipe.ingredients) as [IngredientId, number][])
     .filter(([k, n]) => (inventory[k] ?? 0) < n)
     .map(([k]) => INGREDIENTS[k].name);
@@ -325,7 +329,7 @@ function RecipeChoice({
       </div>
       {!canCook && (
         <div className="text-[11px] text-red-500 mt-1 font-semibold">
-          Need: {missing.join(", ")}
+          {t("needLabel")} {missing.join(", ")}
         </div>
       )}
     </button>
@@ -733,6 +737,7 @@ function CombiningPanel({
   const required = Object.entries(recipe.ingredients) as [IngredientId, number][];
   const done = required.every(([k, n]) => (added[k] ?? 0) >= n);
   const totalAdded = required.reduce((s, [k]) => s + (added[k] ?? 0), 0);
+  const t = useT();
 
   return (
     <div className="panel max-w-3xl mx-auto">
@@ -747,10 +752,10 @@ function CombiningPanel({
         />
         <div className="flex-1 min-w-0">
           <div className="font-display text-lg text-cocoa-600 truncate">
-            Combining: {recipe.name}
+            {t("combiningRecipe", { name: recipe.name })}
           </div>
           <div className="text-[11px] text-cocoa-400">
-            Tap each ingredient to add it to the bowl.
+            {t("tapIngredientsToAdd")}
           </div>
         </div>
         <button className="btn-icon" onClick={onCancel}>
@@ -776,7 +781,7 @@ function CombiningPanel({
             )}
             {totalAdded === 0 && (
               <span className="text-[11px] text-cocoa-50/80 self-center">
-                empty bowl
+                {t("emptyBowl")}
               </span>
             )}
           </div>
@@ -805,7 +810,7 @@ function CombiningPanel({
                   {INGREDIENTS[k].name}
                 </span>
                 <span className="block text-[11px] text-cocoa-400">
-                  {have}/{n} {full ? "✓" : "tap to add"}
+                  {have}/{n} {full ? "✓" : t("tapToAddIngredient")}
                 </span>
               </span>
             </button>
@@ -819,7 +824,7 @@ function CombiningPanel({
           onClick={onCancel}
           className="flex-1 py-2 rounded-xl bg-cream-100 text-cocoa-600 font-bold"
         >
-          Back
+          {t("back")}
         </button>
         <button
           disabled={!done}
@@ -830,7 +835,7 @@ function CombiningPanel({
               : "bg-cream-100 text-cocoa-400"
           }`}
         >
-          {done ? STATION_ACTION[station] : "Add all ingredients first"}
+          {done ? t(STATION_ACTION[station]) : t("addAllIngredientsFirst")}
         </button>
       </div>
     </div>

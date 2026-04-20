@@ -5,6 +5,7 @@ import type { Customer } from "@/game/types";
 import { RECIPE_BY_ID } from "@/game/recipes";
 import { FoodArt } from "../foods/FoodArt";
 import { useGame } from "@/game/store";
+import { useT } from "@/game/i18n";
 
 /**
  * The black order ticket that lives along the bottom of the screen.
@@ -22,6 +23,7 @@ export function OrderTicket({
   canServe?: boolean;
 }) {
   const customRecipes = useGame((s) => s.customRecipes);
+  const t = useT();
   return (
     <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 w-[min(720px,94vw)]">
       <AnimatePresence mode="wait">
@@ -59,7 +61,7 @@ export function OrderTicket({
                     </div>
                   </div>
                   <div className="mt-0.5 text-[10px] uppercase tracking-wider font-bold text-cream-300/70">
-                    Today&apos;s order
+                    {t("todaysOrder")}
                   </div>
                 </div>
                 {typeof patienceRatio === "number" && (
@@ -75,7 +77,7 @@ export function OrderTicket({
                         : "bg-cocoa-600/60 text-cream-300/60 cursor-not-allowed"
                     }`}
                   >
-                    {canServe ? "Serve ✨" : "Prep first"}
+                    {canServe ? t("serveBtn") : t("prepFirst")}
                   </button>
                 )}
               </div>
@@ -105,7 +107,7 @@ export function OrderTicket({
                 })}
                 {customer.hasPet && (
                   <div className="rounded-xl bg-white/5 border border-white/10 px-2 py-1 text-xs font-bold text-cream-100 flex items-center gap-1">
-                    {customer.hasPet === "dog" ? "🐶" : "🐱"} pet treat please!
+                    {customer.hasPet === "dog" ? "🐶" : "🐱"} {t("petTreatPlease")}
                   </div>
                 )}
               </div>

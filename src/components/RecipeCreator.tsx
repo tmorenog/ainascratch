@@ -6,43 +6,45 @@ import { INGREDIENTS, INGREDIENT_LIST } from "@/game/ingredients";
 import type { IngredientId, RecipeCategory } from "@/game/types";
 import { useGame } from "@/game/store";
 import { useT } from "@/game/i18n";
+import type { TKey } from "@/game/i18n";
 
 /** Animals + themes for the plush combiner. Pick one of each and the
- *  creator mashes them together into a cute themed plush. */
-type PlushOption = { id: string; name: string; emoji: string };
+ *  creator mashes them together into a cute themed plush. Names resolve
+ *  through i18n so every language gets its own words. */
+type PlushOption = { id: string; nameKey: TKey; emoji: string };
 
 const PLUSH_ANIMALS: PlushOption[] = [
-  { id: "bear", name: "Bear", emoji: "🐻" },
-  { id: "bunny", name: "Bunny", emoji: "🐰" },
-  { id: "cat", name: "Cat", emoji: "🐱" },
-  { id: "puppy", name: "Puppy", emoji: "🐶" },
-  { id: "fox", name: "Fox", emoji: "🦊" },
-  { id: "panda", name: "Panda", emoji: "🐼" },
-  { id: "penguin", name: "Penguin", emoji: "🐧" },
-  { id: "frog", name: "Frog", emoji: "🐸" },
-  { id: "koala", name: "Koala", emoji: "🐨" },
-  { id: "tiger", name: "Tiger", emoji: "🐯" },
-  { id: "owl", name: "Owl", emoji: "🦉" },
-  { id: "unicorn", name: "Unicorn", emoji: "🦄" },
+  { id: "bear", nameKey: "plushAnimal_bear", emoji: "🐻" },
+  { id: "bunny", nameKey: "plushAnimal_bunny", emoji: "🐰" },
+  { id: "cat", nameKey: "plushAnimal_cat", emoji: "🐱" },
+  { id: "puppy", nameKey: "plushAnimal_puppy", emoji: "🐶" },
+  { id: "fox", nameKey: "plushAnimal_fox", emoji: "🦊" },
+  { id: "panda", nameKey: "plushAnimal_panda", emoji: "🐼" },
+  { id: "penguin", nameKey: "plushAnimal_penguin", emoji: "🐧" },
+  { id: "frog", nameKey: "plushAnimal_frog", emoji: "🐸" },
+  { id: "koala", nameKey: "plushAnimal_koala", emoji: "🐨" },
+  { id: "tiger", nameKey: "plushAnimal_tiger", emoji: "🐯" },
+  { id: "owl", nameKey: "plushAnimal_owl", emoji: "🦉" },
+  { id: "unicorn", nameKey: "plushAnimal_unicorn", emoji: "🦄" },
 ];
 
 const PLUSH_THEMES: PlushOption[] = [
-  { id: "pineapple", name: "Pineapple", emoji: "🍍" },
-  { id: "donut", name: "Donut", emoji: "🍩" },
-  { id: "cupcake", name: "Cupcake", emoji: "🧁" },
-  { id: "strawberry", name: "Strawberry", emoji: "🍓" },
-  { id: "rainbow", name: "Rainbow", emoji: "🌈" },
-  { id: "cloud", name: "Cloud", emoji: "☁️" },
-  { id: "star", name: "Star", emoji: "⭐" },
-  { id: "croissant", name: "Croissant", emoji: "🥐" },
-  { id: "coffee", name: "Coffee", emoji: "☕" },
-  { id: "lemon", name: "Lemon", emoji: "🍋" },
-  { id: "flower", name: "Flower", emoji: "🌸" },
-  { id: "heart", name: "Heart", emoji: "💖" },
-  { id: "watermelon", name: "Watermelon", emoji: "🍉" },
-  { id: "cherry", name: "Cherry", emoji: "🍒" },
-  { id: "mushroom", name: "Mushroom", emoji: "🍄" },
-  { id: "moon", name: "Moon", emoji: "🌙" },
+  { id: "pineapple", nameKey: "plushTheme_pineapple", emoji: "🍍" },
+  { id: "donut", nameKey: "plushTheme_donut", emoji: "🍩" },
+  { id: "cupcake", nameKey: "plushTheme_cupcake", emoji: "🧁" },
+  { id: "strawberry", nameKey: "plushTheme_strawberry", emoji: "🍓" },
+  { id: "rainbow", nameKey: "plushTheme_rainbow", emoji: "🌈" },
+  { id: "cloud", nameKey: "plushTheme_cloud", emoji: "☁️" },
+  { id: "star", nameKey: "plushTheme_star", emoji: "⭐" },
+  { id: "croissant", nameKey: "plushTheme_croissant", emoji: "🥐" },
+  { id: "coffee", nameKey: "plushTheme_coffee", emoji: "☕" },
+  { id: "lemon", nameKey: "plushTheme_lemon", emoji: "🍋" },
+  { id: "flower", nameKey: "plushTheme_flower", emoji: "🌸" },
+  { id: "heart", nameKey: "plushTheme_heart", emoji: "💖" },
+  { id: "watermelon", nameKey: "plushTheme_watermelon", emoji: "🍉" },
+  { id: "cherry", nameKey: "plushTheme_cherry", emoji: "🍒" },
+  { id: "mushroom", nameKey: "plushTheme_mushroom", emoji: "🍄" },
+  { id: "moon", nameKey: "plushTheme_moon", emoji: "🌙" },
 ];
 
 const CATEGORIES: {
@@ -115,18 +117,21 @@ export function RecipeCreator({
   const [plushTheme, setPlushTheme] = useState<string | null>(null);
 
   // When the player picks an animal + theme for a plush, auto-fill the
-  // name / emoji / description so they don't have to type anything.
+  // name / emoji / description so they don't have to type anything. Names
+  // come out of i18n so the auto-filled copy matches the player's language.
   useEffect(() => {
     if (category !== "plush") return;
     const animal = PLUSH_ANIMALS.find((a) => a.id === plushAnimal);
-    const theme = PLUSH_THEMES.find((t) => t.id === plushTheme);
+    const theme = PLUSH_THEMES.find((th) => th.id === plushTheme);
     if (!animal || !theme) return;
-    setName(`${theme.name} ${animal.name} Plush`);
+    const animalName = t(animal.nameKey);
+    const themeName = t(theme.nameKey);
+    setName(`${themeName} ${animalName} ${t("plushies")}`);
     setEmoji(`${theme.emoji}${animal.emoji}`);
     setDescription(
-      `A squishy ${animal.name.toLowerCase()} with a ${theme.name.toLowerCase()} twist — totally huggable.`,
+      `${themeName} × ${animalName}`,
     );
-  }, [category, plushAnimal, plushTheme]);
+  }, [category, plushAnimal, plushTheme, t]);
 
   // Suggested price: 2x total ingredient cost, rounded to nearest dollar.
   const ingredientCost = useMemo(() => {
@@ -344,7 +349,7 @@ export function RecipeCreator({
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-bold uppercase tracking-wide text-cocoa-400 mb-1">
-                Pick an animal 🐾
+                {t("pickAnimal")}
               </label>
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                 {PLUSH_ANIMALS.map((a) => {
@@ -361,7 +366,7 @@ export function RecipeCreator({
                     >
                       <div className="text-2xl">{a.emoji}</div>
                       <div className="text-[11px] font-bold text-cocoa-500 mt-0.5">
-                        {a.name}
+                        {t(a.nameKey)}
                       </div>
                     </button>
                   );
@@ -370,7 +375,7 @@ export function RecipeCreator({
             </div>
             <div>
               <label className="block text-xs font-bold uppercase tracking-wide text-cocoa-400 mb-1">
-                Pick a theme 🎀
+                {t("pickTheme")}
               </label>
               <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                 {PLUSH_THEMES.map((th) => {
@@ -387,7 +392,7 @@ export function RecipeCreator({
                     >
                       <div className="text-2xl">{th.emoji}</div>
                       <div className="text-[11px] font-bold text-cocoa-500 mt-0.5">
-                        {th.name}
+                        {t(th.nameKey)}
                       </div>
                     </button>
                   );
@@ -395,21 +400,20 @@ export function RecipeCreator({
               </div>
             </div>
             <div className="rounded-xl border border-cream-200 bg-cream-50 px-3 py-2 text-sm text-cocoa-500">
-              {plushPicked ? (
-                <>
-                  🧸 Combining{" "}
-                  <span className="font-bold">
-                    {PLUSH_THEMES.find((th) => th.id === plushTheme)?.name}
-                  </span>{" "}
-                  +{" "}
-                  <span className="font-bold">
-                    {PLUSH_ANIMALS.find((a) => a.id === plushAnimal)?.name}
-                  </span>{" "}
-                  → a one-of-a-kind themed plush!
-                </>
-              ) : (
-                <>Pick an animal and a theme to combine them into a custom plush.</>
-              )}
+              {plushPicked
+                ? t("combiningPlush", {
+                    theme:
+                      t(
+                        PLUSH_THEMES.find((th) => th.id === plushTheme)!
+                          .nameKey,
+                      ),
+                    animal:
+                      t(
+                        PLUSH_ANIMALS.find((a) => a.id === plushAnimal)!
+                          .nameKey,
+                      ),
+                  })
+                : t("pickBothToCombine")}
             </div>
           </div>
         )}

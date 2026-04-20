@@ -3,23 +3,25 @@
 import { Modal } from "./ui/Modal";
 import { Stars } from "./ui/Stars";
 import { useGame } from "@/game/store";
+import { useT } from "@/game/i18n";
 
 export function ReviewsPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const reviews = useGame((s) => s.reviews);
   const stats = useGame((s) => s.stats);
+  const t = useT();
 
   return (
-    <Modal open={open} onClose={onClose} title="Reviews & Progress ⭐">
+    <Modal open={open} onClose={onClose} title={t("reviewsTitle")}>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
-        <Stat label="Orders served" value={stats.ordersCompleted} />
-        <Stat label="Best streak" value={stats.bestStreak} emoji="🔥" />
-        <Stat label="Avg stars" value={stats.averageStars.toFixed(1)} emoji="⭐" />
-        <Stat label="Total tips" value={`$${stats.totalTips}`} emoji="🪙" />
+        <Stat label={t("ordersServed")} value={stats.ordersCompleted} />
+        <Stat label={t("bestStreak")} value={stats.bestStreak} emoji="🔥" />
+        <Stat label={t("avgStars")} value={stats.averageStars.toFixed(1)} emoji="⭐" />
+        <Stat label={t("totalTips")} value={`$${stats.totalTips}`} emoji="🪙" />
       </div>
 
       {reviews.length === 0 ? (
         <div className="text-center text-cocoa-400 py-10">
-          No reviews yet — serve your first customer!
+          {t("noReviewsYet")}
         </div>
       ) : (
         <ul className="space-y-2">
@@ -39,7 +41,7 @@ export function ReviewsPanel({ open, onClose }: { open: boolean; onClose: () => 
                 <div className="text-sm text-cocoa-500">&ldquo;{r.text}&rdquo;</div>
                 {r.tip > 0 && (
                   <div className="text-xs text-mint-500 font-bold mt-0.5">
-                    + ${r.tip} tip
+                    {t("tipAmount", { tip: r.tip })}
                   </div>
                 )}
               </div>

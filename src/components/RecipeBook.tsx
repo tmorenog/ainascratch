@@ -8,18 +8,19 @@ import type { IngredientId, Recipe, RecipeCategory } from "@/game/types";
 import { FoodArt } from "./foods/FoodArt";
 import { useGame } from "@/game/store";
 import { useT } from "@/game/i18n";
+import type { TKey } from "@/game/i18n";
 
 type TabId = RecipeCategory | "all" | "mine";
 
-const TABS: { id: TabId; label: string; emoji: string }[] = [
-  { id: "all", label: "All", emoji: "📖" },
-  { id: "drink", label: "Drinks", emoji: "🥤" },
-  { id: "pastry", label: "Pastries", emoji: "🧁" },
-  { id: "scratch", label: "Baked", emoji: "🥣" },
-  { id: "pet", label: "Pet Treats", emoji: "🐾" },
-  { id: "safe", label: "Everyone-Safe", emoji: "🌱" },
-  { id: "plush", label: "Plushies", emoji: "🧸" },
-  { id: "mine", label: "Mine", emoji: "🧪" },
+const TABS: { id: TabId; labelKey: TKey; emoji: string }[] = [
+  { id: "all", labelKey: "tabAll", emoji: "📖" },
+  { id: "drink", labelKey: "drinks", emoji: "🥤" },
+  { id: "pastry", labelKey: "pastries", emoji: "🧁" },
+  { id: "scratch", labelKey: "baked", emoji: "🥣" },
+  { id: "pet", labelKey: "petTreats", emoji: "🐾" },
+  { id: "safe", labelKey: "everyoneSafe", emoji: "🌱" },
+  { id: "plush", labelKey: "plushies", emoji: "🧸" },
+  { id: "mine", labelKey: "tabMine", emoji: "🧪" },
 ];
 
 export function RecipeBook({
@@ -50,7 +51,7 @@ export function RecipeBook({
       : allRecipes.filter((r) => r.category === tab);
 
   return (
-    <Modal open={open} onClose={onClose} title="Recipe Book 📖" maxWidth="max-w-4xl">
+    <Modal open={open} onClose={onClose} title={t("recipeBookTitle")} maxWidth="max-w-4xl">
       <div className="flex flex-wrap items-center gap-1.5 mb-3 sticky top-0 bg-cream-50/95 py-1 z-10">
         {TABS.map((tb) => (
           <button
@@ -62,7 +63,7 @@ export function RecipeBook({
                 : "bg-cream-100 text-cocoa-500 border-cream-200 hover:bg-cream-200"
             }`}
           >
-            {tb.emoji} {tb.label}
+            {tb.emoji} {t(tb.labelKey)}
           </button>
         ))}
         <div className="flex-1" />
@@ -151,7 +152,7 @@ export function RecipeBook({
                   <div className="text-xs text-cocoa-400 italic">
                     {isUnlocked
                       ? r.description
-                      : `Unlocks at level ${r.unlockLevel ?? "?"}`}
+                      : t("unlocksAtLevel", { level: r.unlockLevel ?? "?" })}
                   </div>
                 </div>
               </div>

@@ -114,7 +114,94 @@ export type TKey =
   | "chefsSpecial"
   | "removeRecipe"
   | "yourCreations"
-  | "noCreationsYet";
+  | "noCreationsYet"
+  // Plush combiner
+  | "pickAnimal"
+  | "pickTheme"
+  | "combiningPlush"
+  | "pickBothToCombine"
+  | "plushAnimal_bear"
+  | "plushAnimal_bunny"
+  | "plushAnimal_cat"
+  | "plushAnimal_puppy"
+  | "plushAnimal_fox"
+  | "plushAnimal_panda"
+  | "plushAnimal_penguin"
+  | "plushAnimal_frog"
+  | "plushAnimal_koala"
+  | "plushAnimal_tiger"
+  | "plushAnimal_owl"
+  | "plushAnimal_unicorn"
+  | "plushTheme_pineapple"
+  | "plushTheme_donut"
+  | "plushTheme_cupcake"
+  | "plushTheme_strawberry"
+  | "plushTheme_rainbow"
+  | "plushTheme_cloud"
+  | "plushTheme_star"
+  | "plushTheme_croissant"
+  | "plushTheme_coffee"
+  | "plushTheme_lemon"
+  | "plushTheme_flower"
+  | "plushTheme_heart"
+  | "plushTheme_watermelon"
+  | "plushTheme_cherry"
+  | "plushTheme_mushroom"
+  | "plushTheme_moon"
+  // Recipe book
+  | "recipeBookTitle"
+  | "tabAll"
+  | "tabMine"
+  | "unlocksAtLevel"
+  // Order ticket
+  | "todaysOrder"
+  | "serveBtn"
+  | "prepFirst"
+  | "petTreatPlease"
+  // Reviews panel
+  | "reviewsTitle"
+  | "ordersServed"
+  | "bestStreak"
+  | "avgStars"
+  | "totalTips"
+  | "noReviewsYet"
+  | "tipAmount"
+  // Supermarket / pantry
+  | "supermarketTitle"
+  | "youHave"
+  | "deliveryArrivingSoon"
+  | "totalLabel"
+  | "clearCart"
+  | "placeOrder"
+  | "incomingDeliveries"
+  | "pantryTitle"
+  | "deliveriesOnWay"
+  | "callSupermarket"
+  // Prep scene
+  | "stationDrinkTitle"
+  | "stationPastryTitle"
+  | "stationOvenTitle"
+  | "stationScratchTitle"
+  | "stationPetTitle"
+  | "stationShelfTitle"
+  | "stationDrinkAction"
+  | "stationPastryAction"
+  | "stationOvenAction"
+  | "stationScratchAction"
+  | "stationPetAction"
+  | "stationShelfAction"
+  | "allDoneDelicious"
+  | "plateIt"
+  | "pickRecipeToMake"
+  | "nothingUnlockedYet"
+  | "combiningRecipe"
+  | "tapIngredientsToAdd"
+  | "emptyBowl"
+  | "back"
+  | "addAllIngredientsFirst"
+  | "needLabel"
+  | "tapToAddIngredient"
+  | "almostReady";
 
 type Dict = Record<TKey, string>;
 
@@ -215,6 +302,87 @@ const en: Dict = {
   removeRecipe: "Remove",
   yourCreations: "Your creations",
   noCreationsYet: "Nothing invented yet — hit the + Invent button to get cooking!",
+  pickAnimal: "Pick an animal 🐾",
+  pickTheme: "Pick a theme 🎀",
+  combiningPlush: "🧸 Combining {theme} + {animal} → a one-of-a-kind themed plush!",
+  pickBothToCombine: "Pick an animal and a theme to combine them into a custom plush.",
+  plushAnimal_bear: "Bear",
+  plushAnimal_bunny: "Bunny",
+  plushAnimal_cat: "Cat",
+  plushAnimal_puppy: "Puppy",
+  plushAnimal_fox: "Fox",
+  plushAnimal_panda: "Panda",
+  plushAnimal_penguin: "Penguin",
+  plushAnimal_frog: "Frog",
+  plushAnimal_koala: "Koala",
+  plushAnimal_tiger: "Tiger",
+  plushAnimal_owl: "Owl",
+  plushAnimal_unicorn: "Unicorn",
+  plushTheme_pineapple: "Pineapple",
+  plushTheme_donut: "Donut",
+  plushTheme_cupcake: "Cupcake",
+  plushTheme_strawberry: "Strawberry",
+  plushTheme_rainbow: "Rainbow",
+  plushTheme_cloud: "Cloud",
+  plushTheme_star: "Star",
+  plushTheme_croissant: "Croissant",
+  plushTheme_coffee: "Coffee",
+  plushTheme_lemon: "Lemon",
+  plushTheme_flower: "Flower",
+  plushTheme_heart: "Heart",
+  plushTheme_watermelon: "Watermelon",
+  plushTheme_cherry: "Cherry",
+  plushTheme_mushroom: "Mushroom",
+  plushTheme_moon: "Moon",
+  recipeBookTitle: "Recipe Book 📖",
+  tabAll: "All",
+  tabMine: "Mine",
+  unlocksAtLevel: "Unlocks at level {level}",
+  todaysOrder: "Today's order",
+  serveBtn: "Serve ✨",
+  prepFirst: "Prep first",
+  petTreatPlease: "pet treat please!",
+  reviewsTitle: "Reviews & Progress ⭐",
+  ordersServed: "Orders served",
+  bestStreak: "Best streak",
+  avgStars: "Avg stars",
+  totalTips: "Total tips",
+  noReviewsYet: "No reviews yet — serve your first customer!",
+  tipAmount: "+ ${tip} tip",
+  supermarketTitle: "Supermarket 🛒",
+  youHave: "You have",
+  deliveryArrivingSoon: "🚚 {count} delivery arriving soon…",
+  totalLabel: "Total",
+  clearCart: "Clear",
+  placeOrder: "Place order (arrives in ~8s)",
+  incomingDeliveries: "Incoming deliveries",
+  pantryTitle: "Pantry Shelf 🧺",
+  deliveriesOnWay: "Deliveries on the way",
+  callSupermarket: "🛒 Call the supermarket",
+  stationDrinkTitle: "Drink Bar",
+  stationPastryTitle: "Pastry Counter",
+  stationOvenTitle: "Oven",
+  stationScratchTitle: "Bakery Oven",
+  stationPetTitle: "Pet Treat Nook",
+  stationShelfTitle: "Plush Shelf",
+  stationDrinkAction: "Squeeze & pour 🍋",
+  stationPastryAction: "Decorate 🎀",
+  stationOvenAction: "Bake 🔥",
+  stationScratchAction: "Roll & bake 🔥",
+  stationPetAction: "Shape & bake 🐾",
+  stationShelfAction: "Gift-wrap 🎀",
+  allDoneDelicious: "All done — looks delicious!",
+  plateIt: "Plate it ✨",
+  pickRecipeToMake: "Pick a recipe to make",
+  nothingUnlockedYet: "Nothing unlocked here yet.",
+  combiningRecipe: "Combining: {name}",
+  tapIngredientsToAdd: "Tap each ingredient to add it to the bowl.",
+  emptyBowl: "empty bowl",
+  back: "Back",
+  addAllIngredientsFirst: "Add all ingredients first",
+  needLabel: "Need:",
+  tapToAddIngredient: "tap to add",
+  almostReady: "Almost ready…",
 };
 
 const es: Dict = {
@@ -308,6 +476,87 @@ const es: Dict = {
   removeRecipe: "Quitar",
   yourCreations: "Tus creaciones",
   noCreationsYet: "Aún no has inventado nada — ¡pulsa + Inventar y a cocinar!",
+  pickAnimal: "Elige un animal 🐾",
+  pickTheme: "Elige un tema 🎀",
+  combiningPlush: "🧸 Combinando {theme} + {animal} → ¡un peluche temático único!",
+  pickBothToCombine: "Elige un animal y un tema para combinarlos en un peluche único.",
+  plushAnimal_bear: "Oso",
+  plushAnimal_bunny: "Conejito",
+  plushAnimal_cat: "Gato",
+  plushAnimal_puppy: "Perrito",
+  plushAnimal_fox: "Zorro",
+  plushAnimal_panda: "Panda",
+  plushAnimal_penguin: "Pingüino",
+  plushAnimal_frog: "Rana",
+  plushAnimal_koala: "Koala",
+  plushAnimal_tiger: "Tigre",
+  plushAnimal_owl: "Búho",
+  plushAnimal_unicorn: "Unicornio",
+  plushTheme_pineapple: "Piña",
+  plushTheme_donut: "Rosquilla",
+  plushTheme_cupcake: "Cupcake",
+  plushTheme_strawberry: "Fresa",
+  plushTheme_rainbow: "Arcoíris",
+  plushTheme_cloud: "Nube",
+  plushTheme_star: "Estrella",
+  plushTheme_croissant: "Croissant",
+  plushTheme_coffee: "Café",
+  plushTheme_lemon: "Limón",
+  plushTheme_flower: "Flor",
+  plushTheme_heart: "Corazón",
+  plushTheme_watermelon: "Sandía",
+  plushTheme_cherry: "Cereza",
+  plushTheme_mushroom: "Seta",
+  plushTheme_moon: "Luna",
+  recipeBookTitle: "Recetario 📖",
+  tabAll: "Todas",
+  tabMine: "Mías",
+  unlocksAtLevel: "Se desbloquea en el nivel {level}",
+  todaysOrder: "Pedido de hoy",
+  serveBtn: "Servir ✨",
+  prepFirst: "Prepara primero",
+  petTreatPlease: "¡un premio para mi mascota!",
+  reviewsTitle: "Reseñas y Progreso ⭐",
+  ordersServed: "Pedidos servidos",
+  bestStreak: "Mejor racha",
+  avgStars: "Estrellas prom.",
+  totalTips: "Propinas totales",
+  noReviewsYet: "Aún no hay reseñas — ¡atiende a tu primer cliente!",
+  tipAmount: "+ ${tip} propina",
+  supermarketTitle: "Supermercado 🛒",
+  youHave: "Tienes",
+  deliveryArrivingSoon: "🚚 {count} entrega llegando pronto…",
+  totalLabel: "Total",
+  clearCart: "Vaciar",
+  placeOrder: "Hacer pedido (llega en ~8s)",
+  incomingDeliveries: "Entregas en camino",
+  pantryTitle: "Despensa 🧺",
+  deliveriesOnWay: "Entregas en camino",
+  callSupermarket: "🛒 Llamar al supermercado",
+  stationDrinkTitle: "Barra de bebidas",
+  stationPastryTitle: "Mesa de pastelería",
+  stationOvenTitle: "Horno",
+  stationScratchTitle: "Horno de panadería",
+  stationPetTitle: "Rincón de mascotas",
+  stationShelfTitle: "Estante de peluches",
+  stationDrinkAction: "Exprime y vierte 🍋",
+  stationPastryAction: "Decora 🎀",
+  stationOvenAction: "Hornea 🔥",
+  stationScratchAction: "Amasa y hornea 🔥",
+  stationPetAction: "Da forma y hornea 🐾",
+  stationShelfAction: "Envuelve 🎀",
+  allDoneDelicious: "¡Listo — se ve delicioso!",
+  plateIt: "¡A emplatar! ✨",
+  pickRecipeToMake: "Elige una receta para hacer",
+  nothingUnlockedYet: "Aún no hay nada desbloqueado aquí.",
+  combiningRecipe: "Combinando: {name}",
+  tapIngredientsToAdd: "Toca cada ingrediente para añadirlo al bol.",
+  emptyBowl: "bol vacío",
+  back: "Atrás",
+  addAllIngredientsFirst: "Añade todos los ingredientes primero",
+  needLabel: "Faltan:",
+  tapToAddIngredient: "toca para añadir",
+  almostReady: "Casi listo…",
 };
 
 const fr: Dict = {
@@ -402,6 +651,89 @@ const fr: Dict = {
   yourCreations: "Tes créations",
   noCreationsYet:
     "Rien d'inventé pour l'instant — clique sur + Inventer pour commencer !",
+  pickAnimal: "Choisis un animal 🐾",
+  pickTheme: "Choisis un thème 🎀",
+  combiningPlush:
+    "🧸 On mélange {theme} + {animal} → une peluche unique en son genre !",
+  pickBothToCombine:
+    "Choisis un animal et un thème pour en faire une peluche personnalisée.",
+  plushAnimal_bear: "Ours",
+  plushAnimal_bunny: "Lapin",
+  plushAnimal_cat: "Chat",
+  plushAnimal_puppy: "Chiot",
+  plushAnimal_fox: "Renard",
+  plushAnimal_panda: "Panda",
+  plushAnimal_penguin: "Pingouin",
+  plushAnimal_frog: "Grenouille",
+  plushAnimal_koala: "Koala",
+  plushAnimal_tiger: "Tigre",
+  plushAnimal_owl: "Hibou",
+  plushAnimal_unicorn: "Licorne",
+  plushTheme_pineapple: "Ananas",
+  plushTheme_donut: "Beignet",
+  plushTheme_cupcake: "Cupcake",
+  plushTheme_strawberry: "Fraise",
+  plushTheme_rainbow: "Arc-en-ciel",
+  plushTheme_cloud: "Nuage",
+  plushTheme_star: "Étoile",
+  plushTheme_croissant: "Croissant",
+  plushTheme_coffee: "Café",
+  plushTheme_lemon: "Citron",
+  plushTheme_flower: "Fleur",
+  plushTheme_heart: "Cœur",
+  plushTheme_watermelon: "Pastèque",
+  plushTheme_cherry: "Cerise",
+  plushTheme_mushroom: "Champignon",
+  plushTheme_moon: "Lune",
+  recipeBookTitle: "Livre de recettes 📖",
+  tabAll: "Tout",
+  tabMine: "Les miennes",
+  unlocksAtLevel: "Débloqué au niveau {level}",
+  todaysOrder: "Commande du jour",
+  serveBtn: "Servir ✨",
+  prepFirst: "Prépare d'abord",
+  petTreatPlease: "une friandise pour mon animal !",
+  reviewsTitle: "Avis & Progrès ⭐",
+  ordersServed: "Commandes servies",
+  bestStreak: "Meilleure série",
+  avgStars: "Étoiles moy.",
+  totalTips: "Pourboires totaux",
+  noReviewsYet: "Aucun avis — sers ton premier client !",
+  tipAmount: "+ {tip} $ de pourboire",
+  supermarketTitle: "Supermarché 🛒",
+  youHave: "Tu as",
+  deliveryArrivingSoon: "🚚 {count} livraison en chemin…",
+  totalLabel: "Total",
+  clearCart: "Vider",
+  placeOrder: "Commander (arrive dans ~8s)",
+  incomingDeliveries: "Livraisons en cours",
+  pantryTitle: "Garde-manger 🧺",
+  deliveriesOnWay: "Livraisons en cours",
+  callSupermarket: "🛒 Appeler le supermarché",
+  stationDrinkTitle: "Bar à boissons",
+  stationPastryTitle: "Comptoir pâtisserie",
+  stationOvenTitle: "Four",
+  stationScratchTitle: "Four de boulangerie",
+  stationPetTitle: "Coin animaux",
+  stationShelfTitle: "Étagère à peluches",
+  stationDrinkAction: "Presse & verse 🍋",
+  stationPastryAction: "Décore 🎀",
+  stationOvenAction: "Cuis 🔥",
+  stationScratchAction: "Étale & cuis 🔥",
+  stationPetAction: "Façonne & cuis 🐾",
+  stationShelfAction: "Emballe 🎀",
+  allDoneDelicious: "C'est prêt — ça a l'air délicieux !",
+  plateIt: "À dresser ! ✨",
+  pickRecipeToMake: "Choisis une recette à faire",
+  nothingUnlockedYet: "Rien de débloqué ici pour l'instant.",
+  combiningRecipe: "On assemble : {name}",
+  tapIngredientsToAdd: "Clique chaque ingrédient pour l'ajouter au bol.",
+  emptyBowl: "bol vide",
+  back: "Retour",
+  addAllIngredientsFirst: "Ajoute d'abord tous les ingrédients",
+  needLabel: "Manque :",
+  tapToAddIngredient: "clique pour ajouter",
+  almostReady: "Presque prêt…",
 };
 
 const it: Dict = {
@@ -496,6 +828,89 @@ const it: Dict = {
   yourCreations: "Le tue creazioni",
   noCreationsYet:
     "Ancora nessuna invenzione — premi + Inventa per iniziare!",
+  pickAnimal: "Scegli un animale 🐾",
+  pickTheme: "Scegli un tema 🎀",
+  combiningPlush:
+    "🧸 Stai unendo {theme} + {animal} → un peluche unico nel suo genere!",
+  pickBothToCombine:
+    "Scegli un animale e un tema per unirli in un peluche personalizzato.",
+  plushAnimal_bear: "Orso",
+  plushAnimal_bunny: "Coniglietto",
+  plushAnimal_cat: "Gatto",
+  plushAnimal_puppy: "Cucciolo",
+  plushAnimal_fox: "Volpe",
+  plushAnimal_panda: "Panda",
+  plushAnimal_penguin: "Pinguino",
+  plushAnimal_frog: "Rana",
+  plushAnimal_koala: "Koala",
+  plushAnimal_tiger: "Tigre",
+  plushAnimal_owl: "Gufo",
+  plushAnimal_unicorn: "Unicorno",
+  plushTheme_pineapple: "Ananas",
+  plushTheme_donut: "Ciambella",
+  plushTheme_cupcake: "Cupcake",
+  plushTheme_strawberry: "Fragola",
+  plushTheme_rainbow: "Arcobaleno",
+  plushTheme_cloud: "Nuvola",
+  plushTheme_star: "Stella",
+  plushTheme_croissant: "Cornetto",
+  plushTheme_coffee: "Caffè",
+  plushTheme_lemon: "Limone",
+  plushTheme_flower: "Fiore",
+  plushTheme_heart: "Cuore",
+  plushTheme_watermelon: "Anguria",
+  plushTheme_cherry: "Ciliegia",
+  plushTheme_mushroom: "Fungo",
+  plushTheme_moon: "Luna",
+  recipeBookTitle: "Ricettario 📖",
+  tabAll: "Tutte",
+  tabMine: "Le mie",
+  unlocksAtLevel: "Si sblocca al livello {level}",
+  todaysOrder: "Ordine di oggi",
+  serveBtn: "Servi ✨",
+  prepFirst: "Prepara prima",
+  petTreatPlease: "uno snack per il mio animale!",
+  reviewsTitle: "Recensioni e Progressi ⭐",
+  ordersServed: "Ordini serviti",
+  bestStreak: "Miglior striscia",
+  avgStars: "Stelle medie",
+  totalTips: "Mance totali",
+  noReviewsYet: "Ancora nessuna recensione — servi il primo cliente!",
+  tipAmount: "+ ${tip} di mancia",
+  supermarketTitle: "Supermercato 🛒",
+  youHave: "Hai",
+  deliveryArrivingSoon: "🚚 {count} consegna in arrivo…",
+  totalLabel: "Totale",
+  clearCart: "Svuota",
+  placeOrder: "Ordina (arriva in ~8s)",
+  incomingDeliveries: "Consegne in arrivo",
+  pantryTitle: "Dispensa 🧺",
+  deliveriesOnWay: "Consegne in arrivo",
+  callSupermarket: "🛒 Chiama il supermercato",
+  stationDrinkTitle: "Bancone bevande",
+  stationPastryTitle: "Bancone pasticceria",
+  stationOvenTitle: "Forno",
+  stationScratchTitle: "Forno da pasticceria",
+  stationPetTitle: "Angolo animali",
+  stationShelfTitle: "Scaffale peluche",
+  stationDrinkAction: "Spremi e versa 🍋",
+  stationPastryAction: "Decora 🎀",
+  stationOvenAction: "Inforna 🔥",
+  stationScratchAction: "Stendi e inforna 🔥",
+  stationPetAction: "Dai forma e inforna 🐾",
+  stationShelfAction: "Impacchetta 🎀",
+  allDoneDelicious: "Pronto — ha un aspetto delizioso!",
+  plateIt: "Impiatta! ✨",
+  pickRecipeToMake: "Scegli una ricetta da fare",
+  nothingUnlockedYet: "Ancora niente sbloccato qui.",
+  combiningRecipe: "Stai unendo: {name}",
+  tapIngredientsToAdd: "Tocca ogni ingrediente per aggiungerlo alla ciotola.",
+  emptyBowl: "ciotola vuota",
+  back: "Indietro",
+  addAllIngredientsFirst: "Aggiungi prima tutti gli ingredienti",
+  needLabel: "Manca:",
+  tapToAddIngredient: "tocca per aggiungere",
+  almostReady: "Quasi pronto…",
 };
 
 const pt: Dict = {
@@ -590,6 +1005,89 @@ const pt: Dict = {
   yourCreations: "Suas criações",
   noCreationsYet:
     "Nada inventado ainda — toque em + Inventar para começar!",
+  pickAnimal: "Escolha um animal 🐾",
+  pickTheme: "Escolha um tema 🎀",
+  combiningPlush:
+    "🧸 Combinando {theme} + {animal} → uma pelúcia temática única!",
+  pickBothToCombine:
+    "Escolha um animal e um tema para combiná-los em uma pelúcia personalizada.",
+  plushAnimal_bear: "Urso",
+  plushAnimal_bunny: "Coelhinho",
+  plushAnimal_cat: "Gato",
+  plushAnimal_puppy: "Cachorrinho",
+  plushAnimal_fox: "Raposa",
+  plushAnimal_panda: "Panda",
+  plushAnimal_penguin: "Pinguim",
+  plushAnimal_frog: "Sapo",
+  plushAnimal_koala: "Coala",
+  plushAnimal_tiger: "Tigre",
+  plushAnimal_owl: "Coruja",
+  plushAnimal_unicorn: "Unicórnio",
+  plushTheme_pineapple: "Abacaxi",
+  plushTheme_donut: "Rosquinha",
+  plushTheme_cupcake: "Cupcake",
+  plushTheme_strawberry: "Morango",
+  plushTheme_rainbow: "Arco-íris",
+  plushTheme_cloud: "Nuvem",
+  plushTheme_star: "Estrela",
+  plushTheme_croissant: "Croissant",
+  plushTheme_coffee: "Café",
+  plushTheme_lemon: "Limão",
+  plushTheme_flower: "Flor",
+  plushTheme_heart: "Coração",
+  plushTheme_watermelon: "Melancia",
+  plushTheme_cherry: "Cereja",
+  plushTheme_mushroom: "Cogumelo",
+  plushTheme_moon: "Lua",
+  recipeBookTitle: "Livro de receitas 📖",
+  tabAll: "Todas",
+  tabMine: "Minhas",
+  unlocksAtLevel: "Desbloqueia no nível {level}",
+  todaysOrder: "Pedido de hoje",
+  serveBtn: "Servir ✨",
+  prepFirst: "Prepare primeiro",
+  petTreatPlease: "um petisco para meu bichinho!",
+  reviewsTitle: "Avaliações e Progresso ⭐",
+  ordersServed: "Pedidos servidos",
+  bestStreak: "Melhor sequência",
+  avgStars: "Média de estrelas",
+  totalTips: "Gorjetas totais",
+  noReviewsYet: "Ainda sem avaliações — atenda seu primeiro cliente!",
+  tipAmount: "+ ${tip} de gorjeta",
+  supermarketTitle: "Supermercado 🛒",
+  youHave: "Você tem",
+  deliveryArrivingSoon: "🚚 {count} entrega chegando em breve…",
+  totalLabel: "Total",
+  clearCart: "Limpar",
+  placeOrder: "Fazer pedido (chega em ~8s)",
+  incomingDeliveries: "Entregas a caminho",
+  pantryTitle: "Despensa 🧺",
+  deliveriesOnWay: "Entregas a caminho",
+  callSupermarket: "🛒 Chamar o supermercado",
+  stationDrinkTitle: "Balcão de bebidas",
+  stationPastryTitle: "Balcão de doces",
+  stationOvenTitle: "Forno",
+  stationScratchTitle: "Forno da padaria",
+  stationPetTitle: "Cantinho dos pets",
+  stationShelfTitle: "Prateleira de pelúcias",
+  stationDrinkAction: "Esprema e despeje 🍋",
+  stationPastryAction: "Decore 🎀",
+  stationOvenAction: "Assar 🔥",
+  stationScratchAction: "Abra e asse 🔥",
+  stationPetAction: "Modele e asse 🐾",
+  stationShelfAction: "Embrulhe 🎀",
+  allDoneDelicious: "Pronto — está com uma cara deliciosa!",
+  plateIt: "Empratar! ✨",
+  pickRecipeToMake: "Escolha uma receita para fazer",
+  nothingUnlockedYet: "Nada desbloqueado aqui ainda.",
+  combiningRecipe: "Combinando: {name}",
+  tapIngredientsToAdd: "Toque em cada ingrediente para colocá-lo na tigela.",
+  emptyBowl: "tigela vazia",
+  back: "Voltar",
+  addAllIngredientsFirst: "Adicione todos os ingredientes primeiro",
+  needLabel: "Falta:",
+  tapToAddIngredient: "toque para adicionar",
+  almostReady: "Quase pronto…",
 };
 
 const DICTS: Record<Lang, Dict> = { en, es, fr, it, pt };

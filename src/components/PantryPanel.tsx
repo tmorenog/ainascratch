@@ -3,6 +3,7 @@
 import { Modal } from "./ui/Modal";
 import { useGame } from "@/game/store";
 import { INGREDIENT_LIST } from "@/game/ingredients";
+import { useT } from "@/game/i18n";
 
 /**
  * Lightweight pantry view shown when the player walks to the pantry shelf.
@@ -19,9 +20,10 @@ export function PantryPanel({
 }) {
   const inventory = useGame((s) => s.inventory);
   const pending = useGame((s) => s.pendingSupply);
+  const t = useT();
 
   return (
-    <Modal open={open} onClose={onClose} title="Pantry Shelf 🧺" maxWidth="max-w-2xl">
+    <Modal open={open} onClose={onClose} title={t("pantryTitle")} maxWidth="max-w-2xl">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
         {INGREDIENT_LIST.map((ing) => {
           const v = inventory[ing.id] ?? 0;
@@ -48,7 +50,7 @@ export function PantryPanel({
 
       {pending.length > 0 && (
         <div className="mt-3 rounded-2xl border border-cream-200 bg-white/85 p-3">
-          <div className="text-xs font-bold text-cocoa-500 mb-1">Deliveries on the way</div>
+          <div className="text-xs font-bold text-cocoa-500 mb-1">{t("deliveriesOnWay")}</div>
           {pending.map((o) => (
             <div key={o.id} className="text-sm text-cocoa-500">
               🚚 ${o.totalCost} · {Object.keys(o.items).length} ingredient
@@ -66,7 +68,7 @@ export function PantryPanel({
             onOpenSupermarket();
           }}
         >
-          🛒 Call the supermarket
+          {t("callSupermarket")}
         </button>
       </div>
     </Modal>

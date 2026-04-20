@@ -6,12 +6,14 @@ import { INGREDIENT_LIST, INGREDIENTS } from "@/game/ingredients";
 import type { IngredientId } from "@/game/types";
 import { useGame } from "@/game/store";
 import { motion, AnimatePresence } from "framer-motion";
+import { useT } from "@/game/i18n";
 
 export function Supermarket({ open, onClose }: { open: boolean; onClose: () => void }) {
   const coins = useGame((s) => s.coins);
   const inventory = useGame((s) => s.inventory);
   const pending = useGame((s) => s.pendingSupply);
   const orderSupplies = useGame((s) => s.orderSupplies);
+  const t = useT();
 
   const [cart, setCart] = useState<Partial<Record<IngredientId, number>>>({});
 
@@ -46,11 +48,11 @@ export function Supermarket({ open, onClose }: { open: boolean; onClose: () => v
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Supermarket 🛒" maxWidth="max-w-4xl">
+    <Modal open={open} onClose={onClose} title={t("supermarketTitle")} maxWidth="max-w-4xl">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <div className="chip">🪙 You have: <span className="ml-1 tabular-nums font-black">{coins}</span></div>
+        <div className="chip">🪙 {t("youHave")}: <span className="ml-1 tabular-nums font-black">{coins}</span></div>
         {pending.length > 0 && (
-          <div className="chip">🚚 {pending.length} delivery arriving soon…</div>
+          <div className="chip">{t("deliveryArrivingSoon", { count: pending.length })}</div>
         )}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -87,17 +89,17 @@ export function Supermarket({ open, onClose }: { open: boolean; onClose: () => v
 
       <div className="sticky bottom-0 mt-4 bg-cream-50/95 backdrop-blur pt-3 flex items-center justify-between gap-3">
         <div>
-          <div className="text-xs text-cocoa-400 font-bold uppercase tracking-wide">Total</div>
+          <div className="text-xs text-cocoa-400 font-bold uppercase tracking-wide">{t("totalLabel")}</div>
           <div className="font-display text-2xl text-cocoa-600">🪙 ${totalCost}</div>
         </div>
         <div className="flex gap-2">
-          <button className="btn-secondary" onClick={() => setCart({})}>Clear</button>
+          <button className="btn-secondary" onClick={() => setCart({})}>{t("clearCart")}</button>
           <button
             className="btn-primary disabled:opacity-50"
             disabled={totalCost <= 0 || totalCost > coins}
             onClick={checkout}
           >
-            Place order (arrives in ~8s)
+            {t("placeOrder")}
           </button>
         </div>
       </div>
@@ -111,7 +113,7 @@ export function Supermarket({ open, onClose }: { open: boolean; onClose: () => v
             exit={{ opacity: 0 }}
           >
             <div className="text-xs font-bold text-cocoa-500 mb-1">
-              Incoming deliveries
+              {t("incomingDeliveries")}
             </div>
             {pending.map((o) => (
               <div key={o.id} className="text-sm text-cocoa-500">

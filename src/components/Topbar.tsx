@@ -118,7 +118,7 @@ export function Topbar({
             }`}
             onClick={toggleStore}
           >
-            {isOpen ? "Close Shop" : "Open Shop"}
+            {isOpen ? t("closeShop") : t("openShop")}
           </button>
         </div>
       </div>
