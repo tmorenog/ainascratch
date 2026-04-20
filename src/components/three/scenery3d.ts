@@ -1589,11 +1589,10 @@ export function buildOutdoors(): THREE.Group {
     z: -ROOM.depth / 2 - 30,
   };
 
-  // Vet clinic — small pastel-green building along the sidewalk. Carry
-  // a sick cat here to heal it. Hidden until the Cat Cafe unlocks, then
-  // toggled on by BakeryWorld3D via userData.vet.
+  // Vet clinic — small pastel-green building along the sidewalk. Always
+  // visible, but shows a padlock overlay (via userData.vet) until the
+  // Cat Cafe unlocks, since the vet's only job is healing cafe cats.
   const vet = buildVetClinic(VET_CENTER.x, VET_CENTER.z);
-  vet.visible = false;
   g.add(vet);
   g.userData.vet = vet;
 
@@ -1985,6 +1984,34 @@ export function buildVetClinic(cx: number, cz: number): THREE.Group {
   );
   sign.position.set(0, H - 0.35, -D / 2 - 0.12);
   g.add(sign);
+
+  // Padlock sign hung over the door for pre-unlock players. Toggled by
+  // BakeryWorld3D based on the player's level.
+  const lockedGroup = new THREE.Group();
+  const lockedTex = signboardTexture("🔒 LOCKED — Level 20", "#8a2a2a");
+  const lockedBanner = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.2, 0.55),
+    new THREE.MeshBasicMaterial({ map: lockedTex, transparent: true }),
+  );
+  lockedBanner.position.set(0, 1.2, -D / 2 - 0.14);
+  lockedGroup.add(lockedBanner);
+  // Big golden padlock dangling under the banner.
+  const lockBody = new THREE.Mesh(
+    new THREE.BoxGeometry(0.4, 0.45, 0.15),
+    mat({ color: "#e8b93a", roughness: 0.4 }),
+  );
+  lockBody.position.set(0, 0.6, -D / 2 - 0.18);
+  lockedGroup.add(lockBody);
+  const lockShackle = new THREE.Mesh(
+    new THREE.TorusGeometry(0.14, 0.04, 6, 14, Math.PI),
+    mat({ color: "#c7c7c7", roughness: 0.3, metalness: 0.6 }),
+  );
+  lockShackle.position.set(0, 0.84, -D / 2 - 0.18);
+  lockShackle.rotation.z = Math.PI;
+  lockedGroup.add(lockShackle);
+  lockedGroup.visible = false;
+  g.add(lockedGroup);
+  g.userData.lockedOverlay = lockedGroup;
 
   // Interior: exam table, vet stool, cat bed, shelf
   const tableTop = new THREE.Mesh(

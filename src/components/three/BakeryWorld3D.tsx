@@ -246,6 +246,9 @@ export function BakeryWorld3D({
       }[]) ?? [];
     const outdoors = buildOutdoors();
     const vetBuilding = outdoors.userData.vet as THREE.Group | undefined;
+    const vetLockedOverlay = vetBuilding?.userData.lockedOverlay as
+      | THREE.Group
+      | undefined;
     scene.add(outdoors);
 
     // Supermarket sliding doors — the builder stashes the mesh refs and
@@ -1287,12 +1290,13 @@ export function BakeryWorld3D({
         applyBounds(camera.position);
       }
 
-      // Vet clinic + its hotspot only appear once the Cat Cafe unlocks,
-      // since the vet exists specifically to heal sick cafe cats.
+      // Vet clinic is always visible, but before the Cat Cafe unlocks
+      // we show a 🔒 padlock overlay and skip its hotspot so the player
+      // can't interact with a clinic they can't use yet.
       const catCafeUnlocked =
         useGame.getState().level >= CAT_CAFE_UNLOCK_LEVEL;
-      if (vetBuilding && vetBuilding.visible !== catCafeUnlocked) {
-        vetBuilding.visible = catCafeUnlocked;
+      if (vetLockedOverlay && vetLockedOverlay.visible === catCafeUnlocked) {
+        vetLockedOverlay.visible = !catCafeUnlocked;
       }
 
       // hotspot detection
