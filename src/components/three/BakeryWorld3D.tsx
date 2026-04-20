@@ -1233,7 +1233,7 @@ export function BakeryWorld3D({
         const kind = (nearestPet.userData.pet as { kind: "dog" | "cat" }).kind;
         promptText = `Pet the ${kind}`;
       } else if (nearestCat && nearestCatName) {
-        promptText = `Pet ${nearestCatName} · F: treat · G: toy`;
+        promptText = `Pet ${nearestCatName} · F: treat · G: toy · B: profile`;
       }
       setPrompt(promptText);
       setNearCat(!!nearestCat);
@@ -1620,7 +1620,7 @@ export function BakeryWorld3D({
                   if (pausedRef.current) return;
                   profileTriggerRef.current();
                 }}
-                className="pointer-events-auto absolute right-80 bottom-8 z-30 w-20 h-20 rounded-full border-2 border-white text-white font-black shadow-bakery active:scale-95 transition-transform touch-none select-none bg-indigo-500"
+                className="pointer-events-auto absolute right-32 bottom-32 z-30 w-20 h-20 rounded-full border-2 border-white text-white font-black shadow-bakery active:scale-95 transition-transform touch-none select-none bg-indigo-500"
                 aria-label="Cat profile"
               >
                 <div className="flex flex-col items-center justify-center leading-tight">
