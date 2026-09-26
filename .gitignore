@@ -31,3 +31,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Static export build outputs (used to publish the game as a Claude Artifact)
+/out
+/out2
