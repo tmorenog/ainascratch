@@ -12,6 +12,7 @@ import { PantryPanel } from "./PantryPanel";
 import { CatCafe } from "./CatCafe";
 import { PrepScene } from "./scene/PrepScene";
 import { LevelUpToast } from "./scene/LevelUpToast";
+import { Tutorial } from "./Tutorial";
 import { BakeryWorld3D } from "./three/BakeryWorld3D";
 import { DialogPanel } from "./three/DialogPanel";
 import { FurnitureShop } from "./three/FurnitureShop";
@@ -254,6 +255,7 @@ export function BakeryApp() {
         onPickKind={(kind) => setPlacingKind(kind)}
       />
       <LevelUpToast />
+      <Tutorial />
     </div>
   );
 }

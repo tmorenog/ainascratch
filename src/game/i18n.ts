@@ -201,7 +201,30 @@ export type TKey =
   | "addAllIngredientsFirst"
   | "needLabel"
   | "tapToAddIngredient"
-  | "almostReady";
+  | "almostReady"
+  // Tutorial
+  | "tutorialSkip"
+  | "tutorialNext"
+  | "tutorialFinish"
+  | "tutorialBack"
+  | "tutorialStepLabel"
+  | "tutorialTitle_1"
+  | "tutorialBody_1"
+  | "tutorialTitle_2"
+  | "tutorialBody_2"
+  | "tutorialTitle_3"
+  | "tutorialBody_3"
+  | "tutorialTitle_4"
+  | "tutorialBody_4"
+  | "tutorialTitle_5"
+  | "tutorialBody_5"
+  | "tutorialTitle_6"
+  | "tutorialBody_6"
+  | "tutorialTitle_7"
+  | "tutorialBody_7"
+  | "tutorialTitle_8"
+  | "tutorialBody_8"
+  | "replayTutorial";
 
 type Dict = Record<TKey, string>;
 
@@ -383,6 +406,28 @@ const en: Dict = {
   needLabel: "Need:",
   tapToAddIngredient: "tap to add",
   almostReady: "Almost ready…",
+  tutorialSkip: "Skip",
+  tutorialNext: "Next →",
+  tutorialFinish: "Let's bake! 🎂",
+  tutorialBack: "← Back",
+  tutorialStepLabel: "Step {n} of {total}",
+  tutorialTitle_1: "Welcome to your bakery! 🧁",
+  tutorialBody_1: "You're the chef, cashier, and boss all rolled into one. Let's do a quick walkthrough so you know what to do.",
+  tutorialTitle_2: "Open the shop 🟢",
+  tutorialBody_2: "Tap the green Open Shop button (bottom-left). Customers only come in once you're open for business.",
+  tutorialTitle_3: "Move around 🚶",
+  tutorialBody_3: "Drag to look around and use W A S D (or the joystick on touch) to walk. Get to know the layout: drink bar, pastry counter, ovens, and the service counter with the little bell.",
+  tutorialTitle_4: "A customer arrives 🔔",
+  tutorialBody_4: "When someone walks up to the counter, walk over and tap them to see their order. Watch the patience clock — hurry helps!",
+  tutorialTitle_5: "Make their order 🥣",
+  tutorialBody_5: "Look at the black ticket at the bottom. Walk to the matching station (drinks go to the drink bar, pastries to the pastry counter, and so on) and press E to start.",
+  tutorialTitle_6: "Combine + cook ✨",
+  tutorialBody_6: "Tap each ingredient to add it to the bowl, then hit the big go button. Wait for the timer, then tap Plate it.",
+  tutorialTitle_7: "Serve them 🎀",
+  tutorialBody_7: "Walk back to the customer at the counter and tap Serve. Fast + correct orders earn stars, coins, and tips!",
+  tutorialTitle_8: "You're ready! 🎉",
+  tutorialBody_8: "Level up to unlock new recipes, invent your own, and even open a Cat Cafe downstairs. Have fun!",
+  replayTutorial: "Replay tutorial",
 };
 
 const es: Dict = {
@@ -557,6 +602,28 @@ const es: Dict = {
   needLabel: "Faltan:",
   tapToAddIngredient: "toca para añadir",
   almostReady: "Casi listo…",
+  tutorialSkip: "Saltar",
+  tutorialNext: "Siguiente →",
+  tutorialFinish: "¡A hornear! 🎂",
+  tutorialBack: "← Atrás",
+  tutorialStepLabel: "Paso {n} de {total}",
+  tutorialTitle_1: "¡Bienvenido a tu panadería! 🧁",
+  tutorialBody_1: "Eres el chef, cajero y jefe todo en uno. Vamos a hacer un pequeño recorrido para que sepas qué hacer.",
+  tutorialTitle_2: "Abre la tienda 🟢",
+  tutorialBody_2: "Toca el botón verde Abrir Tienda (abajo a la izquierda). Los clientes solo entran cuando estás abierto.",
+  tutorialTitle_3: "Muévete 🚶",
+  tutorialBody_3: "Arrastra para mirar y usa W A S D (o el joystick en móvil) para caminar. Conoce el lugar: barra de bebidas, pastelería, hornos y el mostrador de servicio con la campanita.",
+  tutorialTitle_4: "Llega un cliente 🔔",
+  tutorialBody_4: "Cuando alguien se acerque al mostrador, ve y tócalo para ver su pedido. ¡Observa el reloj de paciencia — la prisa ayuda!",
+  tutorialTitle_5: "Prepara su pedido 🥣",
+  tutorialBody_5: "Mira el ticket negro de abajo. Ve a la estación correcta (bebidas a la barra, pasteles al mostrador, etc.) y pulsa E para empezar.",
+  tutorialTitle_6: "Combina y cocina ✨",
+  tutorialBody_6: "Toca cada ingrediente para añadirlo al bol y luego pulsa el botón grande. Espera el temporizador y toca ¡A emplatar!",
+  tutorialTitle_7: "Sírveselo 🎀",
+  tutorialBody_7: "Vuelve donde el cliente en el mostrador y toca Servir. ¡Los pedidos rápidos y correctos ganan estrellas, monedas y propinas!",
+  tutorialTitle_8: "¡Ya estás listo! 🎉",
+  tutorialBody_8: "Sube de nivel para desbloquear nuevas recetas, inventar las tuyas y hasta abrir un Cat Cafe abajo. ¡Diviértete!",
+  replayTutorial: "Repetir tutorial",
 };
 
 const fr: Dict = {
@@ -734,6 +801,28 @@ const fr: Dict = {
   needLabel: "Manque :",
   tapToAddIngredient: "clique pour ajouter",
   almostReady: "Presque prêt…",
+  tutorialSkip: "Passer",
+  tutorialNext: "Suivant →",
+  tutorialFinish: "On cuisine ! 🎂",
+  tutorialBack: "← Retour",
+  tutorialStepLabel: "Étape {n} sur {total}",
+  tutorialTitle_1: "Bienvenue dans ta boulangerie ! 🧁",
+  tutorialBody_1: "Tu es le chef, le caissier et le patron, tout en un. On va faire un petit tour pour que tu saches quoi faire.",
+  tutorialTitle_2: "Ouvre la boutique 🟢",
+  tutorialBody_2: "Clique sur le bouton vert Ouvrir la boutique (en bas à gauche). Les clients n'arrivent que quand tu es ouvert.",
+  tutorialTitle_3: "Déplace-toi 🚶",
+  tutorialBody_3: "Glisse pour regarder autour et utilise Z Q S D (ou le joystick sur mobile) pour marcher. Repère les lieux : bar à boissons, pâtisserie, fours et comptoir de service.",
+  tutorialTitle_4: "Un client arrive 🔔",
+  tutorialBody_4: "Quand quelqu'un s'approche du comptoir, va le voir et clique pour voir sa commande. Regarde l'horloge de patience — la vitesse aide !",
+  tutorialTitle_5: "Prépare sa commande 🥣",
+  tutorialBody_5: "Regarde le ticket noir en bas. Va au poste correspondant (boissons au bar, pâtisseries au comptoir, etc.) et appuie sur E pour commencer.",
+  tutorialTitle_6: "Assemble + cuis ✨",
+  tutorialBody_6: "Clique chaque ingrédient pour l'ajouter au bol, puis appuie sur le gros bouton. Attends le minuteur, puis clique À dresser.",
+  tutorialTitle_7: "Sers-lui 🎀",
+  tutorialBody_7: "Retourne voir le client au comptoir et clique Servir. Les commandes rapides et correctes rapportent étoiles, pièces et pourboires !",
+  tutorialTitle_8: "Tu es prêt ! 🎉",
+  tutorialBody_8: "Monte de niveau pour débloquer de nouvelles recettes, inventer les tiennes et même ouvrir un Cat Cafe en bas. Amuse-toi !",
+  replayTutorial: "Rejouer le tutoriel",
 };
 
 const it: Dict = {
@@ -911,6 +1000,28 @@ const it: Dict = {
   needLabel: "Manca:",
   tapToAddIngredient: "tocca per aggiungere",
   almostReady: "Quasi pronto…",
+  tutorialSkip: "Salta",
+  tutorialNext: "Avanti →",
+  tutorialFinish: "Si cuoce! 🎂",
+  tutorialBack: "← Indietro",
+  tutorialStepLabel: "Passo {n} di {total}",
+  tutorialTitle_1: "Benvenuto nella tua pasticceria! 🧁",
+  tutorialBody_1: "Sei chef, cassiere e capo tutto in uno. Facciamo un giro veloce così sai cosa fare.",
+  tutorialTitle_2: "Apri il negozio 🟢",
+  tutorialBody_2: "Tocca il pulsante verde Apri negozio (in basso a sinistra). I clienti entrano solo se sei aperto.",
+  tutorialTitle_3: "Muoviti 🚶",
+  tutorialBody_3: "Trascina per guardarti intorno e usa W A S D (o il joystick su mobile) per camminare. Familiarizza con il posto: bancone bevande, pasticceria, forni e bancone servizio con la campanella.",
+  tutorialTitle_4: "Arriva un cliente 🔔",
+  tutorialBody_4: "Quando qualcuno si avvicina al bancone, vai da lui e toccalo per vedere l'ordine. Guarda l'orologio della pazienza — la velocità aiuta!",
+  tutorialTitle_5: "Prepara l'ordine 🥣",
+  tutorialBody_5: "Guarda il biglietto nero in basso. Vai alla stazione giusta (bevande al bancone bevande, dolci in pasticceria, ecc.) e premi E per iniziare.",
+  tutorialTitle_6: "Combina e cuoci ✨",
+  tutorialBody_6: "Tocca ogni ingrediente per aggiungerlo alla ciotola, poi premi il pulsante grosso. Aspetta il timer e tocca Impiatta.",
+  tutorialTitle_7: "Servi 🎀",
+  tutorialBody_7: "Torna dal cliente al bancone e tocca Servi. Ordini veloci e corretti portano stelle, monete e mance!",
+  tutorialTitle_8: "Sei pronto! 🎉",
+  tutorialBody_8: "Sali di livello per sbloccare nuove ricette, inventare le tue e persino aprire un Cat Cafe di sotto. Divertiti!",
+  replayTutorial: "Rivedi il tutorial",
 };
 
 const pt: Dict = {
@@ -1088,6 +1199,28 @@ const pt: Dict = {
   needLabel: "Falta:",
   tapToAddIngredient: "toque para adicionar",
   almostReady: "Quase pronto…",
+  tutorialSkip: "Pular",
+  tutorialNext: "Próximo →",
+  tutorialFinish: "Bora assar! 🎂",
+  tutorialBack: "← Voltar",
+  tutorialStepLabel: "Passo {n} de {total}",
+  tutorialTitle_1: "Bem-vindo à sua padaria! 🧁",
+  tutorialBody_1: "Você é chef, caixa e chefe tudo num só. Vamos dar uma olhadinha rápida pra você saber o que fazer.",
+  tutorialTitle_2: "Abra a loja 🟢",
+  tutorialBody_2: "Toque no botão verde Abrir Loja (canto inferior esquerdo). Clientes só entram quando você está aberto.",
+  tutorialTitle_3: "Ande por aí 🚶",
+  tutorialBody_3: "Arraste pra olhar em volta e use W A S D (ou o joystick no celular) pra andar. Conheça o lugar: balcão de bebidas, doces, fornos e o balcão de atendimento com a campainha.",
+  tutorialTitle_4: "Um cliente chegou 🔔",
+  tutorialBody_4: "Quando alguém se aproximar do balcão, vá até lá e toque nele para ver o pedido. Fique de olho no relógio de paciência — rapidez ajuda!",
+  tutorialTitle_5: "Prepare o pedido 🥣",
+  tutorialBody_5: "Olhe o ticket preto embaixo. Vá até a estação certa (bebidas no balcão de bebidas, doces no balcão de doces, etc.) e aperte E pra começar.",
+  tutorialTitle_6: "Combine e cozinhe ✨",
+  tutorialBody_6: "Toque em cada ingrediente pra colocar na tigela, depois aperte o botão grande. Espere o cronômetro e toque Empratar.",
+  tutorialTitle_7: "Sirva 🎀",
+  tutorialBody_7: "Volte pro cliente no balcão e toque em Servir. Pedidos rápidos e corretos rendem estrelas, moedas e gorjetas!",
+  tutorialTitle_8: "Tudo pronto! 🎉",
+  tutorialBody_8: "Suba de nível pra desbloquear receitas novas, inventar as suas e até abrir um Cat Cafe embaixo. Divirta-se!",
+  replayTutorial: "Repetir tutorial",
 };
 
 const DICTS: Record<Lang, Dict> = { en, es, fr, it, pt };

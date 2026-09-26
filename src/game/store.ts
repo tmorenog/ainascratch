@@ -102,6 +102,9 @@ interface GameState {
   hasOnboarded: boolean;
   difficulty: Difficulty;
   language: Lang;
+  /** Tutorial step: 0..N-1 while the tutorial is running, -1 once the
+   *  player finishes or skips it. Starts at 0 for brand-new bakeries. */
+  tutorialStep: number;
 
   // economy
   coins: number;
@@ -163,6 +166,9 @@ interface GameState {
   setDifficulty: (d: Difficulty) => void;
   setLanguage: (l: Lang) => void;
   finishOnboarding: () => void;
+  advanceTutorial: () => void;
+  skipTutorial: () => void;
+  restartTutorial: () => void;
   resetGame: () => void;
 
   toggleStore: () => void;
@@ -367,6 +373,7 @@ export const useGame = create<GameState>()(
       hasOnboarded: false,
       difficulty: "cozy",
       language: "en" as Lang,
+      tutorialStep: 0,
 
       coins: 30,
       level: 1,
@@ -399,6 +406,9 @@ export const useGame = create<GameState>()(
       setDifficulty: (d) => set({ difficulty: d }),
       setLanguage: (l) => set({ language: l }),
       finishOnboarding: () => set({ hasOnboarded: true }),
+      advanceTutorial: () => set((s) => ({ tutorialStep: s.tutorialStep + 1 })),
+      skipTutorial: () => set({ tutorialStep: -1 }),
+      restartTutorial: () => set({ tutorialStep: 0 }),
 
       resetGame: () =>
         set({
@@ -406,6 +416,7 @@ export const useGame = create<GameState>()(
           hasOnboarded: false,
           difficulty: "cozy",
           language: get().language,
+          tutorialStep: 0,
           coins: 30,
           level: 1,
           xp: 0,
@@ -1128,7 +1139,7 @@ export const useGame = create<GameState>()(
       storage: createJSONStorage(() => localStorage),
       // Bump whenever we add recipes or ingredients so returning players
       // automatically get the new menu + a full inventory slot list.
-      version: 8,
+      version: 9,
       migrate: (persisted, _version) => {
         const p = (persisted ?? {}) as Partial<GameState>;
         // Merge in any newly-unlocked recipes that weren't in the save.
@@ -1147,6 +1158,15 @@ export const useGame = create<GameState>()(
           ...emptyInventory(),
           ...(p.inventory ?? {}),
         } as Record<IngredientId, number>;
+        // Returning players who already onboarded skip the tutorial;
+        // brand-new saves start it. `tutorialStep === undefined` means
+        // "old save that predates the tutorial".
+        const migratedTutorialStep =
+          p.tutorialStep !== undefined
+            ? p.tutorialStep
+            : p.hasOnboarded
+            ? -1
+            : 0;
         return {
           ...p,
           unlockedRecipeIds: Array.from(savedUnlocked),
@@ -1156,6 +1176,7 @@ export const useGame = create<GameState>()(
           language: p.language ?? ("en" as Lang),
           customRecipes: p.customRecipes ?? [],
           specialRecipeId: p.specialRecipeId ?? null,
+          tutorialStep: migratedTutorialStep,
         } as GameState;
       },
       partialize: (s) => ({
@@ -1163,6 +1184,7 @@ export const useGame = create<GameState>()(
         hasOnboarded: s.hasOnboarded,
         difficulty: s.difficulty,
         language: s.language,
+        tutorialStep: s.tutorialStep,
         coins: s.coins,
         level: s.level,
         xp: s.xp,

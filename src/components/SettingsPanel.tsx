@@ -20,6 +20,7 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
   const language = useGame((s) => s.language);
   const setLanguage = useGame((s) => s.setLanguage);
   const resetGame = useGame((s) => s.resetGame);
+  const restartTutorial = useGame((s) => s.restartTutorial);
   const [confirmReset, setConfirmReset] = useState(false);
   const [name, setName] = useState(bakeryName);
   const t = useT();
@@ -98,6 +99,18 @@ export function SettingsPanel({ open, onClose }: { open: boolean; onClose: () =>
             );
           })}
         </div>
+      </div>
+
+      <div className="mt-4">
+        <button
+          className="btn-secondary"
+          onClick={() => {
+            restartTutorial();
+            onClose();
+          }}
+        >
+          📖 {t("replayTutorial")}
+        </button>
       </div>
 
       <div className="mt-5 p-3 rounded-2xl border border-berry-400/30 bg-berry-400/10">
