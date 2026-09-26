@@ -76,7 +76,15 @@ export function BakeryApp() {
   useEffect(() => {
     const unsub = useGame.persist.onFinishHydration(() => setHydrated(true));
     if (useGame.persist.hasHydrated()) setHydrated(true);
-    return unsub;
+    // Fallback: if the persist middleware never signals hydration (a
+    // sandboxed iframe where localStorage throws, for instance), boot
+    // the game anyway after a short beat so we don't stay stuck on the
+    // "warming the ovens" splash forever.
+    const t = window.setTimeout(() => setHydrated(true), 800);
+    return () => {
+      unsub();
+      window.clearTimeout(t);
+    };
   }, []);
 
   // Game tick — patience, deliveries, spawns.
