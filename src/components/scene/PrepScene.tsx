@@ -9,6 +9,7 @@ import type { IngredientId, Recipe, StationId } from "@/game/types";
 import { FoodArt } from "../foods/FoodArt";
 import { useT } from "@/game/i18n";
 import type { TKey } from "@/game/i18n";
+import { getIngredientName, getRecipeName } from "@/game/locale_data";
 
 function resolveRecipe(id: string, custom: Recipe[]): Recipe | undefined {
   return RECIPE_BY_ID[id] ?? custom.find((r) => r.id === id);
@@ -59,6 +60,7 @@ export function PrepScene({
   const specialRecipeId = useGame((s) => s.specialRecipeId);
   const playerLevel = useGame((s) => s.level);
   const slot = useGame((s) => (stationId ? s.prep[stationId] : undefined));
+  const lang = useGame((s) => s.language);
   const t = useT();
 
   const [now, setNow] = useState(() => Date.now());
@@ -165,7 +167,9 @@ export function PrepScene({
                   />
                   <div className="flex-1 min-w-0">
                     <div className="font-display text-lg text-cocoa-600 truncate">
-                      {slotRecipe.name}
+                      {slotRecipe.isCustom
+                        ? slotRecipe.name
+                        : getRecipeName(slotRecipe.id, lang, slotRecipe.name)}
                     </div>
                     <ProgressTrack value={progress} done={done} />
                   </div>
@@ -277,10 +281,14 @@ function RecipeChoice({
   onStart: () => void;
 }) {
   const t = useT();
+  const lang = useGame((s) => s.language);
   const missing = (Object.entries(recipe.ingredients) as [IngredientId, number][])
     .filter(([k, n]) => (inventory[k] ?? 0) < n)
-    .map(([k]) => INGREDIENTS[k].name);
+    .map(([k]) => getIngredientName(k, lang, INGREDIENTS[k].name));
   const canCook = missing.length === 0;
+  const displayName = recipe.isCustom
+    ? recipe.name
+    : getRecipeName(recipe.id, lang, recipe.name);
   return (
     <button
       disabled={!canCook}
@@ -298,7 +306,7 @@ function RecipeChoice({
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1">
-            <span className="font-bold text-cocoa-600 truncate">{recipe.name}</span>
+            <span className="font-bold text-cocoa-600 truncate">{displayName}</span>
             {recipe.isSpecial && <span title="Chef's Special">⭐</span>}
             {recipe.isRecommended && <span title="Recommended">👍</span>}
           </div>
@@ -738,6 +746,10 @@ function CombiningPanel({
   const done = required.every(([k, n]) => (added[k] ?? 0) >= n);
   const totalAdded = required.reduce((s, [k]) => s + (added[k] ?? 0), 0);
   const t = useT();
+  const lang = useGame((s) => s.language);
+  const displayName = recipe.isCustom
+    ? recipe.name
+    : getRecipeName(recipe.id, lang, recipe.name);
 
   return (
     <div className="panel max-w-3xl mx-auto">
@@ -752,7 +764,7 @@ function CombiningPanel({
         />
         <div className="flex-1 min-w-0">
           <div className="font-display text-lg text-cocoa-600 truncate">
-            {t("combiningRecipe", { name: recipe.name })}
+            {t("combiningRecipe", { name: displayName })}
           </div>
           <div className="text-[11px] text-cocoa-400">
             {t("tapIngredientsToAdd")}
@@ -807,7 +819,7 @@ function CombiningPanel({
               <span className="text-2xl">{INGREDIENTS[k].emoji}</span>
               <span className="flex-1 min-w-0">
                 <span className="block text-xs font-bold text-cocoa-700 truncate">
-                  {INGREDIENTS[k].name}
+                  {getIngredientName(k, lang, INGREDIENTS[k].name)}
                 </span>
                 <span className="block text-[11px] text-cocoa-400">
                   {have}/{n} {full ? "✓" : t("tapToAddIngredient")}

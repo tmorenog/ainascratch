@@ -7,6 +7,7 @@ import type { IngredientId, RecipeCategory } from "@/game/types";
 import { useGame } from "@/game/store";
 import { useT } from "@/game/i18n";
 import type { TKey } from "@/game/i18n";
+import { getIngredientName } from "@/game/locale_data";
 
 /** Animals + themes for the plush combiner. Pick one of each and the
  *  creator mashes them together into a cute themed plush. Names resolve
@@ -101,6 +102,7 @@ export function RecipeCreator({
   onClose: () => void;
 }) {
   const addCustomRecipe = useGame((s) => s.addCustomRecipe);
+  const lang = useGame((s) => s.language);
   const t = useT();
 
   const [name, setName] = useState("");
@@ -448,7 +450,7 @@ export function RecipeCreator({
                   <span className="text-2xl">{ing.emoji}</span>
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-bold text-cocoa-700 truncate">
-                      {ing.name}
+                      {getIngredientName(ing.id, lang, ing.name)}
                     </div>
                     <div className="text-[10px] text-cocoa-400">
                       ${ing.pricePerUnit}/{ing.unit}

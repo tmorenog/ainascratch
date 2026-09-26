@@ -4,6 +4,7 @@ import { Modal } from "./ui/Modal";
 import { useGame } from "@/game/store";
 import { INGREDIENT_LIST } from "@/game/ingredients";
 import { useT } from "@/game/i18n";
+import { getIngredientName, getIngredientUnit } from "@/game/locale_data";
 
 /**
  * Lightweight pantry view shown when the player walks to the pantry shelf.
@@ -20,6 +21,7 @@ export function PantryPanel({
 }) {
   const inventory = useGame((s) => s.inventory);
   const pending = useGame((s) => s.pendingSupply);
+  const lang = useGame((s) => s.language);
   const t = useT();
 
   return (
@@ -38,9 +40,9 @@ export function PantryPanel({
               }`}
             >
               <div className="text-2xl">{ing.emoji}</div>
-              <div className="font-bold text-sm truncate">{ing.name}</div>
+              <div className="font-bold text-sm truncate">{getIngredientName(ing.id, lang, ing.name)}</div>
               <div className="text-xs tabular-nums">
-                {v} {ing.unit}
+                {v} {getIngredientUnit(ing.id, lang, ing.unit)}
                 {v === 1 ? "" : "s"}
               </div>
             </div>

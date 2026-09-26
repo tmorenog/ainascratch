@@ -110,6 +110,9 @@ export interface Customer {
   color: string;
   hasPet?: "dog" | "cat";
   greeting: string;
+  /** Index into the archetype's flavorLines pool, so the greeting can be
+   *  re-rendered in the current UI language at display time. */
+  greetingIdx?: number;
   arrivedAt: number;
   patienceMs: number;
   order: string[]; // recipe ids requested

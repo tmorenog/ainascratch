@@ -9,6 +9,12 @@ import { FoodArt } from "./foods/FoodArt";
 import { useGame } from "@/game/store";
 import { useT } from "@/game/i18n";
 import type { TKey } from "@/game/i18n";
+import {
+  getIngredientName,
+  getIngredientUnit,
+  getRecipeDescription,
+  getRecipeName,
+} from "@/game/locale_data";
 
 type TabId = RecipeCategory | "all" | "mine";
 
@@ -40,6 +46,7 @@ export function RecipeBook({
   const removeCustomRecipe = useGame((s) => s.removeCustomRecipe);
   const setSpecial = useGame((s) => s.setSpecial);
   const toggleRecommended = useGame((s) => s.toggleRecommended);
+  const lang = useGame((s) => s.language);
   const t = useT();
 
   const allRecipes: Recipe[] = [...RECIPES, ...customRecipes];
@@ -123,7 +130,7 @@ export function RecipeBook({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <div className="font-display text-lg text-cocoa-600 truncate">
-                      {r.name}
+                      {r.isCustom ? r.name : getRecipeName(r.id, lang, r.name)}
                     </div>
                     <span className="chip !py-0 !px-2 !text-xs">🪙 ${r.price}</span>
                   </div>
@@ -151,7 +158,9 @@ export function RecipeBook({
                   </div>
                   <div className="text-xs text-cocoa-400 italic">
                     {isUnlocked
-                      ? r.description
+                      ? r.isCustom
+                        ? r.description
+                        : getRecipeDescription(r.id, lang, r.description)
                       : t("unlocksAtLevel", { level: r.unlockLevel ?? "?" })}
                   </div>
                 </div>
@@ -160,15 +169,20 @@ export function RecipeBook({
                 <>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {(Object.entries(r.ingredients) as [IngredientId, number][]).map(
-                      ([k, n]) => (
-                        <span
-                          key={k}
-                          className="text-[11px] px-2 py-0.5 rounded-full bg-cream-100 border border-cream-200 text-cocoa-500"
-                        >
-                          {INGREDIENTS[k].emoji} {n} {INGREDIENTS[k].unit}
-                          {n > 1 ? "s" : ""}
-                        </span>
-                      ),
+                      ([k, n]) => {
+                        const iName = getIngredientName(k, lang, INGREDIENTS[k].name);
+                        const iUnit = getIngredientUnit(k, lang, INGREDIENTS[k].unit);
+                        return (
+                          <span
+                            key={k}
+                            className="text-[11px] px-2 py-0.5 rounded-full bg-cream-100 border border-cream-200 text-cocoa-500"
+                            title={iName}
+                          >
+                            {INGREDIENTS[k].emoji} {n} {iUnit}
+                            {n > 1 ? "s" : ""}
+                          </span>
+                        );
+                      },
                     )}
                   </div>
                   <ol className="mt-2 text-xs text-cocoa-500 space-y-1 list-decimal list-inside">

@@ -7,12 +7,14 @@ import type { IngredientId } from "@/game/types";
 import { useGame } from "@/game/store";
 import { motion, AnimatePresence } from "framer-motion";
 import { useT } from "@/game/i18n";
+import { getIngredientName, getIngredientUnit } from "@/game/locale_data";
 
 export function Supermarket({ open, onClose }: { open: boolean; onClose: () => void }) {
   const coins = useGame((s) => s.coins);
   const inventory = useGame((s) => s.inventory);
   const pending = useGame((s) => s.pendingSupply);
   const orderSupplies = useGame((s) => s.orderSupplies);
+  const lang = useGame((s) => s.language);
   const t = useT();
 
   const [cart, setCart] = useState<Partial<Record<IngredientId, number>>>({});
@@ -68,9 +70,9 @@ export function Supermarket({ open, onClose }: { open: boolean; onClose: () => v
                   {ing.emoji}
                 </div>
                 <div className="flex-1">
-                  <div className="font-bold text-cocoa-600">{ing.name}</div>
+                  <div className="font-bold text-cocoa-600">{getIngredientName(ing.id, lang, ing.name)}</div>
                   <div className="text-xs text-cocoa-400">
-                    🪙 ${ing.pricePerUnit} / {ing.unit} · you have {inventory[ing.id] ?? 0}
+                    🪙 ${ing.pricePerUnit} / {getIngredientUnit(ing.id, lang, ing.unit)} · you have {inventory[ing.id] ?? 0}
                   </div>
                 </div>
               </div>

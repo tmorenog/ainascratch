@@ -320,6 +320,7 @@ function spawnCustomer(
     playerLevel,
     archetype.hasPet,
   );
+  const greetingIdx = Math.floor(Math.random() * archetype.flavorLines.length);
   return {
     id: uid("cust"),
     archetypeId: archetype.id,
@@ -327,7 +328,8 @@ function spawnCustomer(
     emoji: archetype.emoji,
     color: archetype.color,
     hasPet: archetype.hasPet,
-    greeting: randomChoice(archetype.flavorLines),
+    greeting: archetype.flavorLines[greetingIdx],
+    greetingIdx,
     arrivedAt: Date.now(),
     patienceMs: Math.round(pMin + Math.random() * (pMax - pMin)) +
       // longer orders get a little more patience

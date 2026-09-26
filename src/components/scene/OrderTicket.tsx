@@ -6,6 +6,7 @@ import { RECIPE_BY_ID } from "@/game/recipes";
 import { FoodArt } from "../foods/FoodArt";
 import { useGame } from "@/game/store";
 import { useT } from "@/game/i18n";
+import { ARCHETYPE_LOCALE, getRecipeName } from "@/game/locale_data";
 
 /**
  * The black order ticket that lives along the bottom of the screen.
@@ -23,7 +24,19 @@ export function OrderTicket({
   canServe?: boolean;
 }) {
   const customRecipes = useGame((s) => s.customRecipes);
+  const lang = useGame((s) => s.language);
   const t = useT();
+  // Localized greeting: look up the archetype's translated line pool at
+  // the same index that was picked at spawn time. Falls back to the
+  // english greeting stored on the customer.
+  const localizedGreeting = (() => {
+    if (!customer) return "";
+    if (lang === "en") return customer.greeting;
+    const pool = ARCHETYPE_LOCALE[customer.archetypeId]?.[lang]?.flavorLines;
+    if (!pool) return customer.greeting;
+    const idx = customer.greetingIdx ?? 0;
+    return pool[idx] ?? pool[0] ?? customer.greeting;
+  })();
   return (
     <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 w-[min(720px,94vw)]">
       <AnimatePresence mode="wait">
@@ -57,7 +70,7 @@ export function OrderTicket({
                       {customer.name}
                     </div>
                     <div className="text-cream-300/80 text-xs italic truncate">
-                      “{customer.greeting}”
+                      “{localizedGreeting}”
                     </div>
                   </div>
                   <div className="mt-0.5 text-[10px] uppercase tracking-wider font-bold text-cream-300/70">
@@ -100,7 +113,11 @@ export function OrderTicket({
                         plushTheme={recipe?.plushTheme}
                       />
                       <span className="text-xs font-bold text-cream-100">
-                        {recipe?.name ?? id}
+                        {recipe
+                          ? recipe.isCustom
+                            ? recipe.name
+                            : getRecipeName(id, lang, recipe.name)
+                          : id}
                       </span>
                     </div>
                   );
