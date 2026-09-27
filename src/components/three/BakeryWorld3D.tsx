@@ -191,6 +191,10 @@ export function BakeryWorld3D({
     camera.position.set(0, PLAYER.eyeHeight, -0.3);
     camera.rotation.order = "YXZ";
     camera.rotation.y = Math.PI; // face +Z (where the service counter is)
+    // Touch + mouse look writes to a "target" pose that the tick lerps
+    // the camera toward each frame. That absorbs choppy touch input on
+    // mobile so pans feel smooth instead of steppy.
+    const lookTarget = { yaw: camera.rotation.y, pitch: camera.rotation.x };
 
     // ---- Lights ----
     scene.add(new THREE.AmbientLight("#fff4dc", 0.55));
@@ -874,6 +878,8 @@ export function BakeryWorld3D({
         );
         camera.rotation.y = BASEMENT.entry.yaw;
         camera.rotation.x = 0;
+        lookTarget.yaw = BASEMENT.entry.yaw;
+        lookTarget.pitch = 0;
         return;
       }
       // Vet clinic: if we're carrying a cat, heal them on the spot.
@@ -898,6 +904,8 @@ export function BakeryWorld3D({
         );
         camera.rotation.y = BASEMENT.exitUp.yaw;
         camera.rotation.x = 0;
+        lookTarget.yaw = BASEMENT.exitUp.yaw;
+        lookTarget.pitch = 0;
         return;
       }
       onInteractRef.current(hs, activeCustomerRef.current);
@@ -1028,8 +1036,8 @@ export function BakeryWorld3D({
       const mx = Math.max(-80, Math.min(80, mxRaw));
       const my = Math.max(-80, Math.min(80, myRaw));
       if (document.pointerLockElement === renderer.domElement) {
-        camera.rotation.y -= mx * 0.0025;
-        camera.rotation.x -= my * 0.0025;
+        lookTarget.yaw -= mx * 0.0025;
+        lookTarget.pitch -= my * 0.0025;
       } else if (isDragging) {
         const dxRaw = e.clientX - dragLastX;
         const dyRaw = e.clientY - dragLastY;
@@ -1037,13 +1045,12 @@ export function BakeryWorld3D({
         dragLastY = e.clientY;
         const dx = Math.max(-80, Math.min(80, dxRaw));
         const dy = Math.max(-80, Math.min(80, dyRaw));
-        camera.rotation.y -= dx * 0.005;
-        camera.rotation.x -= dy * 0.005;
+        lookTarget.yaw -= dx * 0.005;
+        lookTarget.pitch -= dy * 0.005;
       } else {
         return;
       }
-      camera.rotation.x = Math.max(-1.2, Math.min(1.2, camera.rotation.x));
-      camera.rotation.z = 0;
+      lookTarget.pitch = Math.max(-1.2, Math.min(1.2, lookTarget.pitch));
     };
     document.addEventListener("mousemove", onMouseMove);
 
@@ -1071,10 +1078,11 @@ export function BakeryWorld3D({
           // followed by a big catch-up delta should not spin the camera.
           const dx = Math.max(-80, Math.min(80, t.clientX - touchState.lookLast.x));
           const dy = Math.max(-80, Math.min(80, t.clientY - touchState.lookLast.y));
-          camera.rotation.y -= dx * 0.0035;
-          camera.rotation.x -= dy * 0.0035;
-          camera.rotation.x = Math.max(-1.2, Math.min(1.2, camera.rotation.x));
-          camera.rotation.z = 0;
+          // Write to the look target — the tick lerps toward it, so a
+          // choppy stream of touchmove events still produces a smooth pan.
+          lookTarget.yaw -= dx * 0.0035;
+          lookTarget.pitch -= dy * 0.0035;
+          lookTarget.pitch = Math.max(-1.2, Math.min(1.2, lookTarget.pitch));
           touchState.lookLast = { x: t.clientX, y: t.clientY };
         }
       }
@@ -1270,10 +1278,17 @@ export function BakeryWorld3D({
       // users can look around without grabbing the mouse. Arrow keys do NOT
       // move the player — WASD handles movement — so the two never conflict.
       const turnSpeed = 1.8 * dt;
-      if (keys.has("ArrowLeft")) camera.rotation.y += turnSpeed;
-      if (keys.has("ArrowRight")) camera.rotation.y -= turnSpeed;
-      if (keys.has("ArrowUp")) camera.rotation.x = Math.max(-1.2, camera.rotation.x - turnSpeed);
-      if (keys.has("ArrowDown")) camera.rotation.x = Math.min(1.2, camera.rotation.x + turnSpeed);
+      if (keys.has("ArrowLeft")) lookTarget.yaw += turnSpeed;
+      if (keys.has("ArrowRight")) lookTarget.yaw -= turnSpeed;
+      if (keys.has("ArrowUp")) lookTarget.pitch = Math.max(-1.2, lookTarget.pitch - turnSpeed);
+      if (keys.has("ArrowDown")) lookTarget.pitch = Math.min(1.2, lookTarget.pitch + turnSpeed);
+
+      // Smooth the camera toward the look target — feels much less jerky
+      // on mobile, where touchmove events arrive in uneven clumps. The
+      // factor caps at 1 so we never overshoot the target on a long frame.
+      const lookK = Math.min(1, dt * 22);
+      camera.rotation.y += (lookTarget.yaw - camera.rotation.y) * lookK;
+      camera.rotation.x += (lookTarget.pitch - camera.rotation.x) * lookK;
       camera.rotation.z = 0; // never roll
 
       // move player
@@ -1888,17 +1903,54 @@ function Joystick({
       thumbRef.current.style.transform = `translate(${x}px, ${y}px)`;
     }
   }
+  function release() {
+    touchIdRef.current = -1;
+    moveVecRef.current.x = 0;
+    moveVecRef.current.y = 0;
+    updateThumb(0, 0);
+  }
+  // Global safety net: if a touch ends anywhere (including outside the
+  // joystick), make sure we release. Without this the stick can get
+  // "stuck" and stop responding when a finger slides off the pad or the
+  // browser cancels a gesture behind our back.
+  useEffect(() => {
+    function onGlobalEnd(e: TouchEvent) {
+      if (touchIdRef.current === -1) return;
+      for (const t of Array.from(e.changedTouches)) {
+        if (t.identifier === touchIdRef.current) {
+          release();
+          return;
+        }
+      }
+    }
+    window.addEventListener("touchend", onGlobalEnd);
+    window.addEventListener("touchcancel", onGlobalEnd);
+    return () => {
+      window.removeEventListener("touchend", onGlobalEnd);
+      window.removeEventListener("touchcancel", onGlobalEnd);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function onStart(e: React.TouchEvent<HTMLDivElement>) {
     if (pausedRef.current) return;
     const t = e.changedTouches[0];
-    if (!t || touchIdRef.current !== -1) return;
+    if (!t) return;
+    // Always accept a fresh touch on the pad — override any stale id.
+    // Prevents the "stick won't respond" bug when the previous end
+    // event never fired.
     const rect = baseRef.current!.getBoundingClientRect();
     centerRef.current = {
       x: rect.left + rect.width / 2,
       y: rect.top + rect.height / 2,
     };
     touchIdRef.current = t.identifier;
+    // Immediately reflect the tap position so the thumb doesn't skip.
+    const dx = Math.max(-RADIUS, Math.min(RADIUS, t.clientX - centerRef.current.x));
+    const dy = Math.max(-RADIUS, Math.min(RADIUS, t.clientY - centerRef.current.y));
+    updateThumb(dx, dy);
+    moveVecRef.current.x = dx / RADIUS;
+    moveVecRef.current.y = dy / RADIUS;
   }
   function onMove(e: React.TouchEvent<HTMLDivElement>) {
     for (const t of Array.from(e.changedTouches)) {
@@ -1918,10 +1970,7 @@ function Joystick({
   function onEnd(e: React.TouchEvent<HTMLDivElement>) {
     for (const t of Array.from(e.changedTouches)) {
       if (t.identifier !== touchIdRef.current) continue;
-      touchIdRef.current = -1;
-      moveVecRef.current.x = 0;
-      moveVecRef.current.y = 0;
-      updateThumb(0, 0);
+      release();
     }
   }
 
